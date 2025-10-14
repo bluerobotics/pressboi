@@ -1,0 +1,4 @@
+- integrate new pinch valves once sensors are here
+- the command definitions changed for heater and vacuum leak test, update them in the firmware to accept parameters
+- there are safety and lockout considerations, test them all
+- make a pressboi device and start doing the firmware and device definition for that

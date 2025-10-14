@@ -1,0 +1,206 @@
+## Gantry Firmware
+
+### Gantry
+- Public
+    - Gantry
+    - setup
+    - loop
+    - reportEvent
+- Private
+    - abort
+    - enable
+    - disable
+    - clearErrors
+    - standby
+    - dispatchCommand
+    - publishTelemetry
+    - updateState
+    - getState
+
+### Axis
+- Public
+    - Axis
+    - setup
+    - setupMotors
+    - updateState
+    - move
+    - home
+    - abort
+    - enable
+    - disable
+    - reset
+    - isMoving
+    - isHomed
+    - getState
+    - getStateEnum
+    - getPositionMm
+    - getSmoothedTorque
+    - isEnabled
+    - startMove
+- Private
+    - moveSteps
+    - checkTorqueLimit
+    - getRawTorque
+    - reportEvent
+
+### CommsController (Gantry)
+- Public
+    - CommsController
+    - setup
+    - update
+    - enqueueRx
+    - dequeueRx
+    - enqueueTx
+    - reportEvent
+    - parseCommand
+    - isGuiDiscovered
+    - getGuiIp
+    - getGuiPort
+    - setGuiDiscovered
+    - setGuiIp
+    - setGuiPort
+- Private
+    - processUdp
+    - processTxQueue
+    - setupEthernet
+    - setupUsbSerial
+
+---
+
+## Fillhead Firmware
+
+### Fillhead
+- Public
+    - Fillhead
+    - setup
+    - loop
+    - reportEvent
+- Private
+    - abort
+    - enable
+    - disable
+    - clearErrors
+    - standby
+    - dispatchCommand
+    - publishTelemetry
+    - updateState
+
+### Injector
+- Public
+    - Injector
+    - setup
+    - updateState
+    - handleCommand
+    - getTelemetryString
+    - enable
+    - disable
+    - abortMove
+    - reset
+    - isInFault
+    - isBusy
+    - getState
+- Private
+    - startMove
+    - isMoving
+    - getSmoothedTorque
+    - checkTorqueLimit
+    - finalizeAndResetActiveDispenseOperation
+    - fullyResetActiveDispenseOperation
+    - reportEvent
+    - jogMove
+    - machineHome
+    - cartridgeHome
+    - moveToCartridgeHome
+    - moveToCartridgeRetract
+    - initiateInjectMove
+    - pauseOperation
+    - resumeOperation
+    - cancelOperation
+    - setTorqueOffset
+
+### PinchValve
+- Public
+    - PinchValve
+    - setup
+    - updateState
+    - handleCommand
+    - home
+    - open
+    - close
+    - jog
+    - enable
+    - disable
+    - abort
+    - reset
+    - isHomed
+    - isOpen
+    - getTelemetryString
+    - isInFault
+    - isBusy
+    - getState
+- Private
+    - moveSteps
+    - getSmoothedTorque
+    - getInstantaneousTorque
+    - checkTorqueLimit
+    - reportEvent
+
+### HeaterController
+- Public
+    - HeaterController
+    - setup
+    - updateTemperature
+    - updateState
+    - handleCommand
+    - getTelemetryString
+    - getState
+- Private
+    - resetPID
+    - reportEvent
+    - heaterOn
+    - heaterOff
+    - setGains
+    - setSetpoint
+
+### VacuumController
+- Public
+    - VacuumController
+    - setup
+    - updateVacuum
+    - updateState
+    - handleCommand
+    - getTelemetryString
+    - resetState
+    - isBusy
+    - getState
+- Private
+    - reportEvent
+    - vacuumOn
+    - vacuumOff
+    - leakTest
+    - setTarget
+    - setTimeout
+    - setLeakDelta
+    - setLeakDuration
+
+### CommsController (Fillhead)
+- Public
+    - CommsController
+    - setup
+    - update
+    - enqueueRx
+    - dequeueRx
+    - enqueueTx
+    - reportEvent
+    - parseCommand
+    - isGuiDiscovered
+    - getGuiIp
+    - getGuiPort
+    - setGuiDiscovered
+    - setGuiIp
+    - setGuiPort
+- Private
+    - processUdp
+    - processTxQueue
+    - setupEthernet
+    - setupUsbSerial
