@@ -1,0 +1,118 @@
+{
+    "HEATER_ON": {
+        "device": "fillhead",
+        "params": [
+            {"name": "setpoint_C", "type": "float", "optional": true, "keywords": ["temp", "temperature", "C"]}
+        ],
+        "help": "Turns the heater on. Optionally sets the target temperature."
+    },
+    "HEATER_OFF": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Turns the heater off."
+    },
+    "VACUUM_LEAK_TEST": {
+        "device": "fillhead",
+        "params": [
+            {"name": "delta_psi", "type": "float", "optional": true, "keywords": ["delta", "d"]},
+            {"name": "duration_s", "type": "float", "optional": true, "keywords": ["duration", "dur", "s", "sec"]}
+        ],
+        "help": "Performs a vacuum leak test. All parameters are optional."
+    },
+    "VACUUM_ON": {
+        "device": "fillhead",
+        "params": [
+            {"name": "target_psi", "type": "float", "optional": true, "keywords": ["vacuum", "vac", "psi"]}
+        ],
+        "help": "Turns the vacuum on. Optionally sets the target vacuum pressure."
+    },
+    "VACUUM_OFF": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Turns the vacuum off."
+    },
+    "INJECTION_VALVE_HOME_TUBED": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Homes the injection valve (tubed)."
+    },
+    "INJECTION_VALVE_HOME_UNTUBED": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Homes the injection valve (untubed)."
+    },
+    "INJECTION_VALVE_OPEN": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Opens the injection valve."
+    },
+    "INJECTION_VALVE_CLOSE": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Closes the injection valve."
+    },
+    "VACUUM_VALVE_HOME_TUBED": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Homes the vacuum valve (tubed)."
+    },
+    "VACUUM_VALVE_HOME_UNTUBED": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Homes the vacuum valve (untubed)."
+    },
+    "VACUUM_VALVE_OPEN": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Opens the vacuum valve."
+    },
+    "VACUUM_VALVE_CLOSE": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Closes the vacuum valve."
+    },
+    "WAIT_UNTIL_HEATER_AT_TEMP": {
+        "device": "fillhead",
+        "handler": "script",
+        "params": [
+            {"name": "temperature_C", "type": "float", "keywords": ["temp", "temperature", "C"]},
+            {"name": "timeout_sec", "type": "int", "optional": true, "default": 300, "keywords": ["timeout", "t"]}
+        ],
+        "help": "Pauses script until the heater reaches the target temperature."
+    },
+    "WAIT_UNTIL_VACUUM": {
+        "device": "fillhead",
+        "handler": "script",
+        "params": [
+            {"name": "target_psi", "type": "float", "keywords": ["vacuum", "vac", "psi"]},
+            {"name": "timeout_s", "type": "float", "optional": true, "keywords": ["timeout", "t"]}
+        ],
+        "help": "Pauses script until vacuum reaches target. All params optional."
+    },
+    "MACHINE_HOME_MOVE": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Homes the main machine axis."
+    },
+    "CARTRIDGE_HOME_MOVE": {
+        "device": "fillhead",
+        "params": [],
+        "help": "Homes the injector against the cartridge."
+    },
+    "INJECT_STATOR": {
+        "device": "fillhead",
+        "params": [
+            {"name": "volume_ml", "type": "float", "keywords": ["vol", "volume"]},
+            {"name": "speed_ml_s", "type": "float", "optional": true, "keywords": ["speed", "sp"]}
+        ],
+        "help": "Injects a volume using the Stator (5:1) settings."
+    },
+    "INJECT_ROTOR": {
+        "device": "fillhead",
+        "params": [
+            {"name": "volume_ml", "type": "float", "keywords": ["vol", "volume"]},
+            {"name": "speed_ml_s", "type": "float", "optional": true, "keywords": ["speed", "sp"]}
+        ],
+        "help": "Injects a volume using the Rotor (1:1) settings."
+    }
+}
