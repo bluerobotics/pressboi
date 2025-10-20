@@ -17,7 +17,7 @@
  * @name Telemetry Field Keys
  * @brief String identifiers for telemetry data fields in the CSV-like format.
  * @details These defines specify the exact field names used in the telemetry string.
- * Format: "FILLHEAD_TELEM: field1:value1,field2:value2,..."
+ * Format: "PRESSBOI_TELEM: field1:value1,field2:value2,..."
  * @{
  */
 

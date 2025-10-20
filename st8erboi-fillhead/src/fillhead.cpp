@@ -211,7 +211,10 @@ void Fillhead::dispatchCommand(const Message& msg) {
                 m_comms.setGuiIp(msg.remoteIp);
                 m_comms.setGuiPort(atoi(portStr + 5));
                 m_comms.setGuiDiscovered(true);
-                m_comms.reportEvent(STATUS_PREFIX_DISCOVERY, "DEVICE_ID=fillhead");
+                // Report device ID and the port we're listening on
+                char discoveryMsg[64];
+                snprintf(discoveryMsg, sizeof(discoveryMsg), "DEVICE_ID=pressboi PORT=%d", LOCAL_PORT);
+                m_comms.reportEvent(STATUS_PREFIX_DISCOVERY, discoveryMsg);
             }
             break;
         }

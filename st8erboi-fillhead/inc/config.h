@@ -19,7 +19,7 @@
  * @name Network and Communication Settings
  * @{
  */
-#define LOCAL_PORT                      8888      ///< The UDP port this device listens on for incoming commands.
+#define LOCAL_PORT                      8890      ///< The UDP port this device listens on for incoming commands.
 #define MAX_PACKET_LENGTH               1024      ///< Maximum size in bytes for a single UDP packet. Must be large enough for the longest telemetry string.
 #define RX_QUEUE_SIZE                   32        ///< Number of incoming messages that can be buffered before processing.
 #define TX_QUEUE_SIZE                   32        ///< Number of outgoing messages that can be buffered before sending.

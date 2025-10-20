@@ -86,11 +86,11 @@
  * @name Telemetry and Status Prefixes
  * @{
  */
-#define TELEM_PREFIX						"FILLHEAD_TELEM: "         ///< Prefix for all telemetry messages.
-#define STATUS_PREFIX_INFO                  "FILLHEAD_INFO: "          ///< Prefix for informational status messages.
-#define STATUS_PREFIX_START                 "FILLHEAD_START: "         ///< Prefix for messages indicating the start of an operation.
-#define STATUS_PREFIX_DONE                  "FILLHEAD_DONE: "          ///< Prefix for messages indicating the successful completion of an operation.
-#define STATUS_PREFIX_ERROR                 "FILLHEAD_ERROR: "         ///< Prefix for messages indicating an error or fault.
+#define TELEM_PREFIX						"PRESSBOI_TELEM: "         ///< Prefix for all telemetry messages.
+#define STATUS_PREFIX_INFO                  "INFO: "                   ///< Prefix for informational status messages.
+#define STATUS_PREFIX_START                 "START: "                  ///< Prefix for messages indicating the start of an operation.
+#define STATUS_PREFIX_DONE                  "DONE: "                   ///< Prefix for messages indicating the successful completion of an operation.
+#define STATUS_PREFIX_ERROR                 "ERROR: "                  ///< Prefix for messages indicating an error or fault.
 #define STATUS_PREFIX_DISCOVERY             "DISCOVERY_RESPONSE: "     ///< Prefix for the device discovery response.
 /** @} */
 
