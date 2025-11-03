@@ -1,10 +1,10 @@
 <div align="center">
 
-![Blue Robotics](assets/logo.png)
+<img src="assets/logo.png" alt="Blue Robotics" width="400">
 
 # Pressboi Firmware
 
-![Pressboi](assets/icon.png)
+<img src="assets/icon.png" alt="Pressboi" width="150">
 
 **Dual-Motor Press Control System**
 
@@ -434,6 +434,10 @@ For issues, feature requests, or contributions, please open an issue or pull req
 ---
 
 <div align="center">
+
+⭐ **Star us on GitHub if you found this useful!**
+
+Made with 💙 by the Blue Robotics team and contributors worldwide
 
 **[Blue Robotics](https://bluerobotics.com)** | Manufacturing Equipment Control
 
