@@ -196,7 +196,6 @@ void MotorController::updateState() {
                 }
                 break;
                 case SET_ZERO: {
-                    char doneMsg[STATUS_MESSAGE_BUFFER_SIZE];
                     const char* commandStr = (m_homingState == HOMING_MACHINE) ? "home" : "cartridge_home";
                     
                     if (m_homingState == HOMING_MACHINE) {
