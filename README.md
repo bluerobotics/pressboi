@@ -55,16 +55,81 @@ Firmware for the Pressboi dual-motor press control system, built on the Teknic C
 
 ### Flashing
 
-**Method 1: UF2 Bootloader (Recommended)**
+#### **Method 1: Microchip Studio with Atmel ICE (Recommended for Development)**
+
+This is the recommended method for development and debugging.
+
+**Requirements:**
+- [Microchip Studio](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio) (formerly Atmel Studio 7)
+- Atmel ICE debugger/programmer
+- 10-pin SWD cable
+
+**Steps:**
+1. Connect Atmel ICE to your computer via USB
+2. Connect Atmel ICE to ClearCore SWD header (10-pin connector)
+3. Power on the ClearCore
+4. In Microchip Studio, open `pressboi/pressboi.atsln`
+5. Select **Debug** configuration
+6. Go to **Tools → Device Programming** (Ctrl+Shift+P)
+7. Configure:
+   - **Tool:** Atmel-ICE
+   - **Device:** ATSAME53N19A
+   - **Interface:** SWD
+   - Click **Apply**
+8. Click **Read** under Device Signature to verify connection
+9. Go to **Memories** tab
+10. Under **Flash**, browse to `pressboi/Debug/pressboi.elf`
+11. Click **Program** to flash the firmware
+12. Optionally check **Verify** to confirm successful programming
+
+**For Development with Debugging:**
+- Press **F5** or click **Start Debugging and Break** to build, flash, and start a debug session
+- Use breakpoints, watch variables, and step through code
+- Serial Wire Viewer (SWV) available for printf debugging
+
+---
+
+#### **Method 2: Microchip Studio with USB (BOSSA Bootloader)**
+
+If the ClearCore has the BOSSA bootloader installed:
+
+1. Double-tap reset button on ClearCore (LED will pulse)
+2. ClearCore appears as COM port in Device Manager
+3. In Microchip Studio:
+   - Go to **Tools → External Tools**
+   - Add new tool:
+     - **Title:** Flash via BOSSA
+     - **Command:** `C:\Program Files (x86)\Teknic\ClearCore-library\Teknic\tools\bossac.exe`
+     - **Arguments:** `--port=COM# -e -w -v -R "$(ProjectDir)Debug\$(TargetName).bin"`
+     - Replace `COM#` with your ClearCore's COM port
+4. Build project (F7)
+5. Run **Tools → Flash via BOSSA**
+
+---
+
+#### **Method 3: UF2 Bootloader (Quick Field Updates)**
+
+For quick firmware updates without development tools:
+
 1. Double-press the reset button on the ClearCore
 2. ClearCore appears as USB mass storage device
 3. Copy `pressboi.uf2` to the drive
 4. ClearCore automatically reboots with new firmware
 
-**Method 2: BOSSA (Command Line)**
+---
+
+#### **Method 4: BOSSA Command Line**
+
+For automated or scripted flashing:
+
 ```bash
 cd Tools
 flash_clearcore.cmd
+```
+
+Or manually:
+```bash
+bossac.exe --port=COM# -e -w -v -R pressboi.bin
 ```
 
 ---
