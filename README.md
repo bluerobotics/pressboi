@@ -1,8 +1,8 @@
 <div align="center">
 
-# Pressboi Firmware
-
 <img src="assets/icon.png" alt="Pressboi" width="150">
+
+# Pressboi
 
 **Dual-Motor Press Control System**
 
@@ -10,6 +10,8 @@
 [![release](https://img.shields.io/github/v/release/bluerobotics/pressboi?style=flat-square)](https://github.com/bluerobotics/pressboi/releases/latest)
 [![build](https://img.shields.io/github/actions/workflow/status/bluerobotics/pressboi/release.yml?style=flat-square)](https://github.com/bluerobotics/pressboi/actions)
 [![downloads](https://img.shields.io/github/downloads/bluerobotics/pressboi/total?style=flat-square)](https://github.com/bluerobotics/pressboi/releases)
+
+[View Changelog](CHANGELOG.md) • [Download Latest Release](https://github.com/bluerobotics/pressboi/releases/latest)
 
 </div>
 
