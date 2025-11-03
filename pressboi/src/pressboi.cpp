@@ -297,7 +297,7 @@ void Pressboi::clearErrors() {
     
     // The system is now fully reset and ready.
     standby();
-    reportEvent(STATUS_PREFIX_DONE, "CLEAR_ERRORS complete.");
+    reportEvent(STATUS_PREFIX_DONE, "clear_errors");
 }
 
 void Pressboi::standby() {
