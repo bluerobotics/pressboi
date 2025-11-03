@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="assets/logo.png" alt="Blue Robotics" width="400">
-
 # Pressboi Firmware
 
 <img src="assets/icon.png" alt="Pressboi" width="150">
@@ -504,6 +502,10 @@ For issues, feature requests, or contributions, please open an issue or pull req
 
 Made with 💙 by the Blue Robotics team and contributors worldwide
 
-**[Blue Robotics](https://bluerobotics.com)** | Manufacturing Equipment Control
+---
+
+<img src="assets/logo.png" alt="Blue Robotics" width="300">
+
+**[bluerobotics.com](https://bluerobotics.com)** | Manufacturing Equipment Control
 
 </div>
