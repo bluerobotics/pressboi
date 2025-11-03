@@ -1,0 +1,29 @@
+# Build artifacts
+Debug/
+Release/
+
+# But keep the release binaries
+!pressboi/Debug/*.bin
+!pressboi/Debug/*.uf2
+
+# Ignore other build files
+*.elf
+*.map
+
+# Visual Studio / Atmel Studio
+.vs/
+*.atsuo
+*.d
+*.o
+*.a
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+
