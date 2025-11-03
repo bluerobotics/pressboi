@@ -57,6 +57,7 @@ MotorController::MotorController(MotorDriver* motorA, MotorDriver* motorB, Press
     m_cartridgeHomeReferenceSteps = 0;
     m_cumulative_dispensed_ml = 0.0f;
     m_feedStartTime = 0;
+    m_active_op_target_position_steps = 0;
 
     fullyResetActiveDispenseOperation();
     m_activeFeedCommand = nullptr;
@@ -397,6 +398,9 @@ void MotorController::home() {
     m_homingTouchSps = (int)fabs(INJECTOR_HOMING_TOUCH_VEL_MMS * STEPS_PER_MM_INJECTOR);
     m_homingAccelSps2 = (int)fabs(INJECTOR_HOMING_ACCEL_MMSS * STEPS_PER_MM_INJECTOR);
     
+    // Set target position to 0 (home position) for telemetry
+    m_active_op_target_position_steps = 0;
+    
     char logMsg[200];
     snprintf(logMsg, sizeof(logMsg), "Homing params: dist_steps=%ld, rapid_sps=%d, touch_sps=%d, accel_sps2=%d",
              m_homingDistanceSteps, m_homingRapidSps, m_homingTouchSps, m_homingAccelSps2);
@@ -462,6 +466,7 @@ void MotorController::moveToStart() {
     m_feedState = FEED_MOVING_TO_HOME;
     m_activeFeedCommand = "move_to_start";
     
+    m_active_op_target_position_steps = m_cartridgeHomeReferenceSteps;  // Store for telemetry
     long current_pos = m_motorA->PositionRefCommanded();
     long steps_to_move = m_cartridgeHomeReferenceSteps - current_pos;
     
@@ -482,13 +487,20 @@ void MotorController::moveAbsolute(const char* args) {
     
     float position_mm = 0.0f;
     float speed_mms = FEED_DEFAULT_VELOCITY_MMS;
-    float force_kg = m_torqueLimit;  // Use current torque limit as default
+    float force_kg = 0.0f;  // Parsed but ignored for now
     
     // Parse: position, speed, force, [force_action]
+    // Note: force_kg is ignored until force transducer is implemented
     int parsed = std::sscanf(args, "%f %f %f", &position_mm, &speed_mms, &force_kg);
     if (parsed < 1) {
         reportEvent(STATUS_PREFIX_ERROR, "Error: Invalid parameters for MOVE_ABS. Need at least position.");
         return;
+    }
+    
+    // Limit speed to 100 mm/s for safety
+    if (speed_mms > 100.0f) {
+        speed_mms = 100.0f;
+        reportEvent(STATUS_PREFIX_INFO, "Speed limited to 100 mm/s for safety.");
     }
     
     fullyResetActiveDispenseOperation();
@@ -497,11 +509,12 @@ void MotorController::moveAbsolute(const char* args) {
     m_activeFeedCommand = "move_abs";
     
     long target_steps = m_machineHomeReferenceSteps + (long)(position_mm * STEPS_PER_MM_INJECTOR);
+    m_active_op_target_position_steps = target_steps;  // Store for telemetry
     long current_pos = m_motorA->PositionRefCommanded();
     long steps_to_move = target_steps - current_pos;
     
     int velocity_sps = (int)(speed_mms * STEPS_PER_MM_INJECTOR);
-    m_torqueLimit = force_kg;  // Use force as torque limit
+    m_torqueLimit = (float)m_feedDefaultTorquePercent;  // Use default torque limit (force transducer not yet implemented)
     
     startMove(steps_to_move, velocity_sps, m_feedDefaultAccelSPS2);
     
@@ -521,13 +534,20 @@ void MotorController::moveIncremental(const char* args) {
     
     float distance_mm = 0.0f;
     float speed_mms = FEED_DEFAULT_VELOCITY_MMS;
-    float force_kg = m_torqueLimit;  // Use current torque limit as default
+    float force_kg = 0.0f;  // Parsed but ignored for now
     
     // Parse: distance, speed, force, [force_action]
+    // Note: force_kg is ignored until force transducer is implemented
     int parsed = std::sscanf(args, "%f %f %f", &distance_mm, &speed_mms, &force_kg);
     if (parsed < 1) {
         reportEvent(STATUS_PREFIX_ERROR, "Error: Invalid parameters for MOVE_INC. Need at least distance.");
         return;
+    }
+    
+    // Limit speed to 100 mm/s for safety
+    if (speed_mms > 100.0f) {
+        speed_mms = 100.0f;
+        reportEvent(STATUS_PREFIX_INFO, "Speed limited to 100 mm/s for safety.");
     }
     
     fullyResetActiveDispenseOperation();
@@ -536,8 +556,10 @@ void MotorController::moveIncremental(const char* args) {
     m_activeFeedCommand = "move_inc";
     
     long steps_to_move = (long)(distance_mm * STEPS_PER_MM_INJECTOR);
+    long current_pos = m_motorA->PositionRefCommanded();
+    m_active_op_target_position_steps = current_pos + steps_to_move;  // Store for telemetry
     int velocity_sps = (int)(speed_mms * STEPS_PER_MM_INJECTOR);
-    m_torqueLimit = force_kg;  // Use force as torque limit
+    m_torqueLimit = (float)m_feedDefaultTorquePercent;  // Use default torque limit (force transducer not yet implemented)
     
     startMove(steps_to_move, velocity_sps, m_feedDefaultAccelSPS2);
     
@@ -746,6 +768,7 @@ void MotorController::fullyResetActiveDispenseOperation() {
     m_active_op_total_dispensed_ml = 0.0f;
     m_last_completed_dispense_ml = 0.0f;
     m_active_op_total_target_steps = 0;
+    m_active_op_target_position_steps = 0;
     m_active_op_remaining_steps = 0;
     m_active_op_segment_initial_axis_steps = 0;
     m_active_op_initial_axis_steps = 0;
@@ -781,7 +804,9 @@ void MotorController::updateTelemetry(TelemetryData* data) {
     data->enabled1 = enabled1;
     data->current_pos = current_pos_mm;
     data->start_pos = (float)(m_cartridgeHomeReferenceSteps - m_machineHomeReferenceSteps) / STEPS_PER_MM_INJECTOR;
-    data->target_pos = 0.0f;  // TODO: Set to actual target if in move
+    // Calculate target position in mm from stored target steps
+    float target_pos_mm = (float)(m_active_op_target_position_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM_INJECTOR;
+    data->target_pos = (m_state == STATE_FEEDING || m_state == STATE_HOMING) ? target_pos_mm : 0.0f;
     data->torque_m1 = displayTorque0;
     data->torque_m2 = displayTorque1;
     data->homed = m_homingMachineDone ? 1 : 0;

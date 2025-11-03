@@ -266,6 +266,7 @@ private:
     float m_last_completed_dispense_ml;     ///< The volume of the last successful dispense operation.
     float m_active_op_steps_per_ml;         ///< Conversion factor from steps to mL for the current operation.
     long m_active_op_total_target_steps;    ///< Target dispense distance in steps for the current operation.
+    long m_active_op_target_position_steps; ///< Absolute target position in steps for the current operation.
     long m_active_op_remaining_steps;       ///< Remaining steps in the current operation (used for pause/resume).
     long m_active_op_segment_initial_axis_steps; ///< Start position for a move segment (used for pause/resume).
     long m_active_op_initial_axis_steps;    ///< Start position for the entire operation.
