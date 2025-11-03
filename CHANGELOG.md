@@ -2,6 +2,16 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.0.2] - 2025-11-03
+
+### Added
+- MIT License file
+- License section in README
+
+### Fixed
+- License badge in README now displays correctly
+- Release badge styling improved
+
 ## [1.0.1] - 2025-11-03
 
 ### Changed

@@ -6,8 +6,8 @@
 
 **Dual-Motor Press Control System**
 
-[![Release](https://img.shields.io/github/v/release/bluerobotics/pressboi)](https://github.com/bluerobotics/pressboi/releases)
-[![License](https://img.shields.io/github/license/bluerobotics/pressboi)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/bluerobotics/pressboi?style=flat-square)](https://github.com/bluerobotics/pressboi/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
 </div>
 
@@ -489,6 +489,12 @@ pressboi/
 - **[ClearCore Documentation](https://teknic-inc.github.io/ClearCore-library/)** - Teknic ClearCore library reference
 
 ---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Copyright (c) 2025 Blue Robotics
 
 ## Contributing
 
