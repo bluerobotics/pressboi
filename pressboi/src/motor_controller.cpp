@@ -555,17 +555,21 @@ void MotorController::pauseOperation() {
         // Pause homing - stop motors and save current phase
         abortMove();
         reportEvent(STATUS_PREFIX_INFO, "Homing paused. Send resume to continue.");
+        reportEvent(STATUS_PREFIX_DONE, "pause");
     } else if (m_state == STATE_FEEDING) {
         if (m_feedState == FEED_INJECT_ACTIVE || m_feedState == FEED_INJECT_STARTING || 
             m_feedState == FEED_MOVING_TO_HOME || m_feedState == FEED_MOVING_TO_RETRACT) {
             abortMove();
             m_feedState = FEED_INJECT_PAUSED;
             reportEvent(STATUS_PREFIX_INFO, "Move paused. Send resume to continue.");
+            reportEvent(STATUS_PREFIX_DONE, "pause");
         } else {
             reportEvent(STATUS_PREFIX_INFO, "No active move to pause.");
+            reportEvent(STATUS_PREFIX_DONE, "pause");
         }
     } else {
         reportEvent(STATUS_PREFIX_INFO, "No active operation to pause.");
+        reportEvent(STATUS_PREFIX_DONE, "pause");
     }
 }
 
@@ -577,6 +581,7 @@ void MotorController::resumeOperation() {
     if (m_state == STATE_HOMING) {
         // Resume homing from current phase
         reportEvent(STATUS_PREFIX_INFO, "Homing resumed.");
+        reportEvent(STATUS_PREFIX_DONE, "resume");
         // The homing state machine will automatically continue from its current phase
         // No need to restart - it will pick up in the next updateState() call
     } else if (m_state == STATE_FEEDING) {
@@ -589,6 +594,7 @@ void MotorController::resumeOperation() {
                     m_torqueLimit = (float)m_active_op_torque_percent;
                     startMove(m_active_op_remaining_steps, m_active_op_velocity_sps, m_active_op_accel_sps2);
                     reportEvent(STATUS_PREFIX_INFO, "Move resumed.");
+                    reportEvent(STATUS_PREFIX_DONE, "resume");
                 } else {
                     reportEvent(STATUS_PREFIX_INFO, "Move already complete.");
                     fullyResetActiveDispenseOperation();
@@ -600,12 +606,15 @@ void MotorController::resumeOperation() {
                 reportEvent(STATUS_PREFIX_INFO, "Move already stopped. Returning to standby.");
                 fullyResetActiveDispenseOperation();
                 m_state = STATE_STANDBY;
+                reportEvent(STATUS_PREFIX_DONE, "resume");
             }
         } else {
             reportEvent(STATUS_PREFIX_INFO, "No paused move to resume.");
+            reportEvent(STATUS_PREFIX_DONE, "resume");
         }
     } else {
         reportEvent(STATUS_PREFIX_INFO, "No paused operation to resume.");
+        reportEvent(STATUS_PREFIX_DONE, "resume");
     }
 }
 
@@ -620,13 +629,16 @@ void MotorController::cancelOperation() {
         m_homingState = HOMING_NONE;
         m_state = STATE_STANDBY;
         reportEvent(STATUS_PREFIX_INFO, "Homing cancelled. Returning to standby.");
+        reportEvent(STATUS_PREFIX_DONE, "cancel");
     } else if (m_state == STATE_FEEDING) {
         abortMove();
         finalizeAndResetActiveDispenseOperation(false);
         m_state = STATE_STANDBY;
         reportEvent(STATUS_PREFIX_INFO, "Move cancelled. Returning to standby.");
+        reportEvent(STATUS_PREFIX_DONE, "cancel");
     } else {
         reportEvent(STATUS_PREFIX_INFO, "No active operation to cancel.");
+        reportEvent(STATUS_PREFIX_DONE, "cancel");
     }
 }
 
