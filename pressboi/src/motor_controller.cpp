@@ -207,8 +207,8 @@ void MotorController::updateState() {
                         m_homingCartridgeDone = true;
                     }
                     
-                    snprintf(doneMsg, sizeof(doneMsg), "%s complete.", commandStr);
-                    reportEvent(STATUS_PREFIX_DONE, doneMsg);
+                    // Send standardized DONE message with just the command name
+                    reportEvent(STATUS_PREFIX_DONE, commandStr);
 
                     m_state = STATE_STANDBY;
                     m_homingPhase = HOMING_PHASE_IDLE;
@@ -243,9 +243,8 @@ void MotorController::updateState() {
                 
                 if (!isStarting || (isStarting && elapsed > MOVE_START_TIMEOUT_MS)) {
                     if (m_activeFeedCommand) {
-                        char doneMsg[STATUS_MESSAGE_BUFFER_SIZE];
-                        std::snprintf(doneMsg, sizeof(doneMsg), "%s complete.", m_activeFeedCommand);
-                        reportEvent(STATUS_PREFIX_DONE, doneMsg);
+                        // Send standardized DONE message with just the command name
+                        reportEvent(STATUS_PREFIX_DONE, m_activeFeedCommand);
                     }
                     finalizeAndResetActiveDispenseOperation(true);
                     m_state = STATE_STANDBY;
@@ -285,9 +284,8 @@ void MotorController::updateState() {
                 if (m_activeJogCommand) m_activeJogCommand = nullptr;
                 } else if (!isMoving()) {
                 if (m_activeJogCommand) {
-                    char doneMsg[STATUS_MESSAGE_BUFFER_SIZE];
-                    std::snprintf(doneMsg, sizeof(doneMsg), "%s complete.", m_activeJogCommand);
-                    reportEvent(STATUS_PREFIX_DONE, doneMsg);
+                    // Send standardized DONE message with just the command name
+                    reportEvent(STATUS_PREFIX_DONE, m_activeJogCommand);
                     m_activeJogCommand = nullptr;
                 }
                 m_state = STATE_STANDBY;
@@ -440,7 +438,10 @@ void MotorController::setStartPosition(const char* args) {
     
     char msg[128];
     snprintf(msg, sizeof(msg), "Start position set to %.2f mm (%ld steps from home)", position_mm, position_steps);
-    reportEvent(STATUS_PREFIX_DONE, msg);
+    reportEvent(STATUS_PREFIX_INFO, msg);
+    
+    // Send standardized DONE message
+    reportEvent(STATUS_PREFIX_DONE, "set_start_pos");
 }
 
 /**

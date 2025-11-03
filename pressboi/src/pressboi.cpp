@@ -183,9 +183,11 @@ void Pressboi::dispatchCommand(const Message& msg) {
         }
         case CMD_ENABLE:
             enable();
+            m_comms.reportEvent(STATUS_PREFIX_DONE, "enable");
             break;
         case CMD_DISABLE:
             disable();
+            m_comms.reportEvent(STATUS_PREFIX_DONE, "disable");
             break;
 
         // --- Motor Commands (Delegated to MotorController) ---
@@ -247,7 +249,7 @@ void Pressboi::enable() {
     if (m_mainState == STATE_DISABLED) {
         m_mainState = STATE_STANDBY;
         m_motor.enable();
-        m_comms.reportEvent(STATUS_PREFIX_DONE, "System ENABLE complete. Now in STANDBY state.");
+        // DONE message sent by dispatchCommand
     } else {
         m_comms.reportEvent(STATUS_PREFIX_INFO, "System already enabled.");
     }
@@ -260,7 +262,7 @@ void Pressboi::disable() {
     abort(); // Safest to abort any motion first.
     m_mainState = STATE_DISABLED;
     m_motor.disable();
-    m_comms.reportEvent(STATUS_PREFIX_DONE, "System DISABLE complete.");
+    // DONE message sent by dispatchCommand
 }
 
 /**
