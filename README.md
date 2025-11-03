@@ -6,10 +6,10 @@
 
 **Dual-Motor Press Control System**
 
-[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
-[![release: v1.0.2](https://img.shields.io/badge/release-v1.0.2-green.svg?style=flat-square)](https://github.com/bluerobotics/pressboi/releases/latest)
-[![build: passing](https://img.shields.io/badge/build-passing-brightgreen.svg?style=flat-square)](#)
-[![downloads](https://img.shields.io/badge/downloads-0-blue.svg?style=flat-square)](https://github.com/bluerobotics/pressboi/releases)
+[![license: MIT](https://img.shields.io/github/license/bluerobotics/pressboi?style=flat-square)](LICENSE)
+[![release](https://img.shields.io/github/v/release/bluerobotics/pressboi?style=flat-square)](https://github.com/bluerobotics/pressboi/releases/latest)
+[![build](https://img.shields.io/github/actions/workflow/status/bluerobotics/pressboi/release.yml?style=flat-square)](https://github.com/bluerobotics/pressboi/actions)
+[![downloads](https://img.shields.io/github/downloads/bluerobotics/pressboi/total?style=flat-square)](https://github.com/bluerobotics/pressboi/releases)
 
 </div>
 
