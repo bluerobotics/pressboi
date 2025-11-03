@@ -1,11 +1,11 @@
 /**
  * @file config.h
  * @author Eldin Miller-Stead
- * @date September 10, 2025
- * @brief Central configuration file for the Fillhead firmware.
+ * @date November 3, 2025
+ * @brief Central configuration file for the Pressboi press firmware.
  *
  * @details This file consolidates all compile-time constants, hardware pin definitions,
- * and default operational parameters for the entire Fillhead system. By centralizing these
+ * and default operational parameters for the entire Pressboi system. By centralizing these
  * values, it simplifies tuning and maintenance, and ensures consistency across all
  * controller modules. The parameters are organized into logical sections for clarity.
  */
@@ -19,7 +19,7 @@
  * @name Network and Communication Settings
  * @{
  */
-#define LOCAL_PORT                      8890      ///< The UDP port this device listens on for incoming commands.
+#define LOCAL_PORT                      8888      ///< The UDP port this device listens on for incoming commands.
 #define MAX_PACKET_LENGTH               1024      ///< Maximum size in bytes for a single UDP packet. Must be large enough for the longest telemetry string.
 #define RX_QUEUE_SIZE                   32        ///< Number of incoming messages that can be buffered before processing.
 #define TX_QUEUE_SIZE                   32        ///< Number of outgoing messages that can be buffered before sending.
@@ -45,11 +45,9 @@
  * @name Core System Parameters and Unit Conversions
  * @{
  */
-#define INJECTOR_PITCH_MM_PER_REV       5.0f      ///< Linear travel (in mm) of the injector plunger for one full motor revolution.
-#define PINCH_PITCH_MM_PER_REV          2.0f      ///< Linear travel (in mm) of the pinch valve actuator for one full motor revolution.
+#define INJECTOR_PITCH_MM_PER_REV       5.0f      ///< Linear travel (in mm) of the press for one full motor revolution.
 #define PULSES_PER_REV                  800       ///< Number of step pulses required for one full motor revolution (dependent on microstepping settings).
-#define STEPS_PER_MM_INJECTOR           (PULSES_PER_REV / INJECTOR_PITCH_MM_PER_REV)   ///< Calculated steps per millimeter for the main injector drive.
-#define STEPS_PER_MM_PINCH              (PULSES_PER_REV / PINCH_PITCH_MM_PER_REV)      ///< Calculated steps per millimeter for the pinch valve mechanism.
+#define STEPS_PER_MM_INJECTOR           (PULSES_PER_REV / INJECTOR_PITCH_MM_PER_REV)   ///< Calculated steps per millimeter for the press drive.
 #define MAX_HOMING_DURATION_MS          100000    ///< Maximum time (in milliseconds) a homing operation is allowed to run before timing out.
 /** @} */
 
@@ -61,19 +59,8 @@
  * @{
  */
 // --- Motors ---
-#define MOTOR_INJECTOR_A                ConnectorM0 ///< Primary injector motor.
-#define MOTOR_INJECTOR_B                ConnectorM1 ///< Secondary, ganged injector motor.
-#define MOTOR_VACUUM_VALVE              ConnectorM2 ///< Motor for the pinch valve on the vacuum side.
-#define MOTOR_INJECTION_VALVE           ConnectorM3 ///< Motor for the pinch valve on the injection side.
-
-// --- Analog Sensors ---
-#define PIN_THERMOCOUPLE                ConnectorA12 ///< Analog input for the heater thermocouple.
-#define PIN_VACUUM_TRANSDUCER           ConnectorA11 ///< Analog input for the vacuum pressure transducer.
-
-// --- Digital Outputs (Relays) ---
-#define PIN_HEATER_RELAY                ConnectorIO1 ///< Digital output to control the heater relay.
-#define PIN_VACUUM_RELAY                ConnectorIO0 ///< Digital output to control the vacuum pump relay.
-#define PIN_VACUUM_VALVE_RELAY          ConnectorIO5 ///< Digital output to control the vacuum solenoid valve relay.
+#define MOTOR_INJECTOR_A                ConnectorM0 ///< Primary press motor.
+#define MOTOR_INJECTOR_B                ConnectorM1 ///< Secondary, ganged press motor.
 /** @} */
 
 //==================================================================================================
@@ -83,40 +70,7 @@
  * @name Sensor and Control Loop Parameters
  * @{
  */
-#define SENSOR_SAMPLE_INTERVAL_MS       100       ///< How often (in ms) to sample temperature and vacuum sensors.
-#define EWMA_ALPHA_SENSORS              0.5f      ///< Smoothing factor (alpha) for the Exponentially Weighted Moving Average filter on sensor readings.
 #define EWMA_ALPHA_TORQUE               0.2f      ///< Smoothing factor (alpha) for the EWMA filter on motor torque readings.
-
-/**
- * @name Heater Control Defaults
- * @{
- */
-#define TC_V_REF                        10.0f     ///< ADC reference voltage (10V for ClearCore analog inputs).
-#define TC_V_OFFSET                     1.25f     ///< Thermocouple sensor's output voltage at 0 degrees Celsius.
-#define TC_GAIN                         200.0f    ///< Conversion factor from volts to degrees Celsius for the thermocouple sensor.
-#define PID_UPDATE_INTERVAL_MS          100       ///< How often (in ms) the PID calculation for the heater is performed.
-#define PID_PWM_PERIOD_MS               1000      ///< Time window (in ms) for the time-proportioned heater relay control (software PWM).
-#define DEFAULT_HEATER_SETPOINT_C       70.0f     ///< Default target temperature in Celsius.
-#define DEFAULT_HEATER_KP               60.0f     ///< Default Proportional (P) gain for the PID controller.
-#define DEFAULT_HEATER_KI               2.5f      ///< Default Integral (I) gain for the PID controller.
-#define DEFAULT_HEATER_KD               40.0f     ///< Default Derivative (D) gain for the PID controller.
-/** @} */
-
-/**
- * @name Vacuum System Defaults
- * @{
- */
-#define VAC_V_OUT_MIN                   1.0f      ///< Sensor output voltage at minimum pressure (-14.7 PSIG).
-#define VAC_V_OUT_MAX                   5.0f      ///< Sensor output voltage at maximum pressure (15.0 PSIG).
-#define VAC_PRESSURE_MIN                -14.7f    ///< Minimum pressure in PSIG that the sensor can read.
-#define VAC_PRESSURE_MAX                15.0f     ///< Maximum pressure in PSIG that the sensor can read.
-#define VACUUM_PSIG_OFFSET              0.0f      ///< A calibration offset to be added to the raw vacuum sensor reading.
-#define DEFAULT_VACUUM_TARGET_PSIG      -14.0f    ///< Default target pressure in PSIG for vacuum operations.
-#define DEFAULT_VACUUM_RAMP_TIMEOUT_MS  30000     ///< Default time (in ms) allowed to reach the target pressure before a timeout error.
-#define DEFAULT_LEAK_TEST_DELTA_PSIG    0.1f      ///< Default maximum allowed pressure drop during a leak test.
-#define DEFAULT_LEAK_TEST_DURATION_MS   10000     ///< Default duration (in ms) for a leak test.
-#define VACUUM_SETTLE_TIME_S            2.0f      ///< Time (in s) to let pressure stabilize before starting a leak test measurement.
-/** @} */
 /** @} */
 
 //==================================================================================================
@@ -136,8 +90,6 @@
 #define MOTOR_DEFAULT_ACCEL_MAX_MMSS        625.0f    ///< Default maximum acceleration for motors in mm/s^2.
 #define MOTOR_DEFAULT_VEL_MAX_SPS           (int)(MOTOR_DEFAULT_VEL_MAX_MMS * STEPS_PER_MM_INJECTOR) ///< Default max velocity in steps/sec, derived from mm/s.
 #define MOTOR_DEFAULT_ACCEL_MAX_SPS2        (int)(MOTOR_DEFAULT_ACCEL_MAX_MMSS * STEPS_PER_MM_INJECTOR) ///< Default max acceleration in steps/sec^2, derived from mm/s^2.
-#define PINCH_DEFAULT_VEL_MAX_SPS           (int)(MOTOR_DEFAULT_VEL_MAX_MMS * STEPS_PER_MM_PINCH)      ///< Default max velocity for pinch valves in steps/sec.
-#define PINCH_DEFAULT_ACCEL_MAX_SPS2        (int)(MOTOR_DEFAULT_ACCEL_MAX_MMSS * STEPS_PER_MM_PINCH)   ///< Default max acceleration for pinch valves in steps/sec^2.
 /** @} */
 
 /**
@@ -170,50 +122,12 @@
 /** @} */
 
 /**
- * @name Pinch Valve Homing (Untubed)
- * @{
- */
-#define PINCH_HOMING_UNTUBED_STROKE_MM              50.0f  ///< Max travel (mm) for untubed homing.
-#define PINCH_HOMING_UNTUBED_UNIFIED_VEL_MMS        1.0f   ///< Unified velocity (mm/s) for all moves during untubed homing.
-#define PINCH_HOMING_UNTUBED_ACCEL_MMSS             100.0f ///< Acceleration (mm/s^2) for untubed homing.
-#define PINCH_HOMING_UNTUBED_SEARCH_TORQUE_PERCENT  15.0f  ///< Torque limit (%) for detecting the hard stop without tubing.
-#define PINCH_HOMING_UNTUBED_BACKOFF_TORQUE_PERCENT 50.0f  ///< Higher torque (%) for the back-off move.
-#define PINCH_VALVE_UNTUBED_FINAL_OFFSET_MM         9.0f   ///< Final offset distance (mm) from the hard stop, defining the "open" position.
-#define PINCH_VALVE_HOMING_BACKOFF_MM_UNTUBED 0.5f         ///< Back-off distance (mm) for untubed homing.
-/** @} */
-
-/**
- * @name Pinch Valve Homing (Tubed)
- * @{
- */
-#define PINCH_HOMING_TUBED_STROKE_MM              50.0f  ///< Max travel (mm) for tubed homing.
-#define PINCH_HOMING_TUBED_UNIFIED_VEL_MMS        1.0f   ///< Unified velocity (mm/s) for all moves during tubed homing.
-#define PINCH_HOMING_TUBED_ACCEL_MMSS             100.0f ///< Acceleration (mm/s^2) for tubed homing.
-#define PINCH_HOMING_TUBED_SEARCH_TORQUE_PERCENT  60.0f  ///< Higher torque limit (%) needed to fully pinch the tube.
-#define PINCH_HOMING_TUBED_BACKOFF_TORQUE_PERCENT 80.0f  ///< Higher torque (%) for the back-off move.
-#define PINCH_VALVE_TUBED_FINAL_OFFSET_MM         6.0f   ///< Final offset distance (mm) from the hard stop, defining the "open" position with tubing.
-#define PINCH_VALVE_HOMING_BACKOFF_MM_TUBED 0.5f         ///< Back-off distance (mm) for tubed homing.
-/** @} */
-
-/**
- * @name Pinch Valve Operation Defaults
- * @{
- */
-#define PINCH_VALVE_PINCH_TORQUE_PERCENT    75.0f     ///< Target torque (%) for closing the valve during normal operation.
-#define PINCH_VALVE_PINCH_VEL_MMS           2.0f      ///< Speed (mm/s) for the closing (pinching) move.
-#define PINCH_VALVE_OPEN_VEL_MMS            10.0f     ///< Speed (mm/s) for the opening move (returning to the homed position).
-#define PINCH_VALVE_OPEN_ACCEL_MMSS         50.0f     ///< Acceleration (mm/s^2) for the opening move.
-/** @} */
-
-/**
  * @name Jogging Defaults
  * @{
  */
 #define JOG_DEFAULT_TORQUE_PERCENT          30        ///< Default torque limit (%) for jog moves.
 #define JOG_DEFAULT_VEL_MMS                 1.0f      ///< Default velocity (mm/s) for jog moves.
 #define JOG_DEFAULT_ACCEL_MMSS              10.0f     ///< Default acceleration (mm/s^2) for jog moves.
-#define PINCH_JOG_DEFAULT_VEL_MMS           5.0f      ///< Default velocity (mm/s) for pinch valve jog moves.
-#define PINCH_JOG_DEFAULT_ACCEL_MMSS        25.0f     ///< Default acceleration (mm/s^2) for pinch valve jog moves.
 /** @} */
 
 /**

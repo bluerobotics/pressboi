@@ -1,22 +1,22 @@
 /**
- * @file injector_controller.h
+ * @file motor_controller.h
  * @author Eldin Miller-Stead
- * @date September 10, 2025
- * @brief Defines the controller for the dual-motor material injector system.
+ * @date November 3, 2025
+ * @brief Defines the controller for the dual-motor press system.
  *
- * @details This file defines the `Injector` class, which is responsible for managing
- * the two ganged motors that drive the material dispensing mechanism. It contains
- * the complex state machines required for homing (both to the machine's physical
- * zero and to a material cartridge), precision injection moves, and manual jogging.
- * The various state enums that govern the injector's behavior are also defined here.
+ * @details This file defines the `MotorController` class, which is responsible for managing
+ * the two ganged motors that drive the press mechanism. It contains
+ * the complex state machines required for homing and precision moves.
+ * The various state enums that govern the motor behavior are also defined here.
  */
 #pragma once
 
 #include "config.h"
 #include "comms_controller.h"
 #include "commands.h"
+#include "variables.h"
 
-class Fillhead; // Forward declaration
+class Pressboi; // Forward declaration
 
 /**
  * @enum HomingState
@@ -65,95 +65,107 @@ enum FeedState : uint8_t {
 
 
 /**
- * @class Injector
- * @brief Manages the dual-motor injector system for dispensing material.
+ * @class MotorController
+ * @brief Manages the dual-motor press system.
  *
- * @details This class is the core of the material dispensing functionality. It orchestrates
- * the two ganged motors (M0 and M1) to perform complex, multi-stage operations.
- * Key responsibilities include:
+ * @details This class orchestrates the two ganged motors (M0 and M1) to perform complex, 
+ * multi-stage operations. Key responsibilities include:
  * - A hierarchical state machine for managing overall state (e.g., STANDBY, HOMING, FEEDING).
  * - Nested state machines for detailed processes like the multi-phase homing sequence.
  * - Torque-based sensing for detecting hard stops during homing and stall conditions.
- * - Volume-based control of injections, converting mL to motor steps.
- * - Handling user commands for jogging, homing, injecting, and pausing/resuming operations.
+ * - Handling user commands for jogging, homing, and moving.
  * - Reporting detailed telemetry on position, torque, and operational status.
  */
-class Injector {
+class MotorController {
 public:
     /**
-     * @brief Constructs a new Injector object.
+     * @brief Constructs a new MotorController object.
      * @param motorA Pointer to the primary ClearCore motor driver (M0).
      * @param motorB Pointer to the secondary (ganged) ClearCore motor driver (M1).
-     * @param controller Pointer to the main `Fillhead` controller, used for reporting events.
+     * @param controller Pointer to the main `Pressboi` controller, used for reporting events.
      */
-    Injector(MotorDriver* motorA, MotorDriver* motorB, Fillhead* controller);
+    MotorController(MotorDriver* motorA, MotorDriver* motorB, Pressboi* controller);
 
     /**
-     * @brief Initializes the injector motors and their configurations.
+     * @brief Initializes the motors and their configurations.
      * @details Configures motor settings such as max velocity and acceleration, and enables
      * the motor drivers. This should be called once at startup.
      */
     void setup();
 
     /**
-     * @brief Updates the internal state machines for the injector.
-     * @details This is the heart of the injector's non-blocking operation. It should be
+     * @brief Updates the internal state machines for the motor controller.
+     * @details This is the heart of the non-blocking operation. It should be
      * called repeatedly in the main application loop to advance the active state machines
      * for homing, feeding, and jogging operations.
      */
     void updateState();
 
     /**
-     * @brief Handles user commands related to the injector.
+     * @brief Handles user commands related to the motors.
      * @param cmd The `Command` enum representing the command to be executed.
      * @param args A C-style string containing any arguments for the command (e.g., distance, volume).
      */
     void handleCommand(Command cmd, const char* args);
 
     /**
-     * @brief Gets the telemetry string for the injector system.
-     * @return A constant character pointer to a formatted string containing key-value pairs
-     *         of injector telemetry data (position, torque, homing status, etc.).
+     * @brief Updates the telemetry data structure with current motor state.
+     * @param data Pointer to the TelemetryData structure to update
      */
-    const char* getTelemetryString();
+    void updateTelemetry(TelemetryData* data);
 
     /**
-     * @brief Enables the injector motors and sets their default parameters.
+     * @brief Enables the motors and sets their default parameters.
      */
     void enable();
 
     /**
-     * @brief Disables the injector motors.
+     * @brief Disables the motors.
      */
     void disable();
 
     /**
-     * @brief Aborts any ongoing injector motion by commanding a deceleration stop.
+     * @brief Aborts any ongoing motor motion by commanding a deceleration stop.
      */
     void abortMove();
 
     /**
-     * @brief Resets the injector's state machines and error conditions to their default idle state.
+     * @brief Resets the motor controller's state machines and error conditions to their default idle state.
      */
     void reset();
 
     /**
-     * @brief Checks if either of the injector motors is in a hardware fault state.
+     * @brief Checks if either of the motors is in a hardware fault state.
      * @return `true` if a motor is in fault, `false` otherwise.
      */
     bool isInFault() const;
 
     /**
-     * @brief Checks if the injector is busy with any operation.
-     * @return `true` if the injector's main state is not `STATE_STANDBY`.
+     * @brief Checks if the motor controller is busy with any operation.
+     * @return `true` if the main state is not `STATE_STANDBY`.
      */
     bool isBusy() const;
 
     /**
-     * @brief Gets the current high-level state of the injector as a human-readable string.
+     * @brief Gets the current high-level state as a human-readable string.
      * @return A `const char*` representing the current state (e.g., "Homing", "Feeding").
      */
     const char* getState() const;
+
+    /**
+     * @brief Pauses any active move operation (called by GUI hold event).
+     */
+    void pauseOperation();
+
+    /**
+     * @brief Resumes a paused move operation (called by GUI run event).
+     */
+    void resumeOperation();
+
+    /**
+     * @brief Cancels any active move operation (called by GUI reset event).
+     */
+    void cancelOperation();
 
 private:
     /**
@@ -173,19 +185,14 @@ private:
      * @name Private Command Handlers
      * @{
      */
-    void jogMove(const char* args);
-    void machineHome();
-    void cartridgeHome();
-    void moveToCartridgeHome();
-    void moveToCartridgeRetract(const char* args);
-    void initiateInjectMove(const char* args, float piston_a_diam, float piston_b_diam, const char* command_str);
-    void pauseOperation();
-    void resumeOperation();
-    void cancelOperation();
-    void setTorqueOffset(const char* args);
+    void home();
+    void setStartPosition(const char* args);
+    void moveAbsolute(const char* args);
+    void moveIncremental(const char* args);
+    void moveToStart();
     /** @} */
     
-    Fillhead* m_controller;      ///< Pointer to the main `Fillhead` controller for event reporting.
+    Pressboi* m_controller;      ///< Pointer to the main `Pressboi` controller for event reporting.
     MotorDriver* m_motorA;       ///< Pointer to the primary motor driver (M0).
     MotorDriver* m_motorB;       ///< Pointer to the secondary, ganged motor driver (M1).
 
