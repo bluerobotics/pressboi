@@ -2,7 +2,7 @@
  * @file commands.cpp
  * @brief Command parsing implementation for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from commands.json on 2025-11-03 13:59:24
+ * Generated from commands.json on 2025-11-03 15:23:43
  * 
  * This file contains the command parser integrated into commands.cpp
  */

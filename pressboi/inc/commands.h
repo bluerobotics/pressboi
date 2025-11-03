@@ -2,7 +2,7 @@
  * @file commands.h
  * @brief Defines the command interface for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from commands.json on 2025-11-03 13:59:24
+ * Generated from commands.json on 2025-11-03 15:23:43
  * 
  * This header file defines all commands that can be sent TO the Pressboi device.
  * For response message formats, see responses.h
@@ -82,19 +82,19 @@ typedef enum {
     CMD_UNKNOWN,                        ///< Represents an unrecognized or invalid command.
 
     // General System Commands
-    CMD_DISCOVER_DEVICE,                ///< @see CMD_STR_DISCOVER_DEVICE
-    CMD_SET_START_POS,                  ///< @see CMD_STR_SET_START_POS
-    CMD_PAUSE,                          ///< @see CMD_STR_PAUSE
-    CMD_RESUME,                         ///< @see CMD_STR_RESUME
-    CMD_CANCEL,                         ///< @see CMD_STR_CANCEL
-    CMD_ENABLE,                         ///< @see CMD_STR_ENABLE
-    CMD_DISABLE,                        ///< @see CMD_STR_DISABLE
+    CMD_DISCOVER_DEVICE                     ///< @see CMD_STR_DISCOVER_DEVICE,
+    CMD_SET_START_POS                       ///< @see CMD_STR_SET_START_POS,
+    CMD_PAUSE                               ///< @see CMD_STR_PAUSE,
+    CMD_RESUME                              ///< @see CMD_STR_RESUME,
+    CMD_CANCEL                              ///< @see CMD_STR_CANCEL,
+    CMD_ENABLE                              ///< @see CMD_STR_ENABLE,
+    CMD_DISABLE                             ///< @see CMD_STR_DISABLE,
 
     // Motion Commands
-    CMD_HOME,                           ///< @see CMD_STR_HOME
-    CMD_MOVE_ABS,                       ///< @see CMD_STR_MOVE_ABS
-    CMD_MOVE_INC,                       ///< @see CMD_STR_MOVE_INC
-    CMD_MOVE_TO_START                   ///< @see CMD_STR_MOVE_TO_START
+    CMD_HOME                                ///< @see CMD_STR_HOME,
+    CMD_MOVE_ABS                            ///< @see CMD_STR_MOVE_ABS,
+    CMD_MOVE_INC                            ///< @see CMD_STR_MOVE_INC,
+    CMD_MOVE_TO_START                       ///< @see CMD_STR_MOVE_TO_START
 } Command;
 
 //==================================================================================================
