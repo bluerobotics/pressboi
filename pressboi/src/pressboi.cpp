@@ -153,8 +153,8 @@ void Pressboi::dispatchCommand(const Message& msg) {
     
     // If the system is in an error state, block most commands.
     if (m_mainState == STATE_ERROR) {
-        if (command_enum != CMD_DISCOVER_DEVICE && command_enum != CMD_CLEAR_ERRORS) {
-            m_comms.reportEvent(STATUS_PREFIX_ERROR, "Command ignored: System is in ERROR state. Send clear_errors to reset.");
+        if (command_enum != CMD_DISCOVER_DEVICE && command_enum != CMD_RESET) {
+            m_comms.reportEvent(STATUS_PREFIX_ERROR, "Command ignored: System is in ERROR state. Send reset to recover.");
             return;
         }
     }
@@ -181,10 +181,7 @@ void Pressboi::dispatchCommand(const Message& msg) {
             }
             break;
         }
-        case CMD_ABORT:
-            abort();
-            break;
-        case CMD_CLEAR_ERRORS:
+        case CMD_RESET:
             clearErrors();
             break;
         case CMD_ENABLE:
@@ -214,6 +211,8 @@ void Pressboi::dispatchCommand(const Message& msg) {
             break;
         case CMD_CANCEL:
             m_motor.cancelOperation();
+            // Cancel also acts as abort - stops motion and resets to standby
+            abort();
             break;
 
         // --- Default/Unknown ---
@@ -275,17 +274,16 @@ void Pressboi::disable() {
  * @brief Halts all motion and resets the system state to standby.
  */
 void Pressboi::abort() {
-    reportEvent(STATUS_PREFIX_INFO, "ABORT received. Stopping all motion.");
+    reportEvent(STATUS_PREFIX_INFO, "Stopping all motion.");
     m_motor.abortMove();
     standby();
-    reportEvent(STATUS_PREFIX_DONE, "abort");
 }
 
 /**
  * @brief Resets any error states, clears motor faults, and returns the system to standby.
  */
 void Pressboi::clearErrors() {
-    reportEvent(STATUS_PREFIX_INFO, "CLEAR_ERRORS received. Resetting all sub-systems...");
+    reportEvent(STATUS_PREFIX_INFO, "Reset received. Clearing errors and resetting system...");
 
     // Abort any active motion first to ensure a clean state.
     m_motor.abortMove();
@@ -297,7 +295,7 @@ void Pressboi::clearErrors() {
     
     // The system is now fully reset and ready.
     standby();
-    reportEvent(STATUS_PREFIX_DONE, "clear_errors");
+    reportEvent(STATUS_PREFIX_DONE, "reset");
 }
 
 void Pressboi::standby() {

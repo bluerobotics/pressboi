@@ -2,7 +2,7 @@
  * @file commands.h
  * @brief Defines the command interface for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from commands.json on 2025-11-03 15:26:51
+ * Generated from commands.json on 2025-11-03 15:28:47
  * 
  * This header file defines all commands that can be sent TO the Pressboi device.
  * For response message formats, see responses.h
@@ -19,8 +19,7 @@
  * @{
  */
 #define CMD_STR_DISCOVER_DEVICE                     "DISCOVER_DEVICE" ///< Generic command for any device to respond to.
-#define CMD_STR_ABORT                               "abort" ///< No description available.
-#define CMD_STR_CLEAR_ERRORS                        "clear_errors" ///< No description available.
+#define CMD_STR_RESET                               "reset" ///< No description available.
 #define CMD_STR_SET_START_POS                       "set_start_pos " ///< No description available.
 #define CMD_STR_PAUSE                               "pause" ///< No description available.
 #define CMD_STR_RESUME                              "resume" ///< No description available.
@@ -85,8 +84,7 @@ typedef enum {
 
     // General System Commands
     CMD_DISCOVER_DEVICE                     ///< @see CMD_STR_DISCOVER_DEVICE,
-    CMD_ABORT                               ///< @see CMD_STR_ABORT,
-    CMD_CLEAR_ERRORS                        ///< @see CMD_STR_CLEAR_ERRORS,
+    CMD_RESET                               ///< @see CMD_STR_RESET,
     CMD_SET_START_POS                       ///< @see CMD_STR_SET_START_POS,
     CMD_PAUSE                               ///< @see CMD_STR_PAUSE,
     CMD_RESUME                              ///< @see CMD_STR_RESUME,
