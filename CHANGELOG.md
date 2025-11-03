@@ -2,6 +2,17 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.0.1] - 2025-11-03
+
+### Changed
+- Enhanced README with comprehensive class and method documentation
+- Added Blue Robotics and Pressboi logos
+- Added detailed flashing instructions for Microchip Studio with Atmel ICE
+- Added debugging workflow documentation
+- Reorganized flashing methods by use case (development vs field updates)
+- Added link to BR Equipment Control App
+- Improved visual layout and community engagement footer
+
 ## [1.0.0] - 2025-11-03
 
 ### Added
