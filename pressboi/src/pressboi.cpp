@@ -153,8 +153,8 @@ void Pressboi::dispatchCommand(const Message& msg) {
     
     // If the system is in an error state, block most commands.
     if (m_mainState == STATE_ERROR) {
-        if (command_enum != CMD_DISCOVER_DEVICE) {
-            m_comms.reportEvent(STATUS_PREFIX_ERROR, "Command ignored: System is in ERROR state. Send CLEAR_ERRORS to reset.");
+        if (command_enum != CMD_DISCOVER_DEVICE && command_enum != CMD_CLEAR_ERRORS) {
+            m_comms.reportEvent(STATUS_PREFIX_ERROR, "Command ignored: System is in ERROR state. Send clear_errors to reset.");
             return;
         }
     }
@@ -181,6 +181,12 @@ void Pressboi::dispatchCommand(const Message& msg) {
             }
             break;
         }
+        case CMD_ABORT:
+            abort();
+            break;
+        case CMD_CLEAR_ERRORS:
+            clearErrors();
+            break;
         case CMD_ENABLE:
             enable();
             m_comms.reportEvent(STATUS_PREFIX_DONE, "enable");
@@ -272,7 +278,7 @@ void Pressboi::abort() {
     reportEvent(STATUS_PREFIX_INFO, "ABORT received. Stopping all motion.");
     m_motor.abortMove();
     standby();
-    reportEvent(STATUS_PREFIX_DONE, "ABORT complete.");
+    reportEvent(STATUS_PREFIX_DONE, "abort");
 }
 
 /**
