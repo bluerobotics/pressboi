@@ -2,6 +2,28 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.2.0] - 2025-11-04
+
+### Added
+- Pause and resume functionality for move operations (move_abs, move_inc, retract)
+- Move parameter storage for proper pause/resume state tracking
+- Move start time tracking for timeout detection
+- Force transducer integration with HX711 load cell
+- Force-based move control with configurable actions (hold, skip, retract)
+- Real-time force monitoring during moves with configurable force limits
+
+### Changed
+- State transition logic reordered to check motor status before timeout evaluation
+- Resume operation now recalculates remaining steps at resume time (not pause time)
+- Force parameter now fully functional (previously temporarily ignored)
+
+### Fixed
+- **Critical:** Fixed premature DONE messages - moves no longer send DONE immediately after START
+- **Critical:** Fixed move timeout errors - `m_moveStartTime` now properly initialized for all moves
+- Fixed resume calculation to use current position instead of stale pause-time position
+- Fixed state machine to properly track STARTING → ACTIVE → completion transitions
+- Move parameters (initial position, target steps, velocity, acceleration, torque) now properly stored for all move types
+
 ## [1.1.0] - 2025-11-03
 
 ### Added
