@@ -20,18 +20,18 @@ class Pressboi; // Forward declaration
 
 /**
  * @enum HomingState
- * @brief Defines the top-level active homing operation for the injector motors.
+ * @brief Defines the top-level active homing operation for the press motors.
  */
 enum HomingState : uint8_t {
 	HOMING_NONE,        ///< No homing operation is active.
-	HOMING_MACHINE,     ///< Homing to the machine's physical zero point (fully retracted).
-	HOMING_CARTRIDGE    ///< Homing to the front of the material cartridge.
+	HOMING,             ///< Homing to the physical zero point (fully retracted).
+	HOMING_CARTRIDGE    ///< Homing to the start position.
 };
 
 /**
  * @enum HomingPhase
  * @brief Defines the detailed sub-state or "phase" within an active homing operation.
- * @note This is a legacy global definition and may differ from the private one inside the `Injector` class.
+ * @note This is a legacy global definition and may differ from the private one inside the `MotorController` class.
  */
 enum HomingPhase : uint8_t {
 	HOMING_PHASE_IDLE_GLOBAL,   ///< Homing is not active.
@@ -45,22 +45,22 @@ enum HomingPhase : uint8_t {
 };
 
 /**
- * @enum FeedState
- * @brief Defines the state of an injection or material feed operation.
- * @details This enum tracks the progress of a dispensing action, from starting
+ * @enum MoveState
+ * @brief Defines the state of a press move operation.
+ * @details This enum tracks the progress of a move, from starting
  * to pausing, resuming, and completing.
  */
-enum FeedState : uint8_t {
-	FEED_NONE,                  ///< No feed operation is active or defined.
-	FEED_STANDBY,               ///< Ready to start a feed operation.
-	FEED_INJECT_STARTING,       ///< An injection move has been commanded and is starting.
-	FEED_INJECT_ACTIVE,         ///< An injection move is currently in progress.
-	FEED_INJECT_PAUSED,         ///< An active injection has been paused by the user.
-	FEED_INJECT_RESUMING,       ///< A paused injection is resuming.
-	FEED_MOVING_TO_HOME,        ///< Moving to the previously established cartridge home position.
-	FEED_MOVING_TO_RETRACT,     ///< Moving to a retracted position relative to the cartridge home.
-	FEED_INJECTION_CANCELLED,   ///< The injection was cancelled by the user.
-	FEED_INJECTION_COMPLETED    ///< The injection finished successfully.
+enum MoveState : uint8_t {
+	MOVE_NONE,                  ///< No move operation is active or defined.
+	MOVE_STANDBY,               ///< Ready to start a move operation.
+	MOVE_STARTING,              ///< A move has been commanded and is starting.
+	MOVE_ACTIVE,                ///< A move is currently in progress.
+	MOVE_PAUSED,                ///< An active move has been paused by the user.
+	MOVE_RESUMING,              ///< A paused move is resuming.
+	MOVE_TO_HOME,               ///< Moving to the previously established start position.
+	MOVE_TO_RETRACT,            ///< Moving to a retracted position relative to the start.
+	MOVE_CANCELLED,             ///< The move was cancelled by the user.
+	MOVE_COMPLETED              ///< The move finished successfully.
 };
 
 
@@ -70,10 +70,10 @@ enum FeedState : uint8_t {
  *
  * @details This class orchestrates the two ganged motors (M0 and M1) to perform complex, 
  * multi-stage operations. Key responsibilities include:
- * - A hierarchical state machine for managing overall state (e.g., STANDBY, HOMING, FEEDING).
+ * - A hierarchical state machine for managing overall state (e.g., STANDBY, HOMING, MOVING).
  * - Nested state machines for detailed processes like the multi-phase homing sequence.
  * - Torque-based sensing for detecting hard stops during homing and stall conditions.
- * - Handling user commands for jogging, homing, and moving.
+ * - Handling user commands for homing and moving.
  * - Reporting detailed telemetry on position, torque, and operational status.
  */
 class MotorController {
@@ -97,7 +97,7 @@ public:
      * @brief Updates the internal state machines for the motor controller.
      * @details This is the heart of the non-blocking operation. It should be
      * called repeatedly in the main application loop to advance the active state machines
-     * for homing, feeding, and jogging operations.
+     * for homing and moving operations.
      */
     void updateState();
 
@@ -176,8 +176,9 @@ private:
     bool isMoving();
     float getSmoothedTorque(MotorDriver *motor, float *smoothedValue, bool *firstRead);
     bool checkTorqueLimit();
-    void finalizeAndResetActiveDispenseOperation(bool success);
-    void fullyResetActiveDispenseOperation();
+    bool checkForceSensorStatus(const char** errorMsg);
+    void finalizeAndResetActiveMove(bool success);
+    void fullyResetActiveMove();
     void reportEvent(const char* statusType, const char* message);
     /** @} */
 
@@ -186,10 +187,10 @@ private:
      * @{
      */
     void home();
-    void setStartPosition(const char* args);
+    void setRetract(const char* args);
     void moveAbsolute(const char* args);
     void moveIncremental(const char* args);
-    void moveToStart();
+    void retract(const char* args);
     /** @} */
     
     Pressboi* m_controller;      ///< Pointer to the main `Pressboi` controller for event reporting.
@@ -198,22 +199,21 @@ private:
 
     /**
      * @enum State
-     * @brief Defines the top-level operational state of the injector.
+     * @brief Defines the top-level operational state of the press.
      */
     typedef enum {
-        STATE_STANDBY,      ///< Injector is idle and ready for commands.
-        STATE_HOMING,       ///< Injector is performing a homing sequence.
-        STATE_JOGGING,      ///< Injector is performing a manual jog move.
-        STATE_FEEDING,      ///< Injector is performing an injection or retract move.
-        STATE_MOTOR_FAULT   ///< An injector motor has entered a hardware fault state.
+        STATE_STANDBY,      ///< Press is idle and ready for commands.
+        STATE_HOMING,       ///< Press is performing a homing sequence.
+        STATE_MOVING,       ///< Press is performing a move operation.
+        STATE_MOTOR_FAULT   ///< A motor has entered a hardware fault state.
     } State;
-    State m_state; ///< The current top-level state of the injector.
+    State m_state; ///< The current top-level state of the press.
 
-    HomingState m_homingState; ///< The type of homing being performed (Machine vs. Cartridge).
+    HomingState m_homingState; ///< The type of homing being performed.
 
     /**
      * @enum HomingPhase
-     * @brief Defines the detailed sub-states for the injector's internal homing sequence.
+     * @brief Defines the detailed sub-states for the press's internal homing sequence.
      */
     typedef enum {
 		HOMING_PHASE_IDLE,              ///< Homing is not active.
@@ -234,38 +234,38 @@ private:
 	} HomingPhase;
     HomingPhase m_homingPhase; ///< The current phase of an active homing sequence.
 
-    FeedState m_feedState;             ///< The current state of an injection or feed operation.
-    bool m_homingMachineDone;          ///< Flag indicating if machine homing has been successfully completed.
-    bool m_homingCartridgeDone;        ///< Flag indicating if cartridge homing has been successfully completed.
+    MoveState m_moveState;             ///< The current state of a move operation.
+    bool m_homingDone;                 ///< Flag indicating if homing has been successfully completed.
+    bool m_retractDone;                ///< Flag indicating if retract position has been set.
+    bool m_pausedMessageSent;          ///< Flag to prevent spamming "paused" messages.
     uint32_t m_homingStartTime;        ///< Timestamp (ms) when the homing sequence started, used for timeout.
     bool m_isEnabled;                  ///< Flag indicating if motors are currently enabled.
     float m_torqueLimit;               ///< Current torque limit (%) for detecting hard stops or stalls.
     float m_torqueOffset;              ///< User-configurable offset (%) for torque readings to account for bias.
     float m_smoothedTorqueValue0, m_smoothedTorqueValue1; ///< Smoothed torque values for each motor.
     bool m_firstTorqueReading0, m_firstTorqueReading1;   ///< Flags for initializing the torque smoothing EWMA filter.
-    int32_t m_machineHomeReferenceSteps, m_cartridgeHomeReferenceSteps; ///< Stored step counts for machine and cartridge home positions.
-    float m_cumulative_dispensed_ml;   ///< Cumulative dispensed volume (mL) since the last cartridge home.
-    int m_feedDefaultTorquePercent;    ///< Default torque (%) for feed moves.
-    long m_feedDefaultVelocitySPS;     ///< Default velocity (steps/sec) for feed moves.
-    long m_feedDefaultAccelSPS2;       ///< Default acceleration (steps/sec^2) for feed moves.
+    int32_t m_machineHomeReferenceSteps, m_retractReferenceSteps; ///< Stored step counts for home and retract positions.
+    float m_cumulative_distance_mm;    ///< Cumulative distance traveled (mm) since the last home.
+    int m_moveDefaultTorquePercent;    ///< Default torque (%) for moves.
+    long m_moveDefaultVelocitySPS;     ///< Default velocity (steps/sec) for moves.
+    long m_moveDefaultAccelSPS2;       ///< Default acceleration (steps/sec^2) for moves.
     long m_homingDistanceSteps;        ///< Max travel distance (steps) for a homing move.
     long m_homingBackoffSteps;         ///< Backoff distance (steps) for a homing move.
     int m_homingRapidSps;              ///< Rapid speed (steps/sec) for a homing move.
     int m_homingTouchSps;              ///< Slow touch-off speed (steps/sec) for a homing move.
     int m_homingBackoffSps;            ///< Backoff speed (steps/sec) for a homing move.
     int m_homingAccelSps2;             ///< Acceleration (steps/sec^2) for homing moves.
-    const char* m_activeFeedCommand;   ///< Stores the original feed command string for logging upon completion.
-    const char* m_activeJogCommand;    ///< Stores the original jog command string for logging upon completion.
+    const char* m_activeMoveCommand;   ///< Stores the original move command string for logging upon completion.
     
     /**
-     * @name Active Dispense Operation Variables
+     * @name Active Move Operation Variables
      * @{
      */
-    float m_active_op_target_ml;            ///< Target dispense volume in mL for the current operation.
-    float m_active_op_total_dispensed_ml;   ///< Total volume dispensed so far in the current operation.
-    float m_last_completed_dispense_ml;     ///< The volume of the last successful dispense operation.
-    float m_active_op_steps_per_ml;         ///< Conversion factor from steps to mL for the current operation.
-    long m_active_op_total_target_steps;    ///< Target dispense distance in steps for the current operation.
+    float m_active_op_force_limit_kg;       ///< Target force limit (kg) for force-based moves.
+    char m_active_op_force_action[16];      ///< Action to take when force limit reached: "retract", "hold", "skip"
+    float m_active_op_total_distance_mm;    ///< Total distance traveled (mm) in current operation.
+    float m_last_completed_distance_mm;     ///< Distance (mm) of the last completed move operation.
+    long m_active_op_total_target_steps;    ///< Target distance in steps for the current operation.
     long m_active_op_target_position_steps; ///< Absolute target position in steps for the current operation.
     long m_active_op_remaining_steps;       ///< Remaining steps in the current operation (used for pause/resume).
     long m_active_op_segment_initial_axis_steps; ///< Start position for a move segment (used for pause/resume).
@@ -273,7 +273,7 @@ private:
     int m_active_op_velocity_sps;           ///< Velocity (steps/sec) for the current operation.
     int m_active_op_accel_sps2;             ///< Acceleration (steps/sec^2) for the current operation.
     int m_active_op_torque_percent;         ///< Torque limit (%) for the current operation.
-    uint32_t m_feedStartTime;               ///< Timestamp (ms) when a feed operation started.
+    uint32_t m_moveStartTime;               ///< Timestamp (ms) when a move operation started.
     /** @} */
     
     char m_telemetryBuffer[256]; ///< Buffer for the formatted telemetry string.

@@ -2,7 +2,7 @@
  * @file events.cpp
  * @brief Event sending implementation for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from events.json on 2025-11-03 15:23:43
+ * Generated from events.json on 2025-11-04 12:18:51
  */
 
 #include "events.h"
@@ -19,6 +19,14 @@ extern void sendMessage(const char* msg);
 
 void sendEvent(Event event) {
     switch (event) {
+        case EVENT_SCRIPT_HOLD:
+            {
+                char buffer[256];
+                snprintf(buffer, sizeof(buffer), "%s%s", EVENT_PREFIX, EVENT_STR_SCRIPT_HOLD);
+                sendMessage(buffer);
+            }
+            break;
+
         case EVENT_UNKNOWN:
         default:
             // Do nothing for unknown events
@@ -37,6 +45,14 @@ void sendEventInt(Event event, int32_t param) {
 
 void sendEventString(Event event, const char* param) {
     switch (event) {
+        case EVENT_SCRIPT_HOLD:
+            {
+                char buffer[256];
+                snprintf(buffer, sizeof(buffer), "%s%s %s", EVENT_PREFIX, EVENT_STR_SCRIPT_HOLD, param);
+                sendMessage(buffer);
+            }
+            break;
+
         default:
             // Fall back to simple event for events without string params
             sendEvent(event);

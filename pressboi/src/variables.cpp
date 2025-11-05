@@ -2,7 +2,7 @@
  * @file variables.cpp
  * @brief Telemetry construction implementation for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from telemetry.json on 2025-11-03 15:23:43
+ * Generated from telemetry.json on 2025-11-04 12:18:51
  */
 
 #include "variables.h"
@@ -26,7 +26,7 @@ void telemetry_init(TelemetryData* data) {
     data->enabled0 = 1;
     data->enabled1 = 1;
     data->current_pos = 0.0f;
-    data->start_pos = 0.0f;
+    data->retract_pos = 0.0f;
     data->target_pos = 0.0f;
     data->torque_m1 = 0.0f;
     data->torque_m2 = 0.0f;
@@ -75,9 +75,9 @@ int telemetry_build_message(const TelemetryData* data, char* buffer, size_t buff
         pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_CURRENT_POS, data->current_pos);
     }
     
-    // start_pos
+    // retract_pos
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_START_POS, data->start_pos);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_RETRACT_POS, data->retract_pos);
     }
     
     // target_pos

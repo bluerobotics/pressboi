@@ -43,7 +43,7 @@ void sendMessage(const char* msg) {
  */
 Pressboi::Pressboi() :
     m_comms(),
-    m_motor(&MOTOR_INJECTOR_A, &MOTOR_INJECTOR_B, this)
+    m_motor(&MOTOR_A, &MOTOR_B, this)
 {
     m_mainState = STATE_STANDBY;
     m_lastTelemetryTime = 0;
@@ -61,6 +61,7 @@ void Pressboi::setup() {
 
     m_comms.setup();
     m_motor.setup();
+    m_forceSensor.setup();
     
     m_comms.reportEvent(STATUS_PREFIX_INFO, "Pressboi system setup complete. All components initialized.");
 }
@@ -78,10 +79,13 @@ void Pressboi::loop() {
         dispatchCommand(msg);
     }
 
-    // 3. Update the main state machine and all sub-controllers.
+    // 3. Update force sensor readings.
+    m_forceSensor.update();
+
+    // 4. Update the main state machine and all sub-controllers.
     updateState();
 
-    // 4. Handle time-based periodic tasks.
+    // 5. Handle time-based periodic tasks.
     uint32_t now = Milliseconds();
 	
     if (m_comms.isGuiDiscovered() && (now - m_lastTelemetryTime >= TELEMETRY_INTERVAL_MS)) {
@@ -197,8 +201,8 @@ void Pressboi::dispatchCommand(const Message& msg) {
         case CMD_HOME:
         case CMD_MOVE_ABS:
         case CMD_MOVE_INC:
-        case CMD_SET_START_POS:
-        case CMD_MOVE_TO_START:
+        case CMD_SET_RETRACT:
+        case CMD_RETRACT:
             m_motor.handleCommand(command_enum, args);
             break;
 
@@ -231,6 +235,9 @@ void Pressboi::publishTelemetry() {
 
     // Update telemetry data from motor controller
     m_motor.updateTelemetry(&g_telemetry);
+    
+    // Update force from sensor
+    g_telemetry.force = m_forceSensor.getForce();
     
     // Set main state
     switch(m_mainState) {

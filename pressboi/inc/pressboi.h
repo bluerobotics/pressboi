@@ -14,6 +14,7 @@
 #include "config.h"
 #include "comms_controller.h"
 #include "motor_controller.h"
+#include "force_sensor.h"
 #include "commands.h"
 
 /**
@@ -129,6 +130,7 @@ private:
 public:
     // --- Component Ownership ---
     CommsController  m_comms;           ///< Manages all network and serial communication.
+    ForceSensor      m_forceSensor;     ///< Manages force readings from HX711 via Rugeduino.
 
 private:
     MotorController  m_motor;           ///< Manages the dual-motor press system.

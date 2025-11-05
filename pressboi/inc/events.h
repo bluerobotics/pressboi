@@ -2,7 +2,7 @@
  * @file events.h
  * @brief Defines all event types that can be sent from the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from events.json on 2025-11-03 15:23:43
+ * Generated from events.json on 2025-11-04 12:18:51
  * 
  * This header file defines all events sent FROM the Pressboi device TO the host.
  * Events are asynchronous notifications that can trigger host-side actions.
@@ -25,6 +25,7 @@
  * Format: "PRESSBOI_EVENT: event_name [param1] [param2] ..."
  * @{
  */
+#define EVENT_STR_SCRIPT_HOLD                         "script_hold"  ///< Triggered when the press pauses due to force limit reached or force sensor error.
 /** @} */
 
 //==================================================================================================
@@ -39,6 +40,7 @@
 typedef enum {
     EVENT_UNKNOWN,                        ///< Represents an unrecognized or invalid event.
 
+    EVENT_SCRIPT_HOLD                                    ///< @see EVENT_STR_SCRIPT_HOLD
 } Event;
 
 //==================================================================================================

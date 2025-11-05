@@ -2,7 +2,7 @@
  * @file commands.h
  * @brief Defines the command interface for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from commands.json on 2025-11-03 15:34:06
+ * Generated from commands.json on 2025-11-04 12:18:51
  * 
  * This header file defines all commands that can be sent TO the Pressboi device.
  * For response message formats, see responses.h
@@ -20,7 +20,8 @@
  */
 #define CMD_STR_DISCOVER_DEVICE                     "DISCOVER_DEVICE" ///< Generic command for any device to respond to.
 #define CMD_STR_RESET                               "reset" ///< No description available.
-#define CMD_STR_SET_START_POS                       "set_start_pos " ///< No description available.
+#define CMD_STR_SET_RETRACT                         "set_retract " ///< No description available.
+#define CMD_STR_RETRACT                             "retract" ///< No description available.
 #define CMD_STR_PAUSE                               "pause" ///< No description available.
 #define CMD_STR_RESUME                              "resume" ///< No description available.
 #define CMD_STR_CANCEL                              "cancel" ///< No description available.
@@ -35,7 +36,6 @@
 #define CMD_STR_HOME                                "home" ///< No description available.
 #define CMD_STR_MOVE_ABS                            "move_abs " ///< No description available.
 #define CMD_STR_MOVE_INC                            "move_inc " ///< No description available.
-#define CMD_STR_MOVE_TO_START                       "move_to_start" ///< No description available.
 /** @} */
 
 //==================================================================================================
@@ -85,7 +85,8 @@ typedef enum {
     // General System Commands
     CMD_DISCOVER_DEVICE,                                    ///< @see CMD_STR_DISCOVER_DEVICE
     CMD_RESET,                                    ///< @see CMD_STR_RESET
-    CMD_SET_START_POS,                                    ///< @see CMD_STR_SET_START_POS
+    CMD_SET_RETRACT,                                    ///< @see CMD_STR_SET_RETRACT
+    CMD_RETRACT,                                    ///< @see CMD_STR_RETRACT
     CMD_PAUSE,                                    ///< @see CMD_STR_PAUSE
     CMD_RESUME,                                    ///< @see CMD_STR_RESUME
     CMD_CANCEL,                                    ///< @see CMD_STR_CANCEL
@@ -95,8 +96,7 @@ typedef enum {
     // Motion Commands
     CMD_HOME,                                    ///< @see CMD_STR_HOME
     CMD_MOVE_ABS,                                    ///< @see CMD_STR_MOVE_ABS
-    CMD_MOVE_INC,                                    ///< @see CMD_STR_MOVE_INC
-    CMD_MOVE_TO_START                                     ///< @see CMD_STR_MOVE_TO_START
+    CMD_MOVE_INC                                     ///< @see CMD_STR_MOVE_INC
 } Command;
 
 //==================================================================================================

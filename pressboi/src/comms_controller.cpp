@@ -34,7 +34,7 @@ bool CommsController::enqueueRx(const char* msg, const IpAddress& ip, uint16_t p
 	int next_head = (m_rxQueueHead + 1) % RX_QUEUE_SIZE;
 	if (next_head == m_rxQueueTail) {
 		if(m_guiDiscovered) {
-			char errorMsg[] = "INJ_ERROR: RX QUEUE OVERFLOW - COMMAND DROPPED";
+			char errorMsg[] = "PRESSBOI_ERROR: RX QUEUE OVERFLOW - COMMAND DROPPED";
 			m_udp.Connect(m_guiIp, m_guiPort);
 			m_udp.PacketWrite(errorMsg);
 			m_udp.PacketSend();
@@ -62,7 +62,7 @@ bool CommsController::enqueueTx(const char* msg, const IpAddress& ip, uint16_t p
 	int next_head = (m_txQueueHead + 1) % TX_QUEUE_SIZE;
 	if (next_head == m_txQueueTail) {
 		if(m_guiDiscovered) {
-			char errorMsg[] = "INJ_ERROR: TX QUEUE OVERFLOW - MESSAGE DROPPED";
+			char errorMsg[] = "PRESSBOI_ERROR: TX QUEUE OVERFLOW - MESSAGE DROPPED";
 			m_udp.Connect(m_guiIp, m_guiPort);
 			m_udp.PacketWrite(errorMsg);
 			m_udp.PacketSend();
