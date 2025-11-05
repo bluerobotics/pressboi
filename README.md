@@ -445,6 +445,12 @@ Edit `inc/config.h` to customize:
 - `TX_QUEUE_SIZE` - Transmit queue depth
 - `TELEMETRY_INTERVAL_MS` - Telemetry update rate (default: 100ms)
 
+### Force Sensor
+- `FORCE_SENSOR_ENABLED` - Enable/disable force transducer functionality (default: `true`)
+  - Set to `false` if no force transducer is connected to your machine
+  - When disabled, all force-related checks are skipped and moves execute without force monitoring
+  - **Note:** Machines without force transducers should set this to `false` to prevent sensor errors
+
 ---
 
 ## Project Structure
