@@ -2,6 +2,16 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.2.1] - 2025-11-04
+
+### Added
+- `FORCE_SENSOR_ENABLED` configuration flag in config.h to support machines without force transducers
+- Documentation in README for force sensor configuration
+
+### Changed
+- Force sensor checks now conditional based on `FORCE_SENSOR_ENABLED` flag
+- Machines without force transducers can now operate normally by setting flag to `false`
+
 ## [1.2.0] - 2025-11-04
 
 ### Added
