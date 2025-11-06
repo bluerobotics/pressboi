@@ -17,6 +17,7 @@
 #include "variables.h"
 
 class Pressboi; // Forward declaration
+class ForceSensor; // Forward declaration
 
 /**
  * @enum HomingState
@@ -112,7 +113,7 @@ public:
      * @brief Updates the telemetry data structure with current motor state.
      * @param data Pointer to the TelemetryData structure to update
      */
-    void updateTelemetry(TelemetryData* data);
+    void updateTelemetry(TelemetryData* data, ForceSensor* forceSensor);
 
     /**
      * @brief Enables the motors and sets their default parameters.
@@ -177,6 +178,7 @@ private:
     float getSmoothedTorque(MotorDriver *motor, float *smoothedValue, bool *firstRead);
     bool checkTorqueLimit();
     bool checkForceSensorStatus(const char** errorMsg);
+    void handleLimitReached(const char* limit_type, float limit_value);
     void finalizeAndResetActiveMove(bool success);
     void fullyResetActiveMove();
     void reportEvent(const char* statusType, const char* message);
@@ -263,6 +265,7 @@ private:
      */
     float m_active_op_force_limit_kg;       ///< Target force limit (kg) for force-based moves.
     char m_active_op_force_action[16];      ///< Action to take when force limit reached: "retract", "hold", "skip"
+    char m_active_op_force_mode[16];        ///< Limit mode: "force" (load cell) or "torque" (motor torque)
     float m_active_op_total_distance_mm;    ///< Total distance traveled (mm) in current operation.
     float m_last_completed_distance_mm;     ///< Distance (mm) of the last completed move operation.
     long m_active_op_total_target_steps;    ///< Target distance in steps for the current operation.

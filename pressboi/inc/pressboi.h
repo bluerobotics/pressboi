@@ -27,7 +27,9 @@ enum MainState : uint8_t {
 	STATE_BUSY,          ///< A non-error operation (e.g., homing, moving) is in progress.
 	STATE_ERROR,         ///< A fault has occurred, typically a motor fault. Requires `CLEAR_ERRORS` to recover.
 	STATE_DISABLED,      ///< System is disabled; motors will not move. Requires `ENABLE` to recover.
-	STATE_CLEARING_ERRORS///< A special state to manage the non-blocking error recovery process.
+	STATE_CLEARING_ERRORS,///< A special state to manage the non-blocking error recovery process.
+	STATE_RESETTING,     ///< System is performing a non-blocking reset operation.
+	STATE_RECOVERED      ///< System recovered from watchdog reset. Motors disabled. Requires `RESET` to clear.
 };
 
 /**
@@ -86,6 +88,15 @@ public:
 
 private:
     /**
+     * @brief Performs safety checks and feeds the watchdog timer.
+     * @details This function must be called regularly from the main loop. It performs
+     * critical safety checks and resets the watchdog timer. If safety checks fail,
+     * the system will be put into a safe state. If this function is not called within
+     * the watchdog timeout period, the watchdog will trigger a system reset.
+     */
+    void performSafetyCheck();
+
+    /**
      * @brief Updates the main system state and the state machines of all sub-controllers.
      */
     void updateState();
@@ -127,6 +138,34 @@ private:
      */
     void standby();
 
+    // --- Watchdog Functions ---
+#if WATCHDOG_ENABLED
+    /**
+     * @brief Checks for watchdog recovery after motor setup.
+     * @details Detects if the system recovered from a watchdog timeout and disables motors,
+     * enters RECOVERED state, and reports the recovery to the GUI.
+     */
+    void handleWatchdogRecovery();
+
+    /**
+     * @brief Initializes the watchdog timer with early warning interrupt.
+     * @details Configures the watchdog for a ~128ms timeout with early warning interrupt
+     * that triggers before the reset occurs, allowing safe motor shutdown.
+     */
+    void initializeWatchdog();
+
+    /**
+     * @brief Feeds (clears/resets) the watchdog timer.
+     * @details This must be called regularly from the main loop to prevent watchdog reset.
+     */
+    void feedWatchdog();
+
+    /**
+     * @brief Cleans up watchdog recovery state when clearing errors.
+     */
+    void clearWatchdogRecovery();
+#endif
+
 public:
     // --- Component Ownership ---
     CommsController  m_comms;           ///< Manages all network and serial communication.
@@ -140,4 +179,5 @@ private:
 
     // Timers for periodic tasks
     uint32_t m_lastTelemetryTime;       ///< Timestamp of the last telemetry transmission.
+    uint32_t m_resetStartTime;          ///< Timestamp when reset operation started (for non-blocking delay).
 };

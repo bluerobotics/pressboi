@@ -16,13 +16,23 @@
 #include "pressboi.h"
 #include "commands.h"
 #include "variables.h"
+#include "events.h"
 #include <cstring>
 #include <cstdlib>
+#include <sam.h>  // For watchdog timer (WDT) register access
 
 //==================================================================================================
 // --- Global Telemetry Data ---
 //==================================================================================================
 TelemetryData g_telemetry;
+
+//==================================================================================================
+// --- Watchdog Recovery Flag (Survives Reset) ---
+//==================================================================================================
+#if WATCHDOG_ENABLED
+// Place in .noinit section so it survives reset but is cleared on power-up
+__attribute__((section(".noinit"))) volatile uint32_t g_watchdogRecoveryFlag;
+#endif
 
 //==================================================================================================
 // --- External sendMessage function for events and telemetry ---
@@ -33,6 +43,44 @@ void sendMessage(const char* msg) {
     // Events and telemetry already have their prefixes, so send directly
     pressboi.m_comms.enqueueTx(msg, pressboi.m_comms.getGuiIp(), pressboi.m_comms.getGuiPort());
 }
+
+//==================================================================================================
+// --- Watchdog Early Warning Interrupt Handler ---
+//==================================================================================================
+#if WATCHDOG_ENABLED
+/**
+ * @brief Watchdog early warning interrupt handler.
+ * @details This interrupt is triggered before the watchdog causes a system reset,
+ * giving us a chance to safely disable motors and float all outputs. Sets a persistent
+ * flag so the system knows it recovered from a watchdog reset on the next boot.
+ */
+extern "C" void WDT_Handler(void) {
+    // Clear the early warning interrupt flag
+    WDT->INTFLAG.reg = WDT_INTFLAG_EW;
+    
+    // Immediately disable all motors to prevent damage
+    MOTOR_A.EnableRequest(false);
+    MOTOR_B.EnableRequest(false);
+    
+    // Turn on the LED to indicate watchdog trigger (red/error state)
+    ConnectorLed.Mode(Connector::OUTPUT_DIGITAL);
+    ConnectorLed.State(true);
+    
+    // Set recovery flag in .noinit memory (survives reset)
+    g_watchdogRecoveryFlag = WATCHDOG_RECOVERY_FLAG;
+    
+    // Blink the LED rapidly to make it obvious something went wrong
+    for (int i = 0; i < 5; i++) {
+        ConnectorLed.State(true);
+        for (volatile int d = 0; d < 5000; d++);  // Short delay
+        ConnectorLed.State(false);
+        for (volatile int d = 0; d < 5000; d++);  // Short delay
+    }
+    
+    // System will reset shortly after this ISR completes
+    // On next boot, setup() will detect the recovery flag and enter STATE_RECOVERED
+}
+#endif
 
 //==================================================================================================
 // --- Pressboi Class Implementation ---
@@ -47,6 +95,7 @@ Pressboi::Pressboi() :
 {
     m_mainState = STATE_STANDBY;
     m_lastTelemetryTime = 0;
+    m_resetStartTime = 0;
     
     // Initialize telemetry
     telemetry_init(&g_telemetry);
@@ -63,40 +112,76 @@ void Pressboi::setup() {
     m_motor.setup();
     m_forceSensor.setup();
     
-    m_comms.reportEvent(STATUS_PREFIX_INFO, "Pressboi system setup complete. All components initialized.");
+#if WATCHDOG_ENABLED
+    handleWatchdogRecovery();
+    initializeWatchdog();
+#endif
+    
+    // Only report normal startup if not in RECOVERED state
+    if (m_mainState != STATE_RECOVERED) {
+        m_comms.reportEvent(STATUS_PREFIX_INFO, "Pressboi system setup complete. All components initialized.");
+    }
 }
 
 /**
  * @brief The main execution loop for the Pressboi system.
  */
 void Pressboi::loop() {
-    // 1. Process all incoming/outgoing communication queues.
+    // 1. Perform safety checks and feed the watchdog timer.
+    performSafetyCheck();
+
+    // 2. Process all incoming/outgoing communication queues.
     m_comms.update();
 
-    // 2. Check for and handle one new command from the receive queue.
+    // 3. Check for and handle one new command from the receive queue.
     Message msg;
     if (m_comms.dequeueRx(msg)) {
         dispatchCommand(msg);
     }
 
-    // 3. Update force sensor readings.
+    // 4. Update force sensor readings.
     m_forceSensor.update();
 
-    // 4. Update the main state machine and all sub-controllers.
+    // 5. Update the main state machine and all sub-controllers.
     updateState();
 
-    // 5. Handle time-based periodic tasks.
+    // 6. Handle time-based periodic tasks.
     uint32_t now = Milliseconds();
 	
     if (m_comms.isGuiDiscovered() && (now - m_lastTelemetryTime >= TELEMETRY_INTERVAL_MS)) {
         m_lastTelemetryTime = now;
         publishTelemetry();
     }
+    
+    // If we're in RECOVERED state and GUI just connected, resend the recovery message
+    static bool recovery_msg_sent = false;
+    if (m_mainState == STATE_RECOVERED && m_comms.isGuiDiscovered() && !recovery_msg_sent) {
+        recovery_msg_sent = true;
+        reportEvent(STATUS_PREFIX_RECOVERY, "Watchdog timeout - main loop blocked >128ms. Motors disabled. Send RESET to clear.");
+    }
+    
+    // Reset the flag when leaving RECOVERED state
+    if (m_mainState != STATE_RECOVERED && recovery_msg_sent) {
+        recovery_msg_sent = false;
+    }
 }
 
 //==================================================================================================
 // --- Private Methods: State, Command, and Telemetry Handling ---
 //==================================================================================================
+
+/**
+ * @brief Performs safety checks and feeds the watchdog timer.
+ */
+void Pressboi::performSafetyCheck() {
+#if WATCHDOG_ENABLED
+    feedWatchdog();
+    
+    // Note: Motor fault detection is handled in updateState() as part of the normal state machine
+    // This function focuses on feeding the watchdog and can be extended with additional
+    // hardware-level safety checks if needed (e.g., force sensor limits, temperature monitoring)
+#endif
+}
 
 /**
  * @brief Updates the main system state and the state machines of all sub-controllers.
@@ -140,10 +225,30 @@ void Pressboi::updateState() {
             break;
         }
 
+        case STATE_RESETTING: {
+            // Non-blocking reset: wait for 100ms delay before re-enabling motors
+            uint32_t now = Milliseconds();
+            if (now - m_resetStartTime >= 100) {  // 100ms delay
+                // Clear any motor faults before re-enabling
+                MOTOR_A.ClearAlerts();
+                MOTOR_B.ClearAlerts();
+                
+                // Re-enable motors
+                m_motor.enable();
+                
+                // Reset complete, transition to standby
+                standby();
+                reportEvent(STATUS_PREFIX_DONE, "reset");
+                m_mainState = STATE_STANDBY;
+            }
+            break;
+        }
+
         case STATE_ERROR:
         case STATE_DISABLED:
+        case STATE_RECOVERED:
             // These are terminal states. No logic is performed here.
-            // They are only exited by explicit commands (CLEAR_ERRORS, ENABLE).
+            // They are only exited by explicit commands (CLEAR_ERRORS, ENABLE, or RESET).
             break;
     }
 }
@@ -154,6 +259,14 @@ void Pressboi::updateState() {
  */
 void Pressboi::dispatchCommand(const Message& msg) {
     Command command_enum = parseCommand(msg.buffer);
+    
+    // If the system is in RECOVERED state, block ALL commands except reset
+    if (m_mainState == STATE_RECOVERED) {
+        if (command_enum != CMD_DISCOVER_DEVICE && command_enum != CMD_RESET) {
+            m_comms.reportEvent(STATUS_PREFIX_ERROR, "Command ignored: System in RECOVERED state from watchdog timeout. Send RESET to clear.");
+            return;
+        }
+    }
     
     // If the system is in an error state, block most commands.
     if (m_mainState == STATE_ERROR) {
@@ -196,6 +309,13 @@ void Pressboi::dispatchCommand(const Message& msg) {
             disable();
             m_comms.reportEvent(STATUS_PREFIX_DONE, "disable");
             break;
+        case CMD_TEST_WATCHDOG:
+            // Test command: block for 1 second to trigger watchdog
+            reportEvent(STATUS_PREFIX_INFO, "TEST_WATCHDOG: Blocking for 1 second...");
+            Delay_ms(1000);
+            // This line should never execute if watchdog works
+            reportEvent(STATUS_PREFIX_ERROR, "TEST_WATCHDOG: Watchdog did not trigger!");
+            break;
 
         // --- Motor Commands (Delegated to MotorController) ---
         case CMD_HOME:
@@ -233,19 +353,19 @@ void Pressboi::dispatchCommand(const Message& msg) {
 void Pressboi::publishTelemetry() {
     if (!m_comms.isGuiDiscovered()) return;
 
-    // Update telemetry data from motor controller
-    m_motor.updateTelemetry(&g_telemetry);
-    
-    // Update force from sensor
-    g_telemetry.force = m_forceSensor.getForce();
+    // Update telemetry data from motor controller (includes force calculation)
+    m_motor.updateTelemetry(&g_telemetry, &m_forceSensor);
     
     // Set main state
     switch(m_mainState) {
-        case STATE_STANDBY:  g_telemetry.MAIN_STATE = "STANDBY"; break;
-        case STATE_BUSY:     g_telemetry.MAIN_STATE = "BUSY"; break;
-        case STATE_ERROR:    g_telemetry.MAIN_STATE = "ERROR"; break;
-        case STATE_DISABLED: g_telemetry.MAIN_STATE = "DISABLED"; break;
-        default:             g_telemetry.MAIN_STATE = "UNKNOWN"; break;
+        case STATE_STANDBY:        g_telemetry.MAIN_STATE = "STANDBY"; break;
+        case STATE_BUSY:           g_telemetry.MAIN_STATE = "BUSY"; break;
+        case STATE_ERROR:          g_telemetry.MAIN_STATE = "ERROR"; break;
+        case STATE_DISABLED:       g_telemetry.MAIN_STATE = "DISABLED"; break;
+        case STATE_CLEARING_ERRORS:g_telemetry.MAIN_STATE = "CLEARING_ERRORS"; break;
+        case STATE_RESETTING:      g_telemetry.MAIN_STATE = "RESETTING"; break;
+        case STATE_RECOVERED:      g_telemetry.MAIN_STATE = "RECOVERED"; break;
+        default:                   g_telemetry.MAIN_STATE = "UNKNOWN"; break;
     }
 
     // Build and send telemetry message
@@ -292,17 +412,20 @@ void Pressboi::abort() {
 void Pressboi::clearErrors() {
     reportEvent(STATUS_PREFIX_INFO, "Reset received. Clearing errors and resetting system...");
 
+#if WATCHDOG_ENABLED
+    clearWatchdogRecovery();
+#endif
+
     // Abort any active motion first to ensure a clean state.
     m_motor.abortMove();
 
-    // Power cycle the motors to clear hardware faults.
+    // Disable motors and start non-blocking reset timer
     m_motor.disable();
-    Delay_ms(100);
-    m_motor.enable();
+    m_resetStartTime = Milliseconds();
+    m_mainState = STATE_RESETTING;
     
-    // The system is now fully reset and ready.
-    standby();
-    reportEvent(STATUS_PREFIX_DONE, "reset");
+    // The actual motor re-enable and completion happens in updateState()
+    // This makes the reset operation non-blocking and watchdog-safe
 }
 
 void Pressboi::standby() {
@@ -320,6 +443,122 @@ void Pressboi::standby() {
 void Pressboi::reportEvent(const char* statusType, const char* message) {
     m_comms.reportEvent(statusType, message);
 }
+
+//==================================================================================================
+// --- Watchdog Functions ---
+//==================================================================================================
+
+#if WATCHDOG_ENABLED
+/**
+ * @brief Checks for watchdog recovery after motor setup.
+ */
+void Pressboi::handleWatchdogRecovery() {
+    // Check reset cause to detect watchdog reset
+    uint8_t reset_cause = RSTC->RCAUSE.reg;
+    bool is_watchdog_reset = (reset_cause & RSTC_RCAUSE_WDT) != 0;
+    
+    // If watchdog reset detected, immediately disable motors and enter RECOVERED state
+    if (is_watchdog_reset) {
+        m_motor.disable();
+        m_mainState = STATE_RECOVERED;
+        
+        // Report reset cause for debugging
+        char debug_msg[120];
+        snprintf(debug_msg, sizeof(debug_msg), 
+                 "Reset cause: 0x%02X (POR=%d BODCORE=%d BODVDD=%d EXT=%d WDT=%d SYST=%d)", 
+                 reset_cause,
+                 (reset_cause & RSTC_RCAUSE_POR) ? 1 : 0,
+                 (reset_cause & RSTC_RCAUSE_BODCORE) ? 1 : 0,
+                 (reset_cause & RSTC_RCAUSE_BODVDD) ? 1 : 0,
+                 (reset_cause & RSTC_RCAUSE_EXT) ? 1 : 0,
+                 (reset_cause & RSTC_RCAUSE_WDT) ? 1 : 0,
+                 (reset_cause & RSTC_RCAUSE_SYST) ? 1 : 0);
+        m_comms.reportEvent(STATUS_PREFIX_INFO, debug_msg);
+        
+        // Clear any motor alerts
+        MOTOR_A.ClearAlerts();
+        MOTOR_B.ClearAlerts();
+        
+        // Send recovery message
+        m_comms.reportEvent(STATUS_PREFIX_RECOVERY, "Watchdog timeout - main loop blocked >128ms. Motors disabled. Send RESET to clear.");
+        
+        // Keep LED on solid to indicate recovered state
+        ConnectorLed.Mode(Connector::OUTPUT_DIGITAL);
+        ConnectorLed.State(true);
+    } else {
+        // Normal boot - report reset cause for debugging
+        char debug_msg[120];
+        snprintf(debug_msg, sizeof(debug_msg), 
+                 "Reset cause: 0x%02X (POR=%d BODCORE=%d BODVDD=%d EXT=%d WDT=%d SYST=%d)", 
+                 reset_cause,
+                 (reset_cause & RSTC_RCAUSE_POR) ? 1 : 0,
+                 (reset_cause & RSTC_RCAUSE_BODCORE) ? 1 : 0,
+                 (reset_cause & RSTC_RCAUSE_BODVDD) ? 1 : 0,
+                 (reset_cause & RSTC_RCAUSE_EXT) ? 1 : 0,
+                 (reset_cause & RSTC_RCAUSE_WDT) ? 1 : 0,
+                 (reset_cause & RSTC_RCAUSE_SYST) ? 1 : 0);
+        m_comms.reportEvent(STATUS_PREFIX_INFO, debug_msg);
+    }
+}
+
+/**
+ * @brief Initializes the watchdog timer with early warning interrupt.
+ */
+void Pressboi::initializeWatchdog() {
+    // Disable watchdog during configuration
+    WDT->CTRLA.reg = 0;
+    while(WDT->SYNCBUSY.reg);
+    
+    // Configure watchdog:
+    // - For 100ms timeout at 1kHz WDT clock
+    // - Need approximately 100 cycles
+    // - Period values: 0x3 = 64 cycles (~64ms), 0x4 = 128 cycles (~128ms)
+    // - Use 0x4 for ~128ms to be safe
+    uint8_t per_value = 0x4;  // 128 cycles ≈ 128ms at 1kHz
+    
+    // Configure watchdog with early warning interrupt
+    WDT->CONFIG.reg = WDT_CONFIG_PER(per_value);
+    while(WDT->SYNCBUSY.reg);
+    
+    // Enable early warning interrupt
+    WDT->INTENSET.reg = WDT_INTENSET_EW;
+    
+    // Enable WDT interrupt in NVIC (Nested Vectored Interrupt Controller)
+    NVIC_EnableIRQ(WDT_IRQn);
+    NVIC_SetPriority(WDT_IRQn, 0);  // Highest priority
+    
+    // Enable watchdog
+    WDT->CTRLA.reg = WDT_CTRLA_ENABLE;
+    while(WDT->SYNCBUSY.reg);
+    
+    m_comms.reportEvent(STATUS_PREFIX_INFO, "Watchdog timer initialized with early warning interrupt.");
+}
+
+/**
+ * @brief Feeds (clears/resets) the watchdog timer.
+ */
+void Pressboi::feedWatchdog() {
+    // ALWAYS feed the watchdog - this is the ONLY place it should be fed
+    // Feed it in ALL states to keep the system responsive
+    WDT->CLEAR.reg = WDT_CLEAR_CLEAR_KEY;
+    while(WDT->SYNCBUSY.reg);
+}
+
+/**
+ * @brief Cleans up watchdog recovery state when clearing errors.
+ */
+void Pressboi::clearWatchdogRecovery() {
+    // Check if we're in RECOVERED state
+    if (m_mainState == STATE_RECOVERED) {
+        reportEvent(STATUS_PREFIX_INFO, "Clearing watchdog recovery state...");
+        
+        // Turn off the LED
+        ConnectorLed.State(false);
+        
+        reportEvent(STATUS_PREFIX_INFO, "Watchdog recovery cleared. System will now initialize normally.");
+    }
+}
+#endif
 
 //==================================================================================================
 // --- Program Entry Point ---

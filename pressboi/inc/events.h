@@ -2,18 +2,50 @@
  * @file events.h
  * @brief Defines all event types that can be sent from the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from events.json on 2025-11-04 12:18:51
+ * Generated from events.json on 2025-11-05 20:42:41
  * 
  * This header file defines all events sent FROM the Pressboi device TO the host.
  * Events are asynchronous notifications that can trigger host-side actions.
  * For command definitions (host → device), see commands.h
- * For response definitions, see responses.h
  * To modify events, edit events.json and regenerate this file.
  */
 #pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
+
+//==================================================================================================
+// Status Message Prefixes (Device → Host)
+//==================================================================================================
+
+/**
+ * @name Status Message Prefixes
+ * @brief Prefixes used for different types of status messages from the device.
+ * @{
+ */
+#define STATUS_PREFIX_INFO                  "PRESSBOI_INFO: "          ///< Prefix for informational status messages.
+#define STATUS_PREFIX_START                 "PRESSBOI_START: "         ///< Prefix for messages indicating the start of an operation.
+#define STATUS_PREFIX_DONE                  "PRESSBOI_DONE: "          ///< Prefix for messages indicating the successful completion of an operation.
+#define STATUS_PREFIX_ERROR                 "PRESSBOI_ERROR: "         ///< Prefix for messages indicating an error or fault.
+#define STATUS_PREFIX_RECOVERY              "PRESSBOI_RECOVERY: "      ///< Prefix for watchdog recovery notifications.
+#define STATUS_PREFIX_DISCOVERY             "DISCOVERY_RESPONSE: "     ///< Prefix for the device discovery response.
+/** @} */
+
+/**
+ * @name Telemetry Prefix
+ * @brief Prefix for periodic telemetry data messages.
+ * @{
+ */
+#define TELEM_PREFIX                        "PRESSBOI_TELEM: "         ///< Prefix for all telemetry messages.
+/** @} */
+
+/**
+ * @name Event Prefix
+ * @brief Prefix for event messages.
+ * @{
+ */
+#define EVENT_PREFIX                        "PRESSBOI_EVENT: "         ///< Prefix for all event messages.
+/** @} */
 
 //==================================================================================================
 // Event String Definitions

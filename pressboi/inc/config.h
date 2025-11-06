@@ -34,6 +34,7 @@
  * @name General System Behavior
  * @{
  */
+#define FIRMWARE_VERSION                "1.3.0"   ///< Pressboi firmware version
 #define STATUS_MESSAGE_BUFFER_SIZE      256       ///< Standard buffer size for composing status and error messages.
 #define POST_ABORT_DELAY_MS             100       ///< Delay in milliseconds after an abort command to allow motors to come to a complete stop.
 /** @} */
@@ -142,6 +143,15 @@
 #define FORCE_SENSOR_MAX_SAFETY_FACTOR      1.2f      ///< Safety factor for maximum force (1.2x = 20% over max).
 #define FORCE_SENSOR_MAX_LIMIT_KG           (FORCE_SENSOR_MAX_KG * FORCE_SENSOR_MAX_SAFETY_FACTOR) ///< Calculated max limit (1440 kg).
 #define FORCE_SENSOR_TIMEOUT_MS             1000      ///< Time (ms) without readings before sensor is considered disconnected.
+/** @} */
+
+/**
+ * @name Watchdog Timer Configuration
+ * @{
+ */
+#define WATCHDOG_ENABLED                    true      ///< Enable/disable watchdog timer. When enabled, system must call safety check regularly or motors will be disabled.
+#define WATCHDOG_TIMEOUT_MS                 100       ///< Watchdog timeout period in milliseconds. System will reset if not fed within this time.
+#define WATCHDOG_RECOVERY_FLAG              0xDEADBEEF ///< Magic number written to backup register to indicate watchdog recovery.
 /** @} */
 /** @} */
 

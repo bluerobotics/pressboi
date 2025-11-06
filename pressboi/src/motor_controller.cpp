@@ -15,6 +15,7 @@
 //==================================================================================================
 #include "motor_controller.h"
 #include "pressboi.h" // Include full header for Pressboi
+#include "events.h"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -125,6 +126,7 @@ void MotorController::updateState() {
                 break;
                 case RAPID_SEARCH_MOVING: {
                     if (checkTorqueLimit()) {
+                        abortMove();
                         reportEvent(STATUS_PREFIX_INFO, "Homing: Rapid search torque limit hit.");
                         m_homingPhase = BACKOFF_START;
                         } else if (!isMoving()) {
@@ -169,6 +171,7 @@ void MotorController::updateState() {
                 break;
                 case SLOW_SEARCH_MOVING: {
                     if (checkTorqueLimit()) {
+                        abortMove();
                         reportEvent(STATUS_PREFIX_INFO, "Homing: Precise position found. Moving to offset.");
                         m_homingPhase = SET_OFFSET_START;
                         } else if (!isMoving()) {
@@ -231,71 +234,42 @@ void MotorController::updateState() {
         }
 
         case STATE_MOVING: {
-            // Check force sensor status during move
-            const char* errorMsg = nullptr;
-            if (checkForceSensorStatus(&errorMsg)) {
-                abortMove();
-                char fullMsg[STATUS_MESSAGE_BUFFER_SIZE];
-                snprintf(fullMsg, sizeof(fullMsg), "Move stopped: %s", errorMsg);
-                reportEvent(STATUS_PREFIX_ERROR, fullMsg);
-                m_moveState = MOVE_PAUSED;  // Hold the controller
-                return;
-            }
-            
-            // Check force limit during move (if force limit was set and sensor is enabled)
-            #if FORCE_SENSOR_ENABLED
-            if (m_moveState == MOVE_ACTIVE && m_active_op_force_limit_kg > 0.1f) {
-                float current_force = m_controller->m_forceSensor.getForce();
-                if (current_force >= m_active_op_force_limit_kg) {
-                    abortMove();
-                    char msg[STATUS_MESSAGE_BUFFER_SIZE];
-                    snprintf(msg, sizeof(msg), "Force limit (%.2f kg) reached. Current force: %.2f kg", 
-                             m_active_op_force_limit_kg, current_force);
-                    reportEvent(STATUS_PREFIX_INFO, msg);
-                    
-                    // Handle action based on force_action parameter
-                    if (strcmp(m_active_op_force_action, "retract") == 0) {
-                        // Send DONE for the original command, then start retract
-                        if (m_activeMoveCommand) {
-                            reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
-                        }
-                        
-                        if (m_retractReferenceSteps == 0) {
-                            reportEvent(STATUS_PREFIX_ERROR, "Cannot retract: retract position not set.");
-                            finalizeAndResetActiveMove(true);
-                            m_state = STATE_STANDBY;
-                        } else {
-                            // Start retract move
-                            m_moveState = MOVE_TO_HOME;
-                            m_activeMoveCommand = "retract";
-                            m_active_op_target_position_steps = m_retractReferenceSteps;
-                            long current_pos = m_motorA->PositionRefCommanded();
-                            long steps_to_retract = m_retractReferenceSteps - current_pos;
-                            m_torqueLimit = DEFAULT_TORQUE_LIMIT;
-                            startMove(steps_to_retract, m_moveDefaultVelocitySPS, m_moveDefaultAccelSPS2);
-                            reportEvent(STATUS_PREFIX_START, "retract");
-                        }
-                    } else if (strcmp(m_active_op_force_action, "skip") == 0) {
-                        // Skip the rest of the move - complete at current position and send DONE
-                        if (m_activeMoveCommand) {
-                            reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
-                        }
-                        finalizeAndResetActiveMove(true);
-                        m_state = STATE_STANDBY;
-                    } else {
-                        // "hold" action - pause and wait for user
-                        m_moveState = MOVE_PAUSED;
+            // Check limits based on mode
+            if (m_moveState == MOVE_ACTIVE) {
+                if (strcmp(m_active_op_force_mode, "load_cell") == 0) {
+                    // Load cell mode - check force sensor status and force limit
+                    const char* errorMsg = nullptr;
+                    if (checkForceSensorStatus(&errorMsg)) {
+                        abortMove();
+                        char fullMsg[STATUS_MESSAGE_BUFFER_SIZE];
+                        snprintf(fullMsg, sizeof(fullMsg), "Move stopped: %s", errorMsg);
+                        reportEvent(STATUS_PREFIX_ERROR, fullMsg);
+                        m_moveState = MOVE_PAUSED;  // Hold the controller
+                        return;
                     }
-                    return;
+                    
+                    // Check force limit (if set and sensor is enabled)
+                    #if FORCE_SENSOR_ENABLED
+                    if (m_active_op_force_limit_kg > 0.1f) {
+                        float current_force = m_controller->m_forceSensor.getForce();
+                        if (current_force >= m_active_op_force_limit_kg) {
+                            char limit_desc[STATUS_MESSAGE_BUFFER_SIZE];
+                            snprintf(limit_desc, sizeof(limit_desc), "Force limit (%.1f kg, actual: %.1f kg)", 
+                                     m_active_op_force_limit_kg, current_force);
+                            handleLimitReached(limit_desc, current_force);
+                            return;
+                        }
+                    }
+                    #endif
+                } else {
+                    // Motor torque mode - check torque limit as primary stopping condition
+                    if (checkTorqueLimit()) {
+                        char limit_desc[STATUS_MESSAGE_BUFFER_SIZE];
+                        snprintf(limit_desc, sizeof(limit_desc), "Torque limit (%.1f%%)", m_torqueLimit);
+                        handleLimitReached(limit_desc, m_torqueLimit);
+                        return;
+                    }
                 }
-            }
-            #endif // FORCE_SENSOR_ENABLED
-            
-            if (checkTorqueLimit()) {
-                reportEvent(STATUS_PREFIX_ERROR,"MOVE: Torque limit! Operation stopped.");
-                finalizeAndResetActiveMove(false);
-                m_state = STATE_STANDBY;
-                return;
             }
 
             // Transition from STARTING/RESUMING to ACTIVE when motor begins moving
@@ -451,15 +425,6 @@ void MotorController::reset() {
  * @brief Handles the HOME command.
  */
 void MotorController::home() {
-    // Check force sensor status before starting
-    const char* errorMsg = nullptr;
-    if (checkForceSensorStatus(&errorMsg)) {
-        char fullMsg[STATUS_MESSAGE_BUFFER_SIZE];
-        snprintf(fullMsg, sizeof(fullMsg), "Homing aborted: %s", errorMsg);
-        reportEvent(STATUS_PREFIX_ERROR, fullMsg);
-        return;
-    }
-    
     m_homingDistanceSteps = (long)(fabs(HOMING_STROKE_MM) * STEPS_PER_MM);
     m_homingBackoffSteps = (long)(HOMING_BACKOFF_MM * STEPS_PER_MM);
     m_homingRapidSps = (int)fabs(HOMING_RAPID_VEL_MMS * STEPS_PER_MM);
@@ -530,15 +495,6 @@ void MotorController::retract(const char* args) {
         return;
     }
     
-    // Check force sensor status before starting
-    const char* errorMsg = nullptr;
-    if (checkForceSensorStatus(&errorMsg)) {
-        char fullMsg[STATUS_MESSAGE_BUFFER_SIZE];
-        snprintf(fullMsg, sizeof(fullMsg), "Move aborted: %s", errorMsg);
-        reportEvent(STATUS_PREFIX_ERROR, fullMsg);
-        return;
-    }
-    
     // Parse optional speed parameter
     float speed_mms = MOVE_DEFAULT_VELOCITY_MMS;
     if (args && args[0] != '\0') {
@@ -592,24 +548,24 @@ void MotorController::moveAbsolute(const char* args) {
         return;
     }
     
-    // Check force sensor status before starting
-    const char* errorMsg = nullptr;
-    if (checkForceSensorStatus(&errorMsg)) {
-        char fullMsg[STATUS_MESSAGE_BUFFER_SIZE];
-        snprintf(fullMsg, sizeof(fullMsg), "Move aborted: %s", errorMsg);
-        reportEvent(STATUS_PREFIX_ERROR, fullMsg);
-        return;
-    }
-    
     float position_mm = 0.0f;
     float speed_mms = MOVE_DEFAULT_VELOCITY_MMS;
     float force_kg = 0.0f;
     char force_action[32] = "hold";  // Default action
+    char force_mode[16] = "motor_torque";  // Default to motor_torque mode
     
-    // Parse: position, speed, force, [force_action]
-    int parsed = std::sscanf(args, "%f %f %f %31s", &position_mm, &speed_mms, &force_kg, force_action);
+    // Parse: position, speed, force, [force_action], [force_mode]
+    int parsed = std::sscanf(args, "%f %f %f %31s %15s", &position_mm, &speed_mms, &force_kg, force_action, force_mode);
     if (parsed < 1) {
         reportEvent(STATUS_PREFIX_ERROR, "Error: Invalid parameters for MOVE_ABS. Need at least position.");
+        return;
+    }
+    
+    // Validate force_mode
+    if (strcmp(force_mode, "motor_torque") != 0 && strcmp(force_mode, "load_cell") != 0) {
+        char err_msg[128];
+        snprintf(err_msg, sizeof(err_msg), "Error: Invalid force_mode '%s'. Must be 'motor_torque' or 'load_cell'.", force_mode);
+        reportEvent(STATUS_PREFIX_ERROR, err_msg);
         return;
     }
     
@@ -619,17 +575,28 @@ void MotorController::moveAbsolute(const char* args) {
         reportEvent(STATUS_PREFIX_INFO, "Speed limited to 100 mm/s for safety.");
     }
     
-    // Check if current force already exceeds target (for "hold" action)
-    #if FORCE_SENSOR_ENABLED
-    float current_force = m_controller->m_forceSensor.getForce();
-    if (parsed >= 4 && strcmp(force_action, "hold") == 0 && current_force >= force_kg) {
-        char msg[STATUS_MESSAGE_BUFFER_SIZE];
-        snprintf(msg, sizeof(msg), "Force limit (%.2f kg) already reached. Current force: %.2f kg", 
-                 force_kg, current_force);
-        reportEvent(STATUS_PREFIX_ERROR, msg);  // ERROR message will auto-hold script
-        return;
+    // Only check force sensor if we're in "load_cell" mode
+    if (strcmp(force_mode, "load_cell") == 0) {
+        const char* errorMsg = nullptr;
+        if (checkForceSensorStatus(&errorMsg)) {
+            char fullMsg[STATUS_MESSAGE_BUFFER_SIZE];
+            snprintf(fullMsg, sizeof(fullMsg), "Move aborted: %s", errorMsg);
+            reportEvent(STATUS_PREFIX_ERROR, fullMsg);
+            return;
+        }
+        
+        // Check if current force already exceeds target (for "hold" action)
+        #if FORCE_SENSOR_ENABLED
+        float current_force = m_controller->m_forceSensor.getForce();
+        if (strcmp(force_action, "hold") == 0 && current_force >= force_kg) {
+            char msg[STATUS_MESSAGE_BUFFER_SIZE];
+            snprintf(msg, sizeof(msg), "Force limit (%.2f kg) already reached. Current force: %.2f kg", 
+                     force_kg, current_force);
+            reportEvent(STATUS_PREFIX_ERROR, msg);  // ERROR message will auto-hold script
+            return;
+        }
+        #endif
     }
-    #endif
     
     fullyResetActiveMove();
     m_state = STATE_MOVING;
@@ -642,7 +609,29 @@ void MotorController::moveAbsolute(const char* args) {
     long steps_to_move = target_steps - current_pos;
     
     int velocity_sps = (int)(speed_mms * STEPS_PER_MM);
-    m_torqueLimit = DEFAULT_TORQUE_LIMIT;  // Use default motor torque limit (80%)
+    
+    // Set torque limit - ALWAYS calculate from kg if provided for safety
+    if (force_kg > 0.0f) {
+        // Validate kg range for torque calculation
+        if (force_kg < 50.0f) {
+            reportEvent(STATUS_PREFIX_ERROR, "Error: Force must be >= 50 kg.");
+            return;
+        }
+        if (force_kg > 1000.0f) {
+            reportEvent(STATUS_PREFIX_ERROR, "Error: Force must be <= 1000 kg.");
+            return;
+        }
+        // Calculate torque limit from kg: Torque = 0.0335 * kgForce + 1.04
+        // This applies to BOTH motor_torque and load_cell modes for safety
+        m_torqueLimit = 0.0335f * force_kg + 1.04f;
+        char torque_msg[128];
+        snprintf(torque_msg, sizeof(torque_msg), "Torque limit set: %.1f%% (from %.0f kg) in %s mode", 
+                 m_torqueLimit, force_kg, force_mode);
+        reportEvent(STATUS_PREFIX_INFO, torque_msg);
+    } else {
+        // No kg parameter specified: use default torque limit
+        m_torqueLimit = DEFAULT_TORQUE_LIMIT;
+    }
     
     // Store move parameters for pause/resume
     m_active_op_initial_axis_steps = current_pos;
@@ -652,15 +641,17 @@ void MotorController::moveAbsolute(const char* args) {
     m_active_op_torque_percent = (int)m_torqueLimit;
     m_moveStartTime = Milliseconds();  // Set start time for timeout tracking
     
-    // Store force limit and action for use during move
+    // Store force limit, action, and mode for use during move
     m_active_op_force_limit_kg = force_kg;
     strncpy(m_active_op_force_action, force_action, sizeof(m_active_op_force_action) - 1);
     m_active_op_force_action[sizeof(m_active_op_force_action) - 1] = '\0';
+    strncpy(m_active_op_force_mode, force_mode, sizeof(m_active_op_force_mode) - 1);
+    m_active_op_force_mode[sizeof(m_active_op_force_mode) - 1] = '\0';
     
     startMove(steps_to_move, velocity_sps, m_moveDefaultAccelSPS2);
     
     char msg[128];
-    snprintf(msg, sizeof(msg), "move_abs to %.2f mm initiated", position_mm);
+    snprintf(msg, sizeof(msg), "move_abs to %.2f mm initiated (mode: %s)", position_mm, force_mode);
     reportEvent(STATUS_PREFIX_START, msg);
 }
 
@@ -673,24 +664,24 @@ void MotorController::moveIncremental(const char* args) {
         return;
     }
     
-    // Check force sensor status before starting
-    const char* errorMsg = nullptr;
-    if (checkForceSensorStatus(&errorMsg)) {
-        char fullMsg[STATUS_MESSAGE_BUFFER_SIZE];
-        snprintf(fullMsg, sizeof(fullMsg), "Move aborted: %s", errorMsg);
-        reportEvent(STATUS_PREFIX_ERROR, fullMsg);
-        return;
-    }
-    
     float distance_mm = 0.0f;
     float speed_mms = MOVE_DEFAULT_VELOCITY_MMS;
     float force_kg = 0.0f;
     char force_action[32] = "hold";  // Default action
+    char force_mode[16] = "motor_torque";  // Default to motor_torque mode
     
-    // Parse: distance, speed, force, [force_action]
-    int parsed = std::sscanf(args, "%f %f %f %31s", &distance_mm, &speed_mms, &force_kg, force_action);
+    // Parse: distance, speed, force, [force_action], [force_mode]
+    int parsed = std::sscanf(args, "%f %f %f %31s %15s", &distance_mm, &speed_mms, &force_kg, force_action, force_mode);
     if (parsed < 1) {
         reportEvent(STATUS_PREFIX_ERROR, "Error: Invalid parameters for MOVE_INC. Need at least distance.");
+        return;
+    }
+    
+    // Validate force_mode
+    if (strcmp(force_mode, "motor_torque") != 0 && strcmp(force_mode, "load_cell") != 0) {
+        char err_msg[128];
+        snprintf(err_msg, sizeof(err_msg), "Error: Invalid force_mode '%s'. Must be 'motor_torque' or 'load_cell'.", force_mode);
+        reportEvent(STATUS_PREFIX_ERROR, err_msg);
         return;
     }
     
@@ -700,17 +691,28 @@ void MotorController::moveIncremental(const char* args) {
         reportEvent(STATUS_PREFIX_INFO, "Speed limited to 100 mm/s for safety.");
     }
     
-    // Check if current force already exceeds target (for "hold" action)
-    #if FORCE_SENSOR_ENABLED
-    float current_force = m_controller->m_forceSensor.getForce();
-    if (parsed >= 4 && strcmp(force_action, "hold") == 0 && current_force >= force_kg) {
-        char msg[STATUS_MESSAGE_BUFFER_SIZE];
-        snprintf(msg, sizeof(msg), "Force limit (%.2f kg) already reached. Current force: %.2f kg", 
-                 force_kg, current_force);
-        reportEvent(STATUS_PREFIX_ERROR, msg);  // ERROR message will auto-hold script
-        return;
+    // Only check force sensor if we're in "load_cell" mode
+    if (strcmp(force_mode, "load_cell") == 0) {
+        const char* errorMsg = nullptr;
+        if (checkForceSensorStatus(&errorMsg)) {
+            char fullMsg[STATUS_MESSAGE_BUFFER_SIZE];
+            snprintf(fullMsg, sizeof(fullMsg), "Move aborted: %s", errorMsg);
+            reportEvent(STATUS_PREFIX_ERROR, fullMsg);
+            return;
+        }
+        
+        // Check if current force already exceeds target (for "hold" action)
+        #if FORCE_SENSOR_ENABLED
+        float current_force = m_controller->m_forceSensor.getForce();
+        if (strcmp(force_action, "hold") == 0 && current_force >= force_kg) {
+            char msg[STATUS_MESSAGE_BUFFER_SIZE];
+            snprintf(msg, sizeof(msg), "Force limit (%.2f kg) already reached. Current force: %.2f kg", 
+                     force_kg, current_force);
+            reportEvent(STATUS_PREFIX_ERROR, msg);  // ERROR message will auto-hold script
+            return;
+        }
+        #endif
     }
-    #endif
     
     fullyResetActiveMove();
     m_state = STATE_MOVING;
@@ -721,7 +723,29 @@ void MotorController::moveIncremental(const char* args) {
     long current_pos = m_motorA->PositionRefCommanded();
     m_active_op_target_position_steps = current_pos + steps_to_move;  // Store for telemetry
     int velocity_sps = (int)(speed_mms * STEPS_PER_MM);
-    m_torqueLimit = DEFAULT_TORQUE_LIMIT;  // Use default motor torque limit (80%)
+    
+    // Set torque limit - ALWAYS calculate from kg if provided for safety
+    if (force_kg > 0.0f) {
+        // Validate kg range for torque calculation
+        if (force_kg < 50.0f) {
+            reportEvent(STATUS_PREFIX_ERROR, "Error: Force must be >= 50 kg.");
+            return;
+        }
+        if (force_kg > 1000.0f) {
+            reportEvent(STATUS_PREFIX_ERROR, "Error: Force must be <= 1000 kg.");
+            return;
+        }
+        // Calculate torque limit from kg: Torque = 0.0335 * kgForce + 1.04
+        // This applies to BOTH motor_torque and load_cell modes for safety
+        m_torqueLimit = 0.0335f * force_kg + 1.04f;
+        char torque_msg[128];
+        snprintf(torque_msg, sizeof(torque_msg), "Torque limit set: %.1f%% (from %.0f kg) in %s mode", 
+                 m_torqueLimit, force_kg, force_mode);
+        reportEvent(STATUS_PREFIX_INFO, torque_msg);
+    } else {
+        // No kg parameter specified: use default torque limit
+        m_torqueLimit = DEFAULT_TORQUE_LIMIT;
+    }
     
     // Store move parameters for pause/resume
     m_active_op_initial_axis_steps = current_pos;
@@ -731,15 +755,17 @@ void MotorController::moveIncremental(const char* args) {
     m_active_op_torque_percent = (int)m_torqueLimit;
     m_moveStartTime = Milliseconds();  // Set start time for timeout tracking
     
-    // Store force limit and action for use during move
+    // Store force limit, action, and mode for use during move
     m_active_op_force_limit_kg = force_kg;
     strncpy(m_active_op_force_action, force_action, sizeof(m_active_op_force_action) - 1);
     m_active_op_force_action[sizeof(m_active_op_force_action) - 1] = '\0';
+    strncpy(m_active_op_force_mode, force_mode, sizeof(m_active_op_force_mode) - 1);
+    m_active_op_force_mode[sizeof(m_active_op_force_mode) - 1] = '\0';
     
     startMove(steps_to_move, velocity_sps, m_moveDefaultAccelSPS2);
     
     char msg[128];
-    snprintf(msg, sizeof(msg), "move_inc by %.2f mm initiated", distance_mm);
+    snprintf(msg, sizeof(msg), "move_inc by %.2f mm initiated (mode: %s)", distance_mm, force_mode);
     reportEvent(STATUS_PREFIX_START, msg);
 }
 
@@ -876,19 +902,26 @@ bool MotorController::isMoving() {
 
 /**
  * @brief Gets a smoothed torque value from a motor using an EWMA filter.
+ * @details During active moves, holds the last non-zero value to prevent telemetry spikes when 
+ * HLFB briefly reads at-position during slow moves.
  */
 float MotorController::getSmoothedTorque(MotorDriver *motor, float *smoothedValue, bool *firstRead) {
-    // If the motor is not actively moving, torque is effectively zero.
-    if (!motor->StatusReg().bit.StepsActive) {
+    // If motor not moving AND we're not in an active move state, reset
+    if (!motor->StatusReg().bit.StepsActive && m_moveState != MOVE_ACTIVE) {
         *firstRead = true; // Reset for the next move
         return 0.0f;
     }
 
     float currentRawTorque = motor->HlfbPercent();
 
-    // The driver may return the sentinel value if a reading is not available yet (e.g., at the start of a move).
-    // Treat it as "no data" and return 0 to avoid false torque limit trips.
+    // The driver may return the sentinel value if a reading is not available yet
+    // During active moves, hold the last good value instead of returning 0
     if (currentRawTorque == TORQUE_HLFB_AT_POSITION) {
+        // If we're in an active move, return last smoothed value (hold)
+        if (m_moveState == MOVE_ACTIVE && !*firstRead) {
+            return *smoothedValue + m_torqueOffset;
+        }
+        // Otherwise return 0 (no torque available yet)
         return 0.0f;
     }
 
@@ -903,6 +936,8 @@ float MotorController::getSmoothedTorque(MotorDriver *motor, float *smoothedValu
 
 /**
  * @brief Checks if the torque on either motor has exceeded the current limit.
+ * @details Just checks and returns true/false. Does NOT abort move or report.
+ * The caller is responsible for handling the limit being reached.
  */
 bool MotorController::checkTorqueLimit() {
     if (isMoving()) {
@@ -913,14 +948,57 @@ bool MotorController::checkTorqueLimit() {
         bool m1_over_limit = (torque1 != TORQUE_HLFB_AT_POSITION && std::abs(torque1) > m_torqueLimit);
 
         if (m0_over_limit || m1_over_limit) {
-            abortMove();
-            char torque_msg[STATUS_MESSAGE_BUFFER_SIZE];
-            std::snprintf(torque_msg, sizeof(torque_msg), "TORQUE LIMIT REACHED (%.1f%%)", m_torqueLimit);
-            reportEvent(STATUS_PREFIX_INFO, torque_msg);
             return true;
         }
     }
     return false;
+}
+
+/**
+ * @brief Handles the logic when a force or torque limit is reached during a move.
+ * @param limit_type Description of what limit was reached (e.g., "Force limit (100 kg)" or "Torque limit (3.9%)")
+ * @param limit_value The actual limit value reached
+ */
+void MotorController::handleLimitReached(const char* limit_type, float limit_value) {
+    abortMove();
+    
+    char msg[STATUS_MESSAGE_BUFFER_SIZE];
+    snprintf(msg, sizeof(msg), "%s reached.", limit_type);
+    reportEvent(STATUS_PREFIX_INFO, msg);
+    
+    // Handle action based on force_action parameter
+    if (strcmp(m_active_op_force_action, "retract") == 0) {
+        // Send DONE for the original command, then start retract
+        if (m_activeMoveCommand) {
+            reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
+        }
+        
+        if (m_retractReferenceSteps == 0) {
+            reportEvent(STATUS_PREFIX_ERROR, "Cannot retract: retract position not set.");
+            finalizeAndResetActiveMove(true);
+            m_state = STATE_STANDBY;
+        } else {
+            // Start retract move
+            m_moveState = MOVE_TO_HOME;
+            m_activeMoveCommand = "retract";
+            m_active_op_target_position_steps = m_retractReferenceSteps;
+            long current_pos = m_motorA->PositionRefCommanded();
+            long steps_to_retract = m_retractReferenceSteps - current_pos;
+            m_torqueLimit = DEFAULT_TORQUE_LIMIT;
+            startMove(steps_to_retract, m_moveDefaultVelocitySPS, m_moveDefaultAccelSPS2);
+            reportEvent(STATUS_PREFIX_START, "retract");
+        }
+    } else if (strcmp(m_active_op_force_action, "skip") == 0) {
+        // Skip the rest of the move - complete at current position and send DONE
+        if (m_activeMoveCommand) {
+            reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
+        }
+        finalizeAndResetActiveMove(true);
+        m_state = STATE_STANDBY;
+    } else {
+        // "hold" action - pause and wait for user
+        m_moveState = MOVE_PAUSED;
+    }
 }
 
 /**
@@ -974,6 +1052,8 @@ void MotorController::finalizeAndResetActiveMove(bool success) {
 void MotorController::fullyResetActiveMove() {
     m_active_op_force_limit_kg = 0.0f;
     m_active_op_force_action[0] = '\0';
+    strncpy(m_active_op_force_mode, "motor_torque", sizeof(m_active_op_force_mode) - 1);
+    m_active_op_force_mode[sizeof(m_active_op_force_mode) - 1] = '\0';
     m_active_op_total_distance_mm = 0.0f;
     m_last_completed_distance_mm = 0.0f;
     m_active_op_total_target_steps = 0;
@@ -993,7 +1073,7 @@ void MotorController::reportEvent(const char* statusType, const char* message) {
 /**
  * @brief Updates the telemetry data structure with current motor state.
  */
-void MotorController::updateTelemetry(TelemetryData* data) {
+void MotorController::updateTelemetry(TelemetryData* data, ForceSensor* forceSensor) {
     if (data == NULL) return;
     
     float displayTorque0 = getSmoothedTorque(m_motorA, &m_smoothedTorqueValue0, &m_firstTorqueReading0);
@@ -1002,12 +1082,59 @@ void MotorController::updateTelemetry(TelemetryData* data) {
     long current_pos_steps_m0 = m_motorA->PositionRefCommanded();
     float current_pos_mm = (float)(current_pos_steps_m0 - m_machineHomeReferenceSteps) / STEPS_PER_MM;
 
-    int enabled0 = m_motorA->StatusReg().bit.Enabled;
-    int enabled1 = m_motorB->StatusReg().bit.Enabled;
+    // Use the m_isEnabled flag for telemetry, not the hardware register
+    // The hardware register may lag or not reflect our intended state
+    // This ensures telemetry matches what the motor controller thinks its state is
+    int enabled0 = m_isEnabled ? 1 : 0;
+    int enabled1 = m_isEnabled ? 1 : 0;
+
+    // Always calculate and send BOTH force values for logging
+    float avg_torque = (displayTorque0 + displayTorque1) / 2.0f;
+    
+    // Calculate force from motor torque (always available)
+    data->force_motor_torque = (avg_torque - 1.04f) / 0.0335f;
+    if (data->force_motor_torque < 0.0f) data->force_motor_torque = 0.0f;
+    if (data->force_motor_torque > 1000.0f) data->force_motor_torque = 1000.0f;
+    
+    // Get force from load cell (if available)
+    #if FORCE_SENSOR_ENABLED
+    if (forceSensor && forceSensor->isConnected()) {
+        data->force_load_cell = forceSensor->getForce();
+    } else {
+        data->force_load_cell = 0.0f;
+    }
+    #else
+    data->force_load_cell = 0.0f;
+    #endif
+    
+    // Set force_source based on active mode or availability
+    if (m_state == STATE_MOVING && strcmp(m_active_op_force_mode, "load_cell") == 0) {
+        data->force_source = "load_cell";
+    } else if (m_state == STATE_MOVING && strcmp(m_active_op_force_mode, "motor_torque") == 0) {
+        data->force_source = "motor_torque";
+    } else {
+        // Not in active move - set based on load cell availability
+        #if FORCE_SENSOR_ENABLED
+        if (forceSensor && forceSensor->isConnected()) {
+            data->force_source = "load_cell";
+        } else {
+            data->force_source = "motor_torque";
+        }
+        #else
+        data->force_source = "motor_torque";
+        #endif
+    }
 
     // Update telemetry structure
-    // Note: force is now read from ForceSensor and updated in pressboi.cpp
-    data->force_limit = m_torqueLimit;
+    // Force limit should be in kg, not torque%
+    if (m_state == STATE_MOVING && m_active_op_force_limit_kg > 0.1f) {
+        // Active move with commanded kg limit
+        data->force_limit = m_active_op_force_limit_kg;
+    } else {
+        // Calculate kg from current torque limit using inverse equation
+        data->force_limit = (m_torqueLimit - 1.04f) / 0.0335f;
+        if (data->force_limit < 0.0f) data->force_limit = 0.0f;
+    }
     data->enabled0 = enabled0;
     data->enabled1 = enabled1;
     data->current_pos = current_pos_mm;
@@ -1015,8 +1142,8 @@ void MotorController::updateTelemetry(TelemetryData* data) {
     // Calculate target position in mm from stored target steps
     float target_pos_mm = (float)(m_active_op_target_position_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM;
     data->target_pos = (m_state == STATE_MOVING || m_state == STATE_HOMING) ? target_pos_mm : 0.0f;
-    data->torque_m1 = displayTorque0;
-    data->torque_m2 = displayTorque1;
+    // Calculate average torque of both motors
+    data->torque_avg = (displayTorque0 + displayTorque1) / 2.0f;
     data->homed = m_homingDone ? 1 : 0;
 }
 

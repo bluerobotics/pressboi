@@ -2,6 +2,30 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.3.0] - 2025-11-06
+
+### Added
+- **Hardware watchdog timer** (SAMD51 WDT): 128ms timeout, eses RSTC->RCAUSE register to detect watchdog resets
+- **STATE_RECOVERED**: Motors disabled after watchdog timeout until explicit reset
+- **test_watchdog command**: Intentionally blocks to trigger watchdog for testing
+- **Non-blocking reset**: STATE_RESETTING now uses non-blocking delay to avoid WDT trip
+- **Motor torque force limiting**: `motor_torque` mode uses motor HLFB as force limit (no load cell required)
+- **Torque-to-force conversion**: `Torque% = 0.0335 × kg + 1.04` (50-1000 kg range)
+- **Force mode parameter**: Move commands accept `force_mode` (`motor_torque` or `load_cell`)
+- **Split force telemetry**: `force_load_cell` and `force_motor_torque` fields
+- **Force source field**: Telemetry indicates active mode (`load_cell` or `motor_torque`)
+
+### Changed
+- **Watchdog functions**: Modularized into dedicated recovery, init, feed, and clear functions
+- **Limit handling**: `handleLimitReached()` centralizes retract/skip/hold logic for both force modes
+- **Load cell checks**: Only runs in `load_cell` mode; `motor_torque` mode operates independently
+- **Force limits**: Execute `force_action` (retract/skip/hold) on limit instead of throwing errors
+- **Motor enable reporting**: Uses internal `m_isEnabled` flag instead of hardware register
+- **Torque telemetry**: Single `torque_avg` field (average of both motors)
+
+### Fixed
+- **Torque flickering**: Holds last non-zero value during active moves
+
 ## [1.2.1] - 2025-11-04
 
 ### Added

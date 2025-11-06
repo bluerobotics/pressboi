@@ -2,10 +2,10 @@
  * @file commands.h
  * @brief Defines the command interface for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from commands.json on 2025-11-04 12:18:51
+ * Generated from commands.json on 2025-11-05 20:42:41
  * 
  * This header file defines all commands that can be sent TO the Pressboi device.
- * For response message formats, see responses.h
+ * For message prefixes and events, see events.h
  * To modify commands, edit commands.json and regenerate this file.
  */
 #pragma once
@@ -27,6 +27,7 @@
 #define CMD_STR_CANCEL                              "cancel" ///< No description available.
 #define CMD_STR_ENABLE                              "enable" ///< No description available.
 #define CMD_STR_DISABLE                             "disable" ///< No description available.
+#define CMD_STR_TEST_WATCHDOG                       "test_watchdog" ///< No description available.
 /** @} */
 
 /**
@@ -41,34 +42,6 @@
 //==================================================================================================
 // Response Message Prefixes (Device → Host)
 //==================================================================================================
-
-/**
- * @name Status Message Prefixes
- * @brief Prefixes used for different types of status messages from the device.
- * @{
- */
-#define STATUS_PREFIX_INFO                  "PRESSBOI_INFO: "          ///< Prefix for informational status messages.
-#define STATUS_PREFIX_START                 "PRESSBOI_START: "         ///< Prefix for messages indicating the start of an operation.
-#define STATUS_PREFIX_DONE                  "PRESSBOI_DONE: "          ///< Prefix for messages indicating the successful completion of an operation.
-#define STATUS_PREFIX_ERROR                 "PRESSBOI_ERROR: "         ///< Prefix for messages indicating an error or fault.
-#define STATUS_PREFIX_DISCOVERY             "DISCOVERY_RESPONSE: "     ///< Prefix for the device discovery response.
-/** @} */
-
-/**
- * @name Telemetry Prefix
- * @brief Prefix for periodic telemetry data messages.
- * @{
- */
-#define TELEM_PREFIX                        "PRESSBOI_TELEM: "         ///< Prefix for all telemetry messages.
-/** @} */
-
-/**
- * @name Event Prefix
- * @brief Prefix for event messages.
- * @{
- */
-#define EVENT_PREFIX                        "PRESSBOI_EVENT: "         ///< Prefix for all event messages.
-/** @} */
 
 //==================================================================================================
 // Command Enum
@@ -92,6 +65,7 @@ typedef enum {
     CMD_CANCEL,                                    ///< @see CMD_STR_CANCEL
     CMD_ENABLE,                                    ///< @see CMD_STR_ENABLE
     CMD_DISABLE,                                    ///< @see CMD_STR_DISABLE
+    CMD_TEST_WATCHDOG,                                    ///< @see CMD_STR_TEST_WATCHDOG
 
     // Motion Commands
     CMD_HOME,                                    ///< @see CMD_STR_HOME

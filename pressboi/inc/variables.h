@@ -2,7 +2,7 @@
  * @file variables.h
  * @brief Telemetry structure and construction interface for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from telemetry.json on 2025-11-04 12:18:51
+ * Generated from telemetry.json on 2025-11-05 20:42:41
  * 
  * This header defines the complete telemetry data structure for the Pressboi.
  * All telemetry fields are assembled in one centralized location.
@@ -25,15 +25,16 @@
  * @{
  */
 #define TELEM_KEY_MAIN_STATE                     "MAIN_STATE               "  ///< Overall press system state
-#define TELEM_KEY_FORCE                          "force                    "  ///< Current force being applied by the press
+#define TELEM_KEY_FORCE_LOAD_CELL                "force_load_cell          "  ///< Force from load cell sensor
+#define TELEM_KEY_FORCE_MOTOR_TORQUE             "force_motor_torque       "  ///< Force calculated from motor torque
 #define TELEM_KEY_FORCE_LIMIT                    "force_limit              "  ///< Maximum force limit for current operation
+#define TELEM_KEY_FORCE_SOURCE                   "force_source             "  ///< Source of force reading: load_cell or motor_torque
 #define TELEM_KEY_ENABLED0                       "enabled0                 "  ///< Power enable status for motor 1
 #define TELEM_KEY_ENABLED1                       "enabled1                 "  ///< Power enable status for motor 2
 #define TELEM_KEY_CURRENT_POS                    "current_pos              "  ///< Current position of press axis
 #define TELEM_KEY_RETRACT_POS                    "retract_pos              "  ///< Preset retract position for the press
 #define TELEM_KEY_TARGET_POS                     "target_pos               "  ///< Target position for current move operation
-#define TELEM_KEY_TORQUE_M1                      "torque_m1                "  ///< Current motor torque percentage for motor 1
-#define TELEM_KEY_TORQUE_M2                      "torque_m2                "  ///< Current motor torque percentage for motor 2
+#define TELEM_KEY_TORQUE_AVG                     "torque_avg               "  ///< Average motor torque percentage
 #define TELEM_KEY_HOMED                          "homed                    "  ///< Indicates if press has been homed to zero position
 /** @} */
 
@@ -48,15 +49,16 @@
  */
 typedef struct {
     const char*  MAIN_STATE                    ; ///< Overall press system state
-    float        force                         ; ///< Current force being applied by the press
+    float        force_load_cell               ; ///< Force from load cell sensor
+    float        force_motor_torque            ; ///< Force calculated from motor torque
     float        force_limit                   ; ///< Maximum force limit for current operation
+    const char*  force_source                  ; ///< Source of force reading: load_cell or motor_torque
     int32_t      enabled0                      ; ///< Power enable status for motor 1
     int32_t      enabled1                      ; ///< Power enable status for motor 2
     float        current_pos                   ; ///< Current position of press axis
     float        retract_pos                   ; ///< Preset retract position for the press
     float        target_pos                    ; ///< Target position for current move operation
-    float        torque_m1                     ; ///< Current motor torque percentage for motor 1
-    float        torque_m2                     ; ///< Current motor torque percentage for motor 2
+    float        torque_avg                    ; ///< Average motor torque percentage
     int32_t      homed                         ; ///< Indicates if press has been homed to zero position
 } TelemetryData;
 
