@@ -291,12 +291,17 @@ void Pressboi::dispatchCommand(const Message& msg) {
                 m_comms.setGuiIp(msg.remoteIp);
                 m_comms.setGuiPort(atoi(portStr + 5));
                 m_comms.setGuiDiscovered(true);
-                // Report device ID and the port we're listening on
-                char discoveryMsg[64];
-                snprintf(discoveryMsg, sizeof(discoveryMsg), "DEVICE_ID=pressboi PORT=%d", LOCAL_PORT);
+                // Report device ID, port, and firmware version
+                char discoveryMsg[96];
+                snprintf(discoveryMsg, sizeof(discoveryMsg), "DEVICE_ID=pressboi PORT=%d FW=%s", LOCAL_PORT, FIRMWARE_VERSION);
                 m_comms.reportEvent(STATUS_PREFIX_DISCOVERY, discoveryMsg);
             }
             break;
+        }
+        case CMD_REBOOT_BOOTLOADER: {
+            reportEvent(STATUS_PREFIX_INFO, "Rebooting to bootloader...");
+            SysMgr.ResetBoard(SysManager::RESET_TO_BOOTLOADER);
+            break; // The system will reset before reaching here
         }
         case CMD_RESET:
             clearErrors();

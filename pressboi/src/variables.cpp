@@ -2,7 +2,7 @@
  * @file variables.cpp
  * @brief Telemetry construction implementation for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from telemetry.json on 2025-11-06 20:49:14
+ * Generated from telemetry.json on 2025-11-07 09:53:40
  */
 
 #include "variables.h"
