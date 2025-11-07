@@ -162,11 +162,53 @@ public:
      * @brief Resumes a paused move operation (called by GUI run event).
      */
     void resumeOperation();
-
+    
+    /**
+     * @brief Sets machine strain compensation coefficients and saves to NVM.
+     */
+    void setMachineStrainCoeffs(float coeff_x4, float coeff_x3, float coeff_x2, float coeff_x1, float coeff_c);
+    
     /**
      * @brief Cancels any active move operation (called by GUI reset event).
      */
     void cancelOperation();
+
+    /**
+     * @brief Sets the force sensing mode and saves to NVM.
+     * @param mode "motor_torque" or "load_cell"
+     * @return true if successful, false if invalid mode
+     */
+    bool setForceMode(const char* mode);
+
+    /**
+     * @brief Gets the current force sensing mode.
+     * @return The current force mode string
+     */
+    const char* getForceMode() const;
+    
+    /**
+     * @brief Sets the calibration offset for the current force mode.
+     * @param offset Offset value (kg for load_cell, torque% intercept for motor_torque)
+     */
+    void setForceCalibrationOffset(float offset);
+    
+    /**
+     * @brief Sets the calibration scale for the current force mode.
+     * @param scale Scale/slope value (kg/raw for load_cell, torque%/kg for motor_torque)
+     */
+    void setForceCalibrationScale(float scale);
+    
+    /**
+     * @brief Gets the calibration offset for the current force mode.
+     * @return Current offset value
+     */
+    float getForceCalibrationOffset() const;
+    
+    /**
+     * @brief Gets the calibration scale for the current force mode.
+     * @return Current scale value
+     */
+    float getForceCalibrationScale() const;
 
 private:
     /**
@@ -181,6 +223,7 @@ private:
     void handleLimitReached(const char* limit_type, float limit_value);
     void finalizeAndResetActiveMove(bool success);
     void fullyResetActiveMove();
+    void updateJoules();
     void reportEvent(const char* statusType, const char* message);
     /** @} */
 
@@ -244,6 +287,9 @@ private:
     bool m_isEnabled;                  ///< Flag indicating if motors are currently enabled.
     float m_torqueLimit;               ///< Current torque limit (%) for detecting hard stops or stalls.
     float m_torqueOffset;              ///< User-configurable offset (%) for torque readings to account for bias.
+    char m_force_mode[16];             ///< Persistent force sensing mode: "motor_torque" or "load_cell" (stored in NVM)
+    float m_motor_torque_offset;       ///< Motor torque equation offset (stored in NVM, default 1.04)
+    float m_motor_torque_scale;        ///< Motor torque equation scale (stored in NVM, default 0.0335)
     float m_smoothedTorqueValue0, m_smoothedTorqueValue1; ///< Smoothed torque values for each motor.
     bool m_firstTorqueReading0, m_firstTorqueReading1;   ///< Flags for initializing the torque smoothing EWMA filter.
     int32_t m_machineHomeReferenceSteps, m_retractReferenceSteps; ///< Stored step counts for home and retract positions.
@@ -277,7 +323,23 @@ private:
     int m_active_op_accel_sps2;             ///< Acceleration (steps/sec^2) for the current operation.
     int m_active_op_torque_percent;         ///< Torque limit (%) for the current operation.
     uint32_t m_moveStartTime;               ///< Timestamp (ms) when a move operation started.
+    double m_joules;                        ///< Energy expended (Joules) during current move, integrated at 50Hz.
+    double m_prev_position_mm;              ///< Previous position (mm) for joule integration calculations.
+    double m_machineStrainBaselinePosMm;    ///< Absolute position (mm) that defines zero deflection for strain compensation.
+    double m_prevMachineDeflectionMm;       ///< Estimated machine flex deflection (mm) at previous sample.
+    double m_prevTotalDeflectionMm;         ///< Cumulative machine deflection at previous sample.
+    double m_machineEnergyJ;                ///< Accumulated machine-flex energy (Joules) during current move.
+    bool m_machineStrainContactActive;     ///< Indicates whether force threshold has been reached and flex compensation is active.
+    bool m_jouleIntegrationActive;          ///< Flag indicating whether joule integration is currently active.
+    bool m_forceLimitTriggered;             ///< Tracks whether the current move has hit the force limit.
+    float m_machineStrainCoeffs[5];         ///< Machine strain compensation coefficients [x^4, x^3, x^2, x, constant].
+    float m_prevForceKg;                    ///< Previous force sample (kg) used for joule integration.
+    bool m_prevForceValid;                  ///< Indicates whether previous force sample is valid.
+    float m_retractSpeedMms;                ///< Stored retract speed to use when not overridden.
     /** @} */
+    
+    float evaluateMachineStrainForceFromDeflection(float deflection_mm) const;
+    float estimateMachineDeflectionFromForce(float force_kg) const;
     
     char m_telemetryBuffer[256]; ///< Buffer for the formatted telemetry string.
 };

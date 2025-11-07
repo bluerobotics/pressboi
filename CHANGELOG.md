@@ -2,6 +2,24 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.4.0] - 2025-11-07
+
+### Added
+- **Force mode commands**: new `set_force_mode`, `set_force_offset`, `set_force_scale`, and `set_strain_cal` commands
+- **Press energy integration**: incremental net force × travel accumulation for Joule reporting
+- **Machine compliance model**: 4th-order strain calibration accounts for machine deflection in energy calculation
+- **Contact thresholding**: 3 kg engagement gate aligns compensation with real workpiece contact
+- **Persistent calibration**: non-volatile memory stores calibration constants and force-mode selection (load-cell vs motor torque)
+
+### Changed
+- **Force mode**: move commands drop the `force_mode` argument; new `set_force_mode` selects sensor source globally
+- **Better precision**: doubled math for position/energy and telemetry now reports millimeters with three decimals
+- **Retract control**: `set_retract` accepts optional speed (default 25 mm/s) and force-action retracts honour that rate
+- **Force mode behaviour**: load-cell moves keep default torque limit while motor-torque mode still uses calibrated curve
+
+### Fixed
+- **Retract speed on force action**: force-action retracts now run at the configured retract speed instead of the previous slow fallback rate
+
 ## [1.3.0] - 2025-11-06
 
 ### Added

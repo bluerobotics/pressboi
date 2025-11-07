@@ -34,7 +34,7 @@
  * @name General System Behavior
  * @{
  */
-#define FIRMWARE_VERSION                "1.3.0"   ///< Pressboi firmware version
+#define FIRMWARE_VERSION                "1.4.0"   ///< Pressboi firmware version
 #define STATUS_MESSAGE_BUFFER_SIZE      256       ///< Standard buffer size for composing status and error messages.
 #define POST_ABORT_DELAY_MS             100       ///< Delay in milliseconds after an abort command to allow motors to come to a complete stop.
 /** @} */
@@ -138,6 +138,18 @@
  * @{
  */
 #define FORCE_SENSOR_ENABLED                true      ///< Enable/disable force sensor functionality. Set to false if no force transducer is connected.
+#define FORCE_SENSOR_SCALE_FACTOR           -0.00023076f  ///< Default scale factor: kg = raw_adc × scale. Calibrated: -52000 raw = 12.0 kg → 1/-4333.33
+#define FORCE_SENSOR_OFFSET_KG              6.5f     ///< Default offset (kg) to add to all force readings for calibration.
+
+/** Machine strain compensation coefficients (force vs. distance polynomial) */
+#define MACHINE_STRAIN_COEFF_X4            -143.0f         ///< x^4 coefficient (force in kg, displacement in millimeters)
+#define MACHINE_STRAIN_COEFF_X3             592.0f         ///< x^3 coefficient
+#define MACHINE_STRAIN_COEFF_X2            -365.0f         ///< x^2 coefficient
+#define MACHINE_STRAIN_COEFF_X1             127.0f         ///< x coefficient
+#define MACHINE_STRAIN_COEFF_C              -2.15f         ///< Constant term
+#define MACHINE_STRAIN_MAX_DEFLECTION_MM     2.0f          ///< Max expected machine flex deflection used for inverse lookup
+#define MACHINE_STRAIN_CONTACT_FORCE_KG      3.0f          ///< Force threshold to declare contact and start flex compensation
+#define RETRACT_DEFAULT_SPEED_MMS           25.0f          ///< Default retract speed when none specified
 #define FORCE_SENSOR_MIN_KG                 -10.0f    ///< Minimum valid force reading (kg). Below this triggers an error.
 #define FORCE_SENSOR_MAX_KG                 1200.0f   ///< Maximum expected force (kg).
 #define FORCE_SENSOR_MAX_SAFETY_FACTOR      1.2f      ///< Safety factor for maximum force (1.2x = 20% over max).

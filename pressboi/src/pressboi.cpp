@@ -316,6 +316,91 @@ void Pressboi::dispatchCommand(const Message& msg) {
             // This line should never execute if watchdog works
             reportEvent(STATUS_PREFIX_ERROR, "TEST_WATCHDOG: Watchdog did not trigger!");
             break;
+        
+        case CMD_SET_FORCE_OFFSET: {
+            float offset = 0.0f;
+            if (sscanf(args, "%f", &offset) == 1) {
+                const char* mode = m_motor.getForceMode();
+                if (strcmp(mode, "load_cell") == 0) {
+                    // Load cell mode: set load cell offset
+                    m_forceSensor.setOffset(offset);
+                    char msg_buf[128];
+                    snprintf(msg_buf, sizeof(msg_buf), "Load cell offset set to %.2f kg and saved to NVM", offset);
+                    reportEvent(STATUS_PREFIX_INFO, msg_buf);
+                } else {
+                    // Motor torque mode: set motor torque offset
+                    m_motor.setForceCalibrationOffset(offset);
+                    char msg_buf[128];
+                    snprintf(msg_buf, sizeof(msg_buf), "Motor torque offset set to %.4f and saved to NVM", offset);
+                    reportEvent(STATUS_PREFIX_INFO, msg_buf);
+                }
+                reportEvent(STATUS_PREFIX_DONE, "set_force_offset");
+            } else {
+                reportEvent(STATUS_PREFIX_ERROR, "Invalid parameter for set_force_offset");
+            }
+            break;
+        }
+        
+        case CMD_SET_FORCE_SCALE: {
+            float scale = 1.0f;
+            if (sscanf(args, "%f", &scale) == 1) {
+                const char* mode = m_motor.getForceMode();
+                if (strcmp(mode, "load_cell") == 0) {
+                    // Load cell mode: set load cell scale
+                    m_forceSensor.setScale(scale);
+                    char msg_buf[128];
+                    snprintf(msg_buf, sizeof(msg_buf), "Load cell scale set to %.6f and saved to NVM", scale);
+                    reportEvent(STATUS_PREFIX_INFO, msg_buf);
+                } else {
+                    // Motor torque mode: set motor torque scale
+                    m_motor.setForceCalibrationScale(scale);
+                    char msg_buf[128];
+                    snprintf(msg_buf, sizeof(msg_buf), "Motor torque scale set to %.6f and saved to NVM", scale);
+                    reportEvent(STATUS_PREFIX_INFO, msg_buf);
+                }
+                reportEvent(STATUS_PREFIX_DONE, "set_force_scale");
+            } else {
+                reportEvent(STATUS_PREFIX_ERROR, "Invalid parameter for set_force_scale");
+            }
+            break;
+        }
+        
+        case CMD_SET_STRAIN_CAL: {
+            float coeff_x4 = MACHINE_STRAIN_COEFF_X4;
+            float coeff_x3 = MACHINE_STRAIN_COEFF_X3;
+            float coeff_x2 = MACHINE_STRAIN_COEFF_X2;
+            float coeff_x1 = MACHINE_STRAIN_COEFF_X1;
+            float coeff_c  = MACHINE_STRAIN_COEFF_C;
+            if (sscanf(args, "%f %f %f %f %f", &coeff_x4, &coeff_x3, &coeff_x2, &coeff_x1, &coeff_c) == 5) {
+                m_motor.setMachineStrainCoeffs(coeff_x4, coeff_x3, coeff_x2, coeff_x1, coeff_c);
+                char msg_buf[160];
+                snprintf(msg_buf, sizeof(msg_buf),
+                         "Machine strain polynomial updated: f(x) = %.3f x^4 %+.3f x^3 %+.3f x^2 %+.3f x %+.3f",
+                         coeff_x4, coeff_x3, coeff_x2, coeff_x1, coeff_c);
+                reportEvent(STATUS_PREFIX_INFO, msg_buf);
+                reportEvent(STATUS_PREFIX_DONE, "set_strain_cal");
+            } else {
+                reportEvent(STATUS_PREFIX_ERROR, "Invalid parameters for set_strain_cal");
+            }
+            break;
+        }
+        
+        case CMD_SET_FORCE_MODE: {
+            char mode[32] = "";
+            if (sscanf(args, "%31s", mode) == 1) {
+                if (m_motor.setForceMode(mode)) {
+                    char msg_buf[128];
+                    snprintf(msg_buf, sizeof(msg_buf), "Force mode set to '%s' and saved to NVM", mode);
+                    reportEvent(STATUS_PREFIX_INFO, msg_buf);
+                    reportEvent(STATUS_PREFIX_DONE, "set_force_mode");
+                } else {
+                    reportEvent(STATUS_PREFIX_ERROR, "Invalid mode. Use 'motor_torque' or 'load_cell'");
+                }
+            } else {
+                reportEvent(STATUS_PREFIX_ERROR, "Invalid parameter for set_force_mode");
+            }
+            break;
+        }
 
         // --- Motor Commands (Delegated to MotorController) ---
         case CMD_HOME:

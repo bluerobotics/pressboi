@@ -2,7 +2,7 @@
  * @file commands.h
  * @brief Defines the command interface for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from commands.json on 2025-11-05 20:42:41
+ * Generated from commands.json on 2025-11-06 20:49:14
  * 
  * This header file defines all commands that can be sent TO the Pressboi device.
  * For message prefixes and events, see events.h
@@ -20,6 +20,7 @@
  */
 #define CMD_STR_DISCOVER_DEVICE                     "DISCOVER_DEVICE" ///< Generic command for any device to respond to.
 #define CMD_STR_RESET                               "reset" ///< No description available.
+#define CMD_STR_SET_FORCE_MODE                      "set_force_mode " ///< No description available.
 #define CMD_STR_SET_RETRACT                         "set_retract " ///< No description available.
 #define CMD_STR_RETRACT                             "retract" ///< No description available.
 #define CMD_STR_PAUSE                               "pause" ///< No description available.
@@ -28,6 +29,9 @@
 #define CMD_STR_ENABLE                              "enable" ///< No description available.
 #define CMD_STR_DISABLE                             "disable" ///< No description available.
 #define CMD_STR_TEST_WATCHDOG                       "test_watchdog" ///< No description available.
+#define CMD_STR_SET_FORCE_OFFSET                    "set_force_offset " ///< No description available.
+#define CMD_STR_SET_FORCE_SCALE                     "set_force_scale " ///< No description available.
+#define CMD_STR_SET_STRAIN_CAL                      "set_strain_cal " ///< No description available.
 /** @} */
 
 /**
@@ -58,6 +62,7 @@ typedef enum {
     // General System Commands
     CMD_DISCOVER_DEVICE,                                    ///< @see CMD_STR_DISCOVER_DEVICE
     CMD_RESET,                                    ///< @see CMD_STR_RESET
+    CMD_SET_FORCE_MODE,                                    ///< @see CMD_STR_SET_FORCE_MODE
     CMD_SET_RETRACT,                                    ///< @see CMD_STR_SET_RETRACT
     CMD_RETRACT,                                    ///< @see CMD_STR_RETRACT
     CMD_PAUSE,                                    ///< @see CMD_STR_PAUSE
@@ -66,6 +71,9 @@ typedef enum {
     CMD_ENABLE,                                    ///< @see CMD_STR_ENABLE
     CMD_DISABLE,                                    ///< @see CMD_STR_DISABLE
     CMD_TEST_WATCHDOG,                                    ///< @see CMD_STR_TEST_WATCHDOG
+    CMD_SET_FORCE_OFFSET,                                    ///< @see CMD_STR_SET_FORCE_OFFSET
+    CMD_SET_FORCE_SCALE,                                    ///< @see CMD_STR_SET_FORCE_SCALE
+    CMD_SET_STRAIN_CAL,                                    ///< @see CMD_STR_SET_STRAIN_CAL
 
     // Motion Commands
     CMD_HOME,                                    ///< @see CMD_STR_HOME

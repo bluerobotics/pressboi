@@ -2,7 +2,7 @@
  * @file variables.cpp
  * @brief Telemetry construction implementation for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from telemetry.json on 2025-11-05 20:42:41
+ * Generated from telemetry.json on 2025-11-06 20:49:14
  */
 
 #include "variables.h"
@@ -26,6 +26,8 @@ void telemetry_init(TelemetryData* data) {
     data->force_motor_torque = 0.0f;
     data->force_limit = 1000.0f;
     data->force_source = "load_cell";
+    data->force_adc_raw = 0;
+    data->joules = 0.0f;
     data->enabled0 = 1;
     data->enabled1 = 1;
     data->current_pos = 0.0f;
@@ -54,12 +56,12 @@ int telemetry_build_message(const TelemetryData* data, char* buffer, size_t buff
     
     // force_load_cell
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.1f,", TELEM_KEY_FORCE_LOAD_CELL, data->force_load_cell);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_FORCE_LOAD_CELL, data->force_load_cell);
     }
     
     // force_motor_torque
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.1f,", TELEM_KEY_FORCE_MOTOR_TORQUE, data->force_motor_torque);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_FORCE_MOTOR_TORQUE, data->force_motor_torque);
     }
     
     // force_limit
@@ -70,6 +72,16 @@ int telemetry_build_message(const TelemetryData* data, char* buffer, size_t buff
     // force_source
     if (pos < buffer_size) {
         pos += snprintf(buffer + pos, buffer_size - pos, "%s:%s,", TELEM_KEY_FORCE_SOURCE, data->force_source);
+    }
+    
+    // force_adc_raw
+    if (pos < buffer_size) {
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%ld,", TELEM_KEY_FORCE_ADC_RAW, (long)data->force_adc_raw);
+    }
+    
+    // joules
+    if (pos < buffer_size) {
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.3f,", TELEM_KEY_JOULES, data->joules);
     }
     
     // enabled0
