@@ -2,6 +2,12 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.4.1] - 2025-11-07
+
+### Added
+- **Bootloader control**: `reboot_bootloader` command drops the controller into ClearCore UF2 mode, enabling remote flashes from the Equipment Control app.
+- **Discovery metadata**: discovery responses now include the running firmware version so tooling can detect when an update is available.
+
 ## [1.4.0] - 2025-11-07
 
 ### Added
@@ -10,6 +16,8 @@ All notable changes to the Pressboi firmware will be documented in this file.
 - **Machine compliance model**: 4th-order strain calibration accounts for machine deflection in energy calculation
 - **Contact thresholding**: 3 kg engagement gate aligns compensation with real workpiece contact
 - **Persistent calibration**: non-volatile memory stores calibration constants and force-mode selection (load-cell vs motor torque)
+- **Bootloader control**: `reboot_bootloader` command drops directly into ClearCore UF2 mode for automated flashing
+- **Discovery metadata**: discovery responses now advertise firmware version for app-side upgrade prompts
 
 ### Changed
 - **Force mode**: move commands drop the `force_mode` argument; new `set_force_mode` selects sensor source globally

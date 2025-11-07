@@ -2,7 +2,7 @@
  * @file commands.h
  * @brief Defines the command interface for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from commands.json on 2025-11-06 20:49:14
+ * Generated from commands.json on 2025-11-07 09:53:40
  * 
  * This header file defines all commands that can be sent TO the Pressboi device.
  * For message prefixes and events, see events.h
@@ -32,6 +32,7 @@
 #define CMD_STR_SET_FORCE_OFFSET                    "set_force_offset " ///< No description available.
 #define CMD_STR_SET_FORCE_SCALE                     "set_force_scale " ///< No description available.
 #define CMD_STR_SET_STRAIN_CAL                      "set_strain_cal " ///< No description available.
+#define CMD_STR_REBOOT_BOOTLOADER                   "reboot_bootloader" ///< No description available.
 /** @} */
 
 /**
@@ -74,6 +75,7 @@ typedef enum {
     CMD_SET_FORCE_OFFSET,                                    ///< @see CMD_STR_SET_FORCE_OFFSET
     CMD_SET_FORCE_SCALE,                                    ///< @see CMD_STR_SET_FORCE_SCALE
     CMD_SET_STRAIN_CAL,                                    ///< @see CMD_STR_SET_STRAIN_CAL
+    CMD_REBOOT_BOOTLOADER,                                    ///< @see CMD_STR_REBOOT_BOOTLOADER
 
     // Motion Commands
     CMD_HOME,                                    ///< @see CMD_STR_HOME
