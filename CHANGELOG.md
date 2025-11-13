@@ -2,6 +2,11 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.4.2] - 2025-11-13
+
+### Added
+- **Force zeroing**: new `set_force_zero` command lets the controller automatically tare either the load cell or the motor-torque force model
+
 ## [1.4.1] - 2025-11-07
 
 ### Added
