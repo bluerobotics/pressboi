@@ -270,9 +270,6 @@
     <Compile Include="inc\variables.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="inc\responses.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="Device_Startup\flash_with_bootloader.ld">
       <SubType>compile</SubType>
     </Compile>

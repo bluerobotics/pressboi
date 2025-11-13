@@ -17,6 +17,7 @@
 #include "commands.h"
 #include "variables.h"
 #include "events.h"
+#include "NvmManager.h"
 #include <cstring>
 #include <cstdlib>
 #include <sam.h>  // For watchdog timer (WDT) register access
@@ -404,6 +405,122 @@ void Pressboi::dispatchCommand(const Message& msg) {
             } else {
                 reportEvent(STATUS_PREFIX_ERROR, "Invalid parameter for set_force_mode");
             }
+            break;
+        }
+
+        case CMD_SET_FORCE_ZERO: {
+            const char* mode = m_motor.getForceMode();
+            if (strcmp(mode, "load_cell") == 0) {
+                // Load cell mode: capture current force reading and set as new offset
+                float old_offset = m_forceSensor.getOffset();
+                float current_force = m_forceSensor.getForce();
+                float new_offset = old_offset - current_force;
+                
+                m_forceSensor.setOffset(new_offset);
+                
+                char msg_buf[128];
+                snprintf(msg_buf, sizeof(msg_buf), "Load cell offset: %.2f kg -> %.2f kg", 
+                         old_offset, new_offset);
+                reportEvent(STATUS_PREFIX_INFO, msg_buf);
+            } else {
+                // Motor torque mode: set offset to current torque reading
+                float old_offset = m_motor.getForceCalibrationOffset();
+                float current_torque = (MOTOR_A.HlfbPercent() + MOTOR_B.HlfbPercent()) / 2.0f;
+                float new_offset = -current_torque;
+                
+                m_motor.setForceCalibrationOffset(new_offset);
+                
+                char msg_buf[128];
+                snprintf(msg_buf, sizeof(msg_buf), "Motor torque offset: %.4f%% -> %.4f%%", 
+                         old_offset, new_offset);
+                reportEvent(STATUS_PREFIX_INFO, msg_buf);
+            }
+            reportEvent(STATUS_PREFIX_DONE, "set_force_zero");
+            break;
+        }
+
+        case CMD_DUMP_NVM: {
+            ClearCore::NvmManager &nvmMgr = ClearCore::NvmManager::Instance();
+            char msg_buf[256];
+
+            // Read all 16 locations first to avoid hanging on NVM access in loop
+            int32_t nvm_values[16];
+            for (int i = 0; i < 16; ++i) {
+                int byte_offset = i * 4;
+                nvm_values[i] = nvmMgr.Int32(static_cast<ClearCore::NvmManager::NvmLocations>(byte_offset));
+            }
+
+            // Now format and send all messages
+            for (int i = 0; i < 16; ++i) {
+                int byte_offset = i * 4;
+                int32_t value = nvm_values[i];
+                unsigned char* bytes = (unsigned char*)&value;
+                
+                // Format hex bytes
+                char hex_str[50];
+                char ascii_str[10];
+                snprintf(hex_str, sizeof(hex_str), "%02X %02X %02X %02X", 
+                         bytes[0], bytes[1], bytes[2], bytes[3]);
+                
+                // ASCII representation (printable chars only)
+                for (int j = 0; j < 4; j++) {
+                    ascii_str[j] = (bytes[j] >= 32 && bytes[j] <= 126) ? bytes[j] : '.';
+                }
+                ascii_str[4] = '\0';
+                
+                // Send with NVMDUMP prefix for GUI routing
+                snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:%04X:%s:%s", byte_offset, hex_str, ascii_str);
+                m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
+            }
+
+            // Summary with interpreted calibration values (use cached values)
+            int32_t magic = nvm_values[7];        // Location 7 (byte offset 28)
+            int32_t force_mode = nvm_values[4];   // Location 4 (byte offset 16)
+            
+            const char* magic_status = (magic == 0x50425231) ? "OK" : "INVALID";
+            const char* mode_str = (force_mode == 0) ? "motor_torque" : "load_cell";
+            
+            // Show magic and mode
+            snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:SUMMARY: Magic=0x%08X(%s) CurrentMode=%s", 
+                     (unsigned int)magic, magic_status, mode_str);
+            m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
+            
+            // Load cell calibration (locations 0 & 1 - IEEE float as bits)
+            int32_t lc_offset_bits = nvm_values[0];   // Location 0
+            int32_t lc_scale_bits = nvm_values[1];    // Location 1
+            float lc_offset, lc_scale;
+            memcpy(&lc_offset, &lc_offset_bits, sizeof(float));
+            memcpy(&lc_scale, &lc_scale_bits, sizeof(float));
+            
+            snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:SUMMARY: LoadCell: Scale=%.6f Offset=%.4f kg", 
+                     lc_scale, lc_offset);
+            m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
+            
+            // Motor torque calibration (locations 5 & 6 - fixed-point)
+            int32_t mt_scale_raw = nvm_values[5];    // Location 5
+            int32_t mt_offset_raw = nvm_values[6];   // Location 6
+            float mt_scale = (float)mt_scale_raw / 100000.0f;
+            float mt_offset = (float)mt_offset_raw / 10000.0f;
+            
+            snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:SUMMARY: MotorTorque: Scale=%.6f Offset=%.4f %%", 
+                     mt_scale, mt_offset);
+            m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
+
+            reportEvent(STATUS_PREFIX_DONE, "dump_nvm");
+            break;
+        }
+
+        case CMD_RESET_NVM: {
+            ClearCore::NvmManager &nvmMgr = ClearCore::NvmManager::Instance();
+
+            // Reset all NVM locations to 0xFFFFFFFF (erased flash state)
+            // Each location is 4 bytes, so use proper byte offsets
+            for (int i = 0; i < 16; ++i) {
+                nvmMgr.Int32(static_cast<ClearCore::NvmManager::NvmLocations>(i * 4), -1);
+            }
+
+            reportEvent(STATUS_PREFIX_INFO, "All NVM locations reset to erased state. Reboot required for changes to take effect.");
+            reportEvent(STATUS_PREFIX_DONE, "reset_nvm");
             break;
         }
 

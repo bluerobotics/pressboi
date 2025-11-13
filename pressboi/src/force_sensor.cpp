@@ -82,8 +82,7 @@ bool ForceSensor::isConnected() const {
 }
 
 void ForceSensor::tare() {
-    // Send 'T' command to Rugeduino to tare/zero the scale
-    ConnectorCOM0.Send("T\n");
+    // No-op: Rugeduino only sends raw values
 }
 
 void ForceSensor::setOffset(float offset_kg) {

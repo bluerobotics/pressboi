@@ -113,33 +113,33 @@ void MotorController::setup() {
     // Check for first boot and initialize NVM with defaults
     NvmManager &nvmMgr = NvmManager::Instance();
     const int32_t NVM_MAGIC_NUMBER = 0x50425231; // "PBR1" = PressBoi Release 1
-    int32_t magicValue = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(7));
+    int32_t magicValue = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(7 * 4));  // Byte offset 28
     
     if (magicValue != NVM_MAGIC_NUMBER) {
         // First boot detected - initialize all NVM locations with defaults
         
-        // Location 4: Force mode (1 = load_cell default)
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(4), 1);
+        // Location 4 (byte 16): Force mode (1 = load_cell default)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(4 * 4), 1);
         
-        // Location 5: Motor torque scale (0.0335 × 100000)
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(5), (int32_t)(0.0335f * 100000.0f));
+        // Location 5 (byte 20): Motor torque scale (0.0335 × 100000)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(5 * 4), (int32_t)(0.0335f * 100000.0f));
         
-        // Location 6: Motor torque offset (1.04 × 10000)
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(6), (int32_t)(1.04f * 10000.0f));
+        // Location 6 (byte 24): Motor torque offset (1.04 × 10000)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(6 * 4), (int32_t)(1.04f * 10000.0f));
         
-        // Locations 8-11: Machine strain compensation coefficients (floats)
-    for (int i = 0; i < 5; ++i) {
+        // Locations 8-12 (bytes 32-48): Machine strain compensation coefficients (floats)
+        for (int i = 0; i < 5; ++i) {
             int32_t coeffBits;
             memcpy(&coeffBits, &m_machineStrainCoeffs[i], sizeof(float));
-            nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(8 + i), coeffBits);
+            nvmMgr.Int32(static_cast<NvmManager::NvmLocations>((8 + i) * 4), coeffBits);
         }
         
-        // Write magic number to indicate NVM is initialized
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(7), NVM_MAGIC_NUMBER);
+        // Write magic number to indicate NVM is initialized (byte 28)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(7 * 4), NVM_MAGIC_NUMBER);
     }
     
     // Load force mode from NVM (0 = motor_torque, 1 = load_cell)
-    int32_t forceModeValue = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(4));
+    int32_t forceModeValue = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(4 * 4));  // Byte offset 16
     if (forceModeValue == 0) {
         strcpy(m_force_mode, "motor_torque");
     } else {
@@ -148,15 +148,15 @@ void MotorController::setup() {
     
     // Load motor torque calibration from NVM
     // NVM locations 5 and 6 store scale and offset as fixed-point (value * 100000 and * 10000)
-    int32_t scaleValue = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(5));
-    int32_t offsetValue = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(6));
+    int32_t scaleValue = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(5 * 4));   // Byte offset 20
+    int32_t offsetValue = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(6 * 4));  // Byte offset 24
     
     // Validate scale: should be in reasonable range (0.01 to 0.1) → stored as 1000 to 10000
     if (scaleValue > 0 && scaleValue < 20000 && scaleValue != -1) {
         m_motor_torque_scale = (float)scaleValue / 100000.0f; // Stored as value * 100000
     } else {
         // Invalid NVM - initialize with default
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(5), (int32_t)(0.0335f * 100000.0f));
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(5 * 4), (int32_t)(0.0335f * 100000.0f));
     }
     
     // Validate offset: should be in reasonable range (-10 to +10) → stored as -100000 to 100000
@@ -164,12 +164,12 @@ void MotorController::setup() {
         m_motor_torque_offset = (float)offsetValue / 10000.0f; // Stored as value * 10000
     } else {
         // Invalid NVM - initialize with default
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(6), (int32_t)(1.04f * 10000.0f));
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(6 * 4), (int32_t)(1.04f * 10000.0f));
     }
     
-    // Load machine strain compensation coefficients (locations 8-11)
+    // Load machine strain compensation coefficients (locations 8-12, bytes 32-48)
     for (int i = 0; i < 5; ++i) {
-        int32_t coeffBits = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(8 + i));
+        int32_t coeffBits = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>((8 + i) * 4));
         if (coeffBits != 0 && coeffBits != -1) {
             float tempCoeff;
             memcpy(&tempCoeff, &coeffBits, sizeof(float));
@@ -190,7 +190,7 @@ void MotorController::setup() {
         m_machineStrainCoeffs[i] = defaultCoeff;
         int32_t defaultBits;
         memcpy(&defaultBits, &defaultCoeff, sizeof(float));
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(8 + i), defaultBits);
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>((8 + i) * 4), defaultBits);
     }
 }
 
@@ -1139,13 +1139,13 @@ bool MotorController::setForceMode(const char* mode) {
     
     if (strcmp(mode, "motor_torque") == 0) {
         strcpy(m_force_mode, "motor_torque");
-        // Save to NVM (0 = motor_torque)
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(4), 0);
+        // Save to NVM (0 = motor_torque, byte offset 16)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(4 * 4), 0);
         return true;
     } else if (strcmp(mode, "load_cell") == 0) {
         strcpy(m_force_mode, "load_cell");
-        // Save to NVM (1 = load_cell)
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(4), 1);
+        // Save to NVM (1 = load_cell, byte offset 16)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(4 * 4), 1);
         return true;
     }
     return false; // Invalid mode
@@ -1165,9 +1165,9 @@ void MotorController::setForceCalibrationOffset(float offset) {
     if (strcmp(m_force_mode, "motor_torque") == 0) {
         // Motor torque offset (intercept of Torque% = scale * kg + offset)
         m_motor_torque_offset = offset;
-        // Save to NVM location 6 (scale by 10000 for fixed-point storage)
+        // Save to NVM location 6 (byte offset 24, scale by 10000 for fixed-point storage)
         NvmManager &nvmMgr = NvmManager::Instance();
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(6), (int32_t)(offset * 10000.0f));
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(6 * 4), (int32_t)(offset * 10000.0f));
     } else {
         // Load cell offset - delegate to force sensor
         // (force sensor handles its own NVM storage)
@@ -1181,9 +1181,9 @@ void MotorController::setForceCalibrationScale(float scale) {
     if (strcmp(m_force_mode, "motor_torque") == 0) {
         // Motor torque scale (slope of Torque% = scale * kg + offset)
         m_motor_torque_scale = scale;
-        // Save to NVM location 5 (scale by 100000 for more precision on small values)
+        // Save to NVM location 5 (byte offset 20, scale by 100000 for more precision on small values)
         NvmManager &nvmMgr = NvmManager::Instance();
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(5), (int32_t)(scale * 100000.0f));
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(5 * 4), (int32_t)(scale * 100000.0f));
     } else {
         // Load cell scale - delegate to force sensor
         // (force sensor handles its own NVM storage)

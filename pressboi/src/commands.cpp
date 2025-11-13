@@ -2,7 +2,7 @@
  * @file commands.cpp
  * @brief Command parsing implementation for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from commands.json on 2025-11-07 09:53:40
+ * Generated from commands.json on 2025-11-13 10:44:58
  * 
  * This file contains the command parser integrated into commands.cpp
  */
@@ -30,9 +30,12 @@ Command parseCommand(const char* cmdStr) {
     if (strncmp(cmdStr, CMD_STR_DISABLE, strlen(CMD_STR_DISABLE)) == 0) return CMD_DISABLE;
     if (strncmp(cmdStr, CMD_STR_TEST_WATCHDOG, strlen(CMD_STR_TEST_WATCHDOG)) == 0) return CMD_TEST_WATCHDOG;
     if (strncmp(cmdStr, CMD_STR_SET_FORCE_OFFSET, strlen(CMD_STR_SET_FORCE_OFFSET)) == 0) return CMD_SET_FORCE_OFFSET;
+    if (strncmp(cmdStr, CMD_STR_SET_FORCE_ZERO, strlen(CMD_STR_SET_FORCE_ZERO)) == 0) return CMD_SET_FORCE_ZERO;
     if (strncmp(cmdStr, CMD_STR_SET_FORCE_SCALE, strlen(CMD_STR_SET_FORCE_SCALE)) == 0) return CMD_SET_FORCE_SCALE;
     if (strncmp(cmdStr, CMD_STR_SET_STRAIN_CAL, strlen(CMD_STR_SET_STRAIN_CAL)) == 0) return CMD_SET_STRAIN_CAL;
     if (strncmp(cmdStr, CMD_STR_REBOOT_BOOTLOADER, strlen(CMD_STR_REBOOT_BOOTLOADER)) == 0) return CMD_REBOOT_BOOTLOADER;
+    if (strncmp(cmdStr, CMD_STR_DUMP_NVM, strlen(CMD_STR_DUMP_NVM)) == 0) return CMD_DUMP_NVM;
+    if (strncmp(cmdStr, CMD_STR_RESET_NVM, strlen(CMD_STR_RESET_NVM)) == 0) return CMD_RESET_NVM;
     return CMD_UNKNOWN;
 }
 
