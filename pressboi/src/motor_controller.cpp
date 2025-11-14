@@ -588,7 +588,8 @@ void MotorController::disable() {
 void MotorController::abortMove() {
     m_motorA->MoveStopDecel();
     m_motorB->MoveStopDecel();
-    Delay_ms(POST_ABORT_DELAY_MS);
+    // Don't block here - let motors decelerate naturally
+    // The ClearCore library handles deceleration properly
 }
 
 /**
