@@ -1604,9 +1604,8 @@ void MotorController::updateJoules() {
 }
 
 void MotorController::reportEvent(const char* statusType, const char* message) {
-    char fullMsg[STATUS_MESSAGE_BUFFER_SIZE];
-    snprintf(fullMsg, sizeof(fullMsg), "Motor: %s", message);
-    m_controller->reportEvent(statusType, fullMsg);
+    // Send message directly without adding "Motor: " prefix
+    m_controller->reportEvent(statusType, message);
 }
 
 /**
