@@ -1347,6 +1347,36 @@ void MotorController::handleLimitReached(const char* limit_type, float limit_val
             startMove(steps_to_retract, velocity_sps, m_moveDefaultAccelSPS2);
             reportEvent(STATUS_PREFIX_START, "retract");
         }
+    } else if (strcmp(m_active_op_force_action, "abort") == 0) {
+        // Send ERROR for the original command to halt script, then start retract
+        if (m_activeMoveCommand) {
+            char error_msg[STATUS_MESSAGE_BUFFER_SIZE];
+            snprintf(error_msg, sizeof(error_msg), "%s aborted due to force limit", m_activeMoveCommand);
+            reportEvent(STATUS_PREFIX_ERROR, error_msg);
+        }
+        
+        if (m_retractReferenceSteps == 0) {
+            reportEvent(STATUS_PREFIX_ERROR, "Cannot retract: retract position not set.");
+            finalizeAndResetActiveMove(true);
+            m_state = STATE_STANDBY;
+        } else {
+            // Start retract move
+            m_moveState = MOVE_TO_HOME;
+            m_activeMoveCommand = "retract";
+            m_active_op_target_position_steps = m_retractReferenceSteps;
+            long current_pos = m_motorA->PositionRefCommanded();
+            long steps_to_retract = m_retractReferenceSteps - current_pos;
+            m_torqueLimit = DEFAULT_TORQUE_LIMIT;
+            float speed_mms = (m_retractSpeedMms > 0.0f) ? m_retractSpeedMms : RETRACT_DEFAULT_SPEED_MMS;
+            if (speed_mms > 100.0f) {
+                speed_mms = 100.0f;
+            }
+            int velocity_sps = static_cast<int>(speed_mms * STEPS_PER_MM);
+            m_active_op_velocity_sps = velocity_sps;
+            m_active_op_accel_sps2 = m_moveDefaultAccelSPS2;
+            startMove(steps_to_retract, velocity_sps, m_moveDefaultAccelSPS2);
+            reportEvent(STATUS_PREFIX_START, "retract");
+        }
     } else if (strcmp(m_active_op_force_action, "skip") == 0) {
         // Skip the rest of the move - complete at current position and send DONE
         if (m_activeMoveCommand) {
