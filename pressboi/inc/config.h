@@ -20,6 +20,7 @@
  * @{
  */
 #define LOCAL_PORT                      8888      ///< The UDP port this device listens on for incoming commands.
+#define CLIENT_PORT                     6272      ///< The UDP port the GUI client listens on.
 #define MAX_PACKET_LENGTH               1024      ///< Maximum size in bytes for a single UDP packet. Must be large enough for the longest telemetry string.
 #define RX_QUEUE_SIZE                   32        ///< Number of incoming messages that can be buffered before processing.
 #define TX_QUEUE_SIZE                   32        ///< Number of outgoing messages that can be buffered before sending.
@@ -34,7 +35,7 @@
  * @name General System Behavior
  * @{
  */
-#define FIRMWARE_VERSION                "1.4.2"   ///< Pressboi firmware version
+#define FIRMWARE_VERSION                "1.5.0"   ///< Pressboi firmware version
 #define STATUS_MESSAGE_BUFFER_SIZE      256       ///< Standard buffer size for composing status and error messages.
 #define POST_ABORT_DELAY_MS             100       ///< Delay in milliseconds after an abort command to allow motors to come to a complete stop.
 /** @} */

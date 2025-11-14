@@ -27,6 +27,7 @@ void CommsController::setup() {
 
 void CommsController::update() {
 	processUdp();
+	processUsbSerial();
 	processTxQueue();
 }
 
@@ -91,13 +92,55 @@ void CommsController::processUdp() {
 	}
 }
 
+void CommsController::processUsbSerial() {
+	static char usbBuffer[MAX_MESSAGE_LENGTH];
+	static int usbBufferIndex = 0;
+	
+	// Limit characters processed per call to prevent watchdog timeout (128ms)
+	int charsProcessed = 0;
+	const int MAX_CHARS_PER_CALL = 32;
+	
+	while (ConnectorUsb.AvailableForRead() > 0 && charsProcessed < MAX_CHARS_PER_CALL) {
+		char c = ConnectorUsb.CharGet();
+		charsProcessed++;
+		
+		// Handle newline as message terminator
+		if (c == '\n' || c == '\r') {
+			if (usbBufferIndex > 0) {
+				usbBuffer[usbBufferIndex] = '\0';
+				// Enqueue as if from local host (use dummy IP)
+				IpAddress dummyIp(127, 0, 0, 1);
+				if (!enqueueRx(usbBuffer, dummyIp, CLIENT_PORT)) {
+					// Error handled in enqueueRx
+				}
+				usbBufferIndex = 0;
+			}
+		}
+		// Add character to buffer
+		else if (usbBufferIndex < MAX_MESSAGE_LENGTH - 1) {
+			usbBuffer[usbBufferIndex++] = c;
+		}
+		// Buffer overflow protection - discard message
+		else {
+			usbBufferIndex = 0;
+			ConnectorUsb.Send("PRESSBOI_ERROR: USB command too long\n");
+		}
+	}
+}
+
 void CommsController::processTxQueue() {
 	if (m_txQueueHead != m_txQueueTail) {
 		Message msg = m_txQueue[m_txQueueTail];
 		m_txQueueTail = (m_txQueueTail + 1) % TX_QUEUE_SIZE;
+		
+		// Send over UDP
 		m_udp.Connect(msg.remoteIp, msg.remotePort);
 		m_udp.PacketWrite(msg.buffer);
 		m_udp.PacketSend();
+		
+		// Mirror to USB serial
+		ConnectorUsb.Send(msg.buffer);
+		ConnectorUsb.Send("\n");
 	}
 }
 

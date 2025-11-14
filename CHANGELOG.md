@@ -2,6 +2,16 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.5.0] - 2025-11-14
+
+### Added
+- **USB serial communication**: Commands and telemetry now mirrored to USB serial (ConnectorUsb) alongside network communication
+- **Dual-channel command processing**: USB commands processed identically to network commands through unified dispatcher
+
+### Changed
+- **Lowercase status text**: Main state and motor status use lowercase for consistency (`standby`, `busy`, `error`, `enabled`, `disabled`, `homed`, `not homed`)
+- **USB processing limit**: Characters per call capped at 32 to prevent watchdog timeout (128ms threshold)
+
 ## [1.4.2] - 2025-11-13
 
 ### Added

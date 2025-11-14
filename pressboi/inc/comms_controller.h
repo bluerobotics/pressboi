@@ -163,6 +163,13 @@ class CommsController {
 	void processUdp();
 
     /**
+     * @brief Processes incoming USB serial data.
+     * @details Reads characters from the USB serial port, buffers them until
+     * a newline is received, then enqueues the complete message into the RX queue.
+     */
+	void processUsbSerial();
+
+    /**
      * @brief Processes the outgoing message queue.
      * @details Dequeues one message from the TX queue (if available) and sends it
      * over UDP to its destination.
