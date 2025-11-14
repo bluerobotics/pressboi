@@ -20,11 +20,9 @@ CommsController::CommsController() {
 	m_txQueueTail = 0;
 }
 
-void CommsController::setup(void (*feedWatchdog)()) {
-	setupUsbSerial();
-	if (feedWatchdog) feedWatchdog();  // Feed watchdog after USB setup
-	setupEthernet(feedWatchdog);
-	if (feedWatchdog) feedWatchdog();  // Feed watchdog after Ethernet setup
+void CommsController::setup() {
+    setupUsbSerial();
+    setupEthernet();
 }
 
 void CommsController::update() {
@@ -163,29 +161,28 @@ void CommsController::setupUsbSerial(void) {
 	// No need to wait here, as the main loop will handle USB when available
 }
 
-void CommsController::setupEthernet(void (*feedWatchdog)()) {
-	EthernetMgr.Setup();
+void CommsController::setupEthernet() {
+    EthernetMgr.Setup();
 
-	// Start DHCP but don't hang if it fails - the system can still function via USB
-	if (!EthernetMgr.DhcpBegin()) {
-		// DHCP failed - continue anyway, network features won't work but USB will
-		return;
-	}
-	
-	// Wait for link with timeout, feeding watchdog periodically to prevent timeout
-	uint32_t link_timeout = 2000;  // 2 second timeout (plenty of time for link to come up)
-	uint32_t link_start = Milliseconds();
-	while (!EthernetMgr.PhyLinkActive()) {
-		if (Milliseconds() - link_start > link_timeout) {
-			// Link didn't come up - continue anyway, USB will still work
-			// Network may become available later
-			return;
-		}
-		Delay_ms(10);  // Short delay between checks
-		if (feedWatchdog) feedWatchdog();  // Feed watchdog to prevent timeout
-	}
+    // Start DHCP but don't hang if it fails - the system can still function via USB
+    if (!EthernetMgr.DhcpBegin()) {
+        // DHCP failed - continue anyway, network features won't work but USB will
+        return;
+    }
 
-	m_udp.Begin(LOCAL_PORT);
+    // Wait for link with timeout (watchdog not yet enabled at this point)
+    uint32_t link_timeout = 2000;  // 2 second timeout (plenty of time for link to come up)
+    uint32_t link_start = Milliseconds();
+    while (!EthernetMgr.PhyLinkActive()) {
+        if (Milliseconds() - link_start > link_timeout) {
+            // Link didn't come up - continue anyway, USB will still work
+            // Network may become available later
+            return;
+        }
+        Delay_ms(10);  // Short delay between checks
+    }
+
+    m_udp.Begin(LOCAL_PORT);
 }
 
 // parseCommand is now in commands.cpp as a global function
