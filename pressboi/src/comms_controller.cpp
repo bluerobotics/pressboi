@@ -20,9 +20,11 @@ CommsController::CommsController() {
 	m_txQueueTail = 0;
 }
 
-void CommsController::setup() {
+void CommsController::setup(void (*feedWatchdog)()) {
 	setupUsbSerial();
-	setupEthernet();
+	if (feedWatchdog) feedWatchdog();  // Feed watchdog after USB setup
+	setupEthernet(feedWatchdog);
+	if (feedWatchdog) feedWatchdog();  // Feed watchdog after Ethernet setup
 }
 
 void CommsController::update() {
@@ -161,7 +163,7 @@ void CommsController::setupUsbSerial(void) {
 	// No need to wait here, as the main loop will handle USB when available
 }
 
-void CommsController::setupEthernet() {
+void CommsController::setupEthernet(void (*feedWatchdog)()) {
 	EthernetMgr.Setup();
 
 	// Start DHCP but don't hang if it fails - the system can still function via USB
@@ -170,16 +172,17 @@ void CommsController::setupEthernet() {
 		return;
 	}
 	
-	// Wait for link with SHORT timeout to prevent watchdog timeout (128ms limit)
-	uint32_t link_timeout = 100;  // 100ms timeout (well under 128ms watchdog)
+	// Wait for link with timeout, feeding watchdog periodically to prevent timeout
+	uint32_t link_timeout = 2000;  // 2 second timeout (plenty of time for link to come up)
 	uint32_t link_start = Milliseconds();
 	while (!EthernetMgr.PhyLinkActive()) {
 		if (Milliseconds() - link_start > link_timeout) {
-			// Link didn't come up quickly - continue anyway, USB will still work
+			// Link didn't come up - continue anyway, USB will still work
 			// Network may become available later
 			return;
 		}
-		Delay_ms(5);  // Very short delay to stay under watchdog timeout
+		Delay_ms(10);  // Short delay between checks
+		if (feedWatchdog) feedWatchdog();  // Feed watchdog to prevent timeout
 	}
 
 	m_udp.Begin(LOCAL_PORT);

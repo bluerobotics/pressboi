@@ -55,8 +55,9 @@ class CommsController {
      * @details Sets up the USB serial port for debugging and initializes the Ethernet
      * controller, including DHCP negotiation and UDP listener setup. This method
      * should be called once at startup.
+     * @param feedWatchdog Optional callback function to feed the watchdog during initialization
      */
-	void setup();
+	void setup(void (*feedWatchdog)() = nullptr);
 
     /**
      * @brief The main update loop for the communications controller.
@@ -181,7 +182,7 @@ class CommsController {
      * @details This function handles the low-level setup of the Ethernet manager,
      * including DHCP negotiation to obtain an IP address and starting the UDP listener.
      */
-	void setupEthernet();
+	void setupEthernet(void (*feedWatchdog)() = nullptr);
 
     /**
      * @brief Configures and initializes the USB serial port.

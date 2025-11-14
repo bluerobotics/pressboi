@@ -109,7 +109,8 @@ void Pressboi::setup() {
     // Configure all motors for step and direction control mode.
     MotorMgr.MotorModeSet(MotorManager::MOTOR_ALL, Connector::CPM_MODE_STEP_AND_DIR);
 
-    m_comms.setup();
+    // Pass feedWatchdog callback to comms setup to prevent timeout during network initialization
+    m_comms.setup([this]() { this->feedWatchdog(); });
     m_motor.setup();
     m_forceSensor.setup();
     
