@@ -170,15 +170,16 @@ void CommsController::setupEthernet() {
 		return;
 	}
 	
-	// Wait for link with timeout to prevent hanging
-	uint32_t link_timeout = 2000;  // 2 second timeout
+	// Wait for link with SHORT timeout to prevent watchdog timeout (128ms limit)
+	uint32_t link_timeout = 100;  // 100ms timeout (well under 128ms watchdog)
 	uint32_t link_start = Milliseconds();
 	while (!EthernetMgr.PhyLinkActive()) {
 		if (Milliseconds() - link_start > link_timeout) {
-			// Link didn't come up - continue anyway, USB will still work
+			// Link didn't come up quickly - continue anyway, USB will still work
+			// Network may become available later
 			return;
 		}
-		Delay_ms(10);  // Reduced from 100ms to 10ms for better responsiveness
+		Delay_ms(5);  // Very short delay to stay under watchdog timeout
 	}
 
 	m_udp.Begin(LOCAL_PORT);
