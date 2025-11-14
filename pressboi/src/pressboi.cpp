@@ -45,6 +45,11 @@ void sendMessage(const char* msg) {
     pressboi.m_comms.enqueueTx(msg, pressboi.m_comms.getGuiIp(), pressboi.m_comms.getGuiPort());
 }
 
+// Static helper function for feeding watchdog during initialization
+static void feedWatchdogStatic() {
+    pressboi.feedWatchdog();
+}
+
 //==================================================================================================
 // --- Watchdog Early Warning Interrupt Handler ---
 //==================================================================================================
@@ -110,7 +115,7 @@ void Pressboi::setup() {
     MotorMgr.MotorModeSet(MotorManager::MOTOR_ALL, Connector::CPM_MODE_STEP_AND_DIR);
 
     // Pass feedWatchdog callback to comms setup to prevent timeout during network initialization
-    m_comms.setup([this]() { this->feedWatchdog(); });
+    m_comms.setup(feedWatchdogStatic);
     m_motor.setup();
     m_forceSensor.setup();
     
