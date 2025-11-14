@@ -157,20 +157,28 @@ void CommsController::setupUsbSerial(void) {
 	ConnectorUsb.Mode(Connector::USB_CDC);
 	ConnectorUsb.Speed(9600);
 	ConnectorUsb.PortOpen();
-	uint32_t timeout = 5000;
-	uint32_t start = Milliseconds();
-	while (!ConnectorUsb && Milliseconds() - start < timeout);
+	// USB setup is non-blocking - the connector will become available when ready
+	// No need to wait here, as the main loop will handle USB when available
 }
 
 void CommsController::setupEthernet() {
 	EthernetMgr.Setup();
 
+	// Start DHCP but don't hang if it fails - the system can still function via USB
 	if (!EthernetMgr.DhcpBegin()) {
-		while (1);
+		// DHCP failed - continue anyway, network features won't work but USB will
+		return;
 	}
 	
+	// Wait for link with timeout to prevent hanging
+	uint32_t link_timeout = 2000;  // 2 second timeout
+	uint32_t link_start = Milliseconds();
 	while (!EthernetMgr.PhyLinkActive()) {
-		Delay_ms(100);
+		if (Milliseconds() - link_start > link_timeout) {
+			// Link didn't come up - continue anyway, USB will still work
+			return;
+		}
+		Delay_ms(10);  // Reduced from 100ms to 10ms for better responsiveness
 	}
 
 	m_udp.Begin(LOCAL_PORT);

@@ -222,8 +222,11 @@ float MotorController::estimateMachineDeflectionFromForce(float force_kg) const 
 
     // Expand high bound until polynomial exceeds target force or we hit a safety ceiling
     const float MAX_DEFLECTION = MACHINE_STRAIN_MAX_DEFLECTION_MM * 4.0f;
-    while (evaluateMachineStrainForceFromDeflection(high) < force_kg && high < MAX_DEFLECTION) {
+    int expansion_iterations = 0;
+    const int MAX_EXPANSION_ITERATIONS = 20;  // Safety limit
+    while (evaluateMachineStrainForceFromDeflection(high) < force_kg && high < MAX_DEFLECTION && expansion_iterations < MAX_EXPANSION_ITERATIONS) {
         high *= 1.5f;
+        expansion_iterations++;
         if (high > MAX_DEFLECTION) {
             high = MAX_DEFLECTION;
             break;
