@@ -484,12 +484,40 @@ void MotorController::updateState() {
                     long current_pos_steps = m_motorA->PositionRefCommanded();
                     m_endpoint_mm = static_cast<float>(static_cast<double>(current_pos_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM);
                     
-                    if (m_activeMoveCommand) {
-                        // Send standardized DONE message with just the command name
-                        reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
+                    // Check if retract or abort action is configured
+                    if (strcmp(m_active_op_force_action, "retract") == 0 || strcmp(m_active_op_force_action, "abort") == 0) {
+                        // Move completed to target - start retract
+                        if (m_activeMoveCommand) {
+                            reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
+                        }
+                        
+                        // Use home position (0mm) as default if retract position not explicitly set
+                        long retract_target = (m_retractReferenceSteps == 0) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
+                        
+                        // Start retract move
+                        m_moveState = MOVE_TO_HOME;
+                        m_activeMoveCommand = "retract";
+                        m_active_op_target_position_steps = retract_target;
+                        long current_pos = m_motorA->PositionRefCommanded();
+                        long steps_to_retract = retract_target - current_pos;
+                        m_torqueLimit = DEFAULT_TORQUE_LIMIT;
+                        float speed_mms = (m_retractSpeedMms > 0.0f) ? m_retractSpeedMms : RETRACT_DEFAULT_SPEED_MMS;
+                        if (speed_mms > 100.0f) {
+                            speed_mms = 100.0f;
+                        }
+                        int velocity_sps = static_cast<int>(speed_mms * STEPS_PER_MM);
+                        m_active_op_velocity_sps = velocity_sps;
+                        m_active_op_accel_sps2 = m_moveDefaultAccelSPS2;
+                        startMove(steps_to_retract, velocity_sps, m_moveDefaultAccelSPS2);
+                        reportEvent(STATUS_PREFIX_START, "retract");
+                    } else {
+                        // No retract - just complete normally
+                        if (m_activeMoveCommand) {
+                            reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
+                        }
+                        finalizeAndResetActiveMove(true);
+                        m_state = STATE_STANDBY;
                     }
-                    finalizeAndResetActiveMove(true);
-                    m_state = STATE_STANDBY;
                 }
             }
 
