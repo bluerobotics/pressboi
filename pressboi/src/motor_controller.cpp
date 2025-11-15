@@ -480,9 +480,13 @@ void MotorController::updateState() {
                     m_state = STATE_STANDBY;
                 } else if (!isStarting) {
                     // Move completed normally (was in ACTIVE state)
-                    // Record endpoint before finalizing
-                    long current_pos_steps = m_motorA->PositionRefCommanded();
-                    m_endpoint_mm = static_cast<float>(static_cast<double>(current_pos_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM);
+                    
+                    // Record endpoint ONLY for press moves (move_abs/move_inc), NOT for retracts
+                    if (m_activeMoveCommand && 
+                        (strcmp(m_activeMoveCommand, "move_abs") == 0 || strcmp(m_activeMoveCommand, "move_inc") == 0)) {
+                        long current_pos_steps = m_motorA->PositionRefCommanded();
+                        m_endpoint_mm = static_cast<float>(static_cast<double>(current_pos_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM);
+                    }
                     
                     // Check if retract action is configured (NOT abort - abort only retracts on force limit)
                     if (strcmp(m_active_op_force_action, "retract") == 0) {
@@ -1354,9 +1358,12 @@ void MotorController::handleLimitReached(const char* limit_type, float limit_val
     m_forceLimitTriggered = true;
     m_prevForceValid = false;
     
-    // Record endpoint where force limit was reached
-    long current_pos_steps = m_motorA->PositionRefCommanded();
-    m_endpoint_mm = static_cast<float>(static_cast<double>(current_pos_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM);
+    // Record endpoint where force limit was reached (only for press moves, not retracts)
+    if (m_activeMoveCommand && 
+        (strcmp(m_activeMoveCommand, "move_abs") == 0 || strcmp(m_activeMoveCommand, "move_inc") == 0)) {
+        long current_pos_steps = m_motorA->PositionRefCommanded();
+        m_endpoint_mm = static_cast<float>(static_cast<double>(current_pos_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM);
+    }
     
     char msg[STATUS_MESSAGE_BUFFER_SIZE];
     snprintf(msg, sizeof(msg), "%s reached.", limit_type);
