@@ -189,11 +189,29 @@ void Pressboi::loop() {
         publishTelemetry();
     }
     
-    // If we're in RECOVERED state and GUI just connected, resend the recovery message
+    // If we're in RECOVERED state and GUI just connected, resend the recovery message with breadcrumb
     static bool recovery_msg_sent = false;
     if (m_mainState == STATE_RECOVERED && m_comms.isGuiDiscovered() && !recovery_msg_sent) {
         recovery_msg_sent = true;
-        reportEvent(STATUS_PREFIX_RECOVERY, "Watchdog timeout - main loop blocked >128ms. Motors disabled. Send RESET to clear.");
+        
+        // Build recovery message with breadcrumb
+        char recoveryMsg[128];
+        const char* breadcrumb_name = "UNKNOWN";
+        switch (g_watchdogBreadcrumb) {
+            case WD_BREADCRUMB_SAFETY_CHECK: breadcrumb_name = "SAFETY_CHECK"; break;
+            case WD_BREADCRUMB_COMMS_UPDATE: breadcrumb_name = "COMMS_UPDATE"; break;
+            case WD_BREADCRUMB_RX_DEQUEUE: breadcrumb_name = "RX_DEQUEUE"; break;
+            case WD_BREADCRUMB_UPDATE_STATE: breadcrumb_name = "UPDATE_STATE"; break;
+            case WD_BREADCRUMB_FORCE_UPDATE: breadcrumb_name = "FORCE_UPDATE"; break;
+            case WD_BREADCRUMB_MOTOR_UPDATE: breadcrumb_name = "MOTOR_UPDATE"; break;
+            case WD_BREADCRUMB_TELEMETRY: breadcrumb_name = "TELEMETRY"; break;
+            case WD_BREADCRUMB_UDP_PROCESS: breadcrumb_name = "UDP_PROCESS"; break;
+            case WD_BREADCRUMB_USB_PROCESS: breadcrumb_name = "USB_PROCESS"; break;
+            case WD_BREADCRUMB_TX_QUEUE: breadcrumb_name = "TX_QUEUE"; break;
+            case WD_BREADCRUMB_UDP_SEND: breadcrumb_name = "UDP_SEND"; break;
+        }
+        snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >128ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
+        reportEvent(STATUS_PREFIX_RECOVERY, recoveryMsg);
     }
     
     // Reset the flag when leaving RECOVERED state
