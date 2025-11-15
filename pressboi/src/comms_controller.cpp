@@ -129,12 +129,8 @@ void CommsController::processUsbSerial() {
 }
 
 void CommsController::processTxQueue() {
-	// Process multiple messages per call (up to 5) to prevent queue buildup
-	// But limit iterations to avoid blocking too long
-	int messages_sent = 0;
-	const int MAX_MESSAGES_PER_CALL = 5;
-	
-	while (m_txQueueHead != m_txQueueTail && messages_sent < MAX_MESSAGES_PER_CALL) {
+	// Process one message per call - this is fine since watchdog is fed every loop iteration
+	if (m_txQueueHead != m_txQueueTail) {
 		Message msg = m_txQueue[m_txQueueTail];
 		m_txQueueTail = (m_txQueueTail + 1) % TX_QUEUE_SIZE;
 		
@@ -146,8 +142,6 @@ void CommsController::processTxQueue() {
 		// Mirror to USB serial
 		ConnectorUsb.Send(msg.buffer);
 		ConnectorUsb.Send("\n");
-		
-		messages_sent++;
 	}
 }
 
