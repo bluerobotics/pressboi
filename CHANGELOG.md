@@ -5,7 +5,7 @@ All notable changes to the Pressboi firmware will be documented in this file.
 ## [1.6.0] - 2025-11-15
 
 ### Added
-- **Endpoint telemetry**: New `endpoint` variable records the exact position (mm) where press moves stop, either when force limit is hit or target position is reached. Preserved through subsequent retract operations for post-move analysis.
+- **Endpoint telemetry**: New `endpoint` variable records the exact position (mm) where press moves stop
 
 ### Fixed
 - **CRITICAL**: Fixed infinite retract loop that caused watchdog timeouts when using `retract` or `abort` force actions. The `force_action` parameter is now properly cleared before starting a retract move to prevent re-triggering.

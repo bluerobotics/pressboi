@@ -160,7 +160,7 @@ void Pressboi::loop() {
     static bool recovery_msg_sent = false;
     if (m_mainState == STATE_RECOVERED && m_comms.isGuiDiscovered() && !recovery_msg_sent) {
         recovery_msg_sent = true;
-        reportEvent(STATUS_PREFIX_RECOVERY, "Watchdog timeout - main loop blocked >128ms. Motors disabled. Send RESET to clear.");
+        reportEvent(STATUS_PREFIX_RECOVERY, "Watchdog timeout - main loop blocked >256ms. Motors disabled. Send RESET to clear.");
     }
     
     // Reset the flag when leaving RECOVERED state
@@ -689,7 +689,7 @@ void Pressboi::handleWatchdogRecovery() {
         MOTOR_B.ClearAlerts();
         
         // Send recovery message
-        m_comms.reportEvent(STATUS_PREFIX_RECOVERY, "Watchdog timeout - main loop blocked >128ms. Motors disabled. Send RESET to clear.");
+        m_comms.reportEvent(STATUS_PREFIX_RECOVERY, "Watchdog timeout - main loop blocked >256ms. Motors disabled. Send RESET to clear.");
         
         // Keep LED on solid to indicate recovered state
         ConnectorLed.Mode(Connector::OUTPUT_DIGITAL);
@@ -719,11 +719,10 @@ void Pressboi::initializeWatchdog() {
     while(WDT->SYNCBUSY.reg);
     
     // Configure watchdog:
-    // - For 100ms timeout at 1kHz WDT clock
-    // - Need approximately 100 cycles
-    // - Period values: 0x3 = 64 cycles (~64ms), 0x4 = 128 cycles (~128ms)
-    // - Use 0x4 for ~128ms to be safe
-    uint8_t per_value = 0x4;  // 128 cycles ≈ 128ms at 1kHz
+    // - For timeout at 1kHz WDT clock
+    // - Period values: 0x3 = 64 cycles (~64ms), 0x4 = 128 cycles (~128ms), 0x5 = 256 cycles (~256ms)
+    // - Use 0x5 for ~256ms to allow headroom for communication bursts during startup
+    uint8_t per_value = 0x5;  // 256 cycles ≈ 256ms at 1kHz
     
     // Configure watchdog with early warning interrupt
     WDT->CONFIG.reg = WDT_CONFIG_PER(per_value);
