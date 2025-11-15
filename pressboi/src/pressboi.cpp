@@ -28,11 +28,22 @@
 TelemetryData g_telemetry;
 
 //==================================================================================================
-// --- Watchdog Recovery Flag (Survives Reset) ---
+// --- Watchdog Recovery Flag and Breadcrumb (Survives Reset) ---
 //==================================================================================================
 #if WATCHDOG_ENABLED
 // Place in .noinit section so it survives reset but is cleared on power-up
 __attribute__((section(".noinit"))) volatile uint32_t g_watchdogRecoveryFlag;
+__attribute__((section(".noinit"))) volatile uint32_t g_watchdogBreadcrumb;
+
+// Breadcrumb codes to identify where the watchdog timeout occurred
+#define WD_BREADCRUMB_SAFETY_CHECK      0x01
+#define WD_BREADCRUMB_COMMS_UPDATE      0x02
+#define WD_BREADCRUMB_RX_DEQUEUE        0x03
+#define WD_BREADCRUMB_UPDATE_STATE      0x04
+#define WD_BREADCRUMB_FORCE_UPDATE      0x05
+#define WD_BREADCRUMB_MOTOR_UPDATE      0x06
+#define WD_BREADCRUMB_TELEMETRY         0x07
+#define WD_BREADCRUMB_UNKNOWN           0xFF
 #endif
 
 //==================================================================================================
@@ -131,27 +142,45 @@ void Pressboi::setup() {
  */
 void Pressboi::loop() {
     // 1. Perform safety checks and feed the watchdog timer.
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SAFETY_CHECK;
+    #endif
     performSafetyCheck();
 
     // 2. Process all incoming/outgoing communication queues.
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_COMMS_UPDATE;
+    #endif
     m_comms.update();
 
     // 3. Check for and handle one new command from the receive queue.
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_RX_DEQUEUE;
+    #endif
     Message msg;
     if (m_comms.dequeueRx(msg)) {
         dispatchCommand(msg);
     }
 
     // 4. Update force sensor readings.
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_FORCE_UPDATE;
+    #endif
     m_forceSensor.update();
 
     // 5. Update the main state machine and all sub-controllers.
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_UPDATE_STATE;
+    #endif
     updateState();
 
     // 6. Handle time-based periodic tasks.
     uint32_t now = Milliseconds();
 	
     if (m_comms.isGuiDiscovered() && (now - m_lastTelemetryTime >= TELEMETRY_INTERVAL_MS)) {
+        #if WATCHDOG_ENABLED
+        g_watchdogBreadcrumb = WD_BREADCRUMB_TELEMETRY;
+        #endif
         m_lastTelemetryTime = now;
         publishTelemetry();
     }
@@ -688,8 +717,20 @@ void Pressboi::handleWatchdogRecovery() {
         MOTOR_A.ClearAlerts();
         MOTOR_B.ClearAlerts();
         
-        // Send recovery message
-        m_comms.reportEvent(STATUS_PREFIX_RECOVERY, "Watchdog timeout - main loop blocked >128ms. Motors disabled. Send RESET to clear.");
+        // Send recovery message with breadcrumb
+        char recoveryMsg[128];
+        const char* breadcrumb_name = "UNKNOWN";
+        switch (g_watchdogBreadcrumb) {
+            case WD_BREADCRUMB_SAFETY_CHECK: breadcrumb_name = "SAFETY_CHECK"; break;
+            case WD_BREADCRUMB_COMMS_UPDATE: breadcrumb_name = "COMMS_UPDATE"; break;
+            case WD_BREADCRUMB_RX_DEQUEUE: breadcrumb_name = "RX_DEQUEUE"; break;
+            case WD_BREADCRUMB_UPDATE_STATE: breadcrumb_name = "UPDATE_STATE"; break;
+            case WD_BREADCRUMB_FORCE_UPDATE: breadcrumb_name = "FORCE_UPDATE"; break;
+            case WD_BREADCRUMB_MOTOR_UPDATE: breadcrumb_name = "MOTOR_UPDATE"; break;
+            case WD_BREADCRUMB_TELEMETRY: breadcrumb_name = "TELEMETRY"; break;
+        }
+        snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >128ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
+        m_comms.reportEvent(STATUS_PREFIX_RECOVERY, recoveryMsg);
         
         // Keep LED on solid to indicate recovered state
         ConnectorLed.Mode(Connector::OUTPUT_DIGITAL);
