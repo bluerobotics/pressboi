@@ -1625,24 +1625,7 @@ void MotorController::updateJoules() {
     m_joules += net_increment;
     m_machineEnergyJ += machine_increment;
 
-    static int jouleLogCounter = 0;
-    if (++jouleLogCounter >= 25) { // roughly every 0.5s at 50Hz
-        jouleLogCounter = 0;
-        char dbg[128];
-        snprintf(dbg, sizeof(dbg),
-                 "JDBG force=%.2fkg def=%.3fmm delta_def=%.3fmm travel=%.3fmm dist=%.3fmm eff=%.3fmm gross=%.4fJ machine=%.4fJ dE=%.4fJ total=%.4fJ",
-                 actual_force_avg,
-                 machine_deflection_curr,
-                 delta_machine_mm,
-                 total_deflection_mm,
-                 abs_distance_mm,
-                 abs_distance_mm - delta_machine_mm,
-                 gross_increment,
-                 machine_increment,
-                 net_increment,
-                 m_joules);
-        reportEvent(STATUS_PREFIX_INFO, dbg);
-    }
+    // Debug logging removed - joule calculations can be monitored via telemetry
     
     m_prev_position_mm = current_pos_mm;
     m_prevForceKg = clamped_force_kg;
