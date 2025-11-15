@@ -43,6 +43,10 @@ __attribute__((section(".noinit"))) volatile uint32_t g_watchdogBreadcrumb;
 #define WD_BREADCRUMB_FORCE_UPDATE      0x05
 #define WD_BREADCRUMB_MOTOR_UPDATE      0x06
 #define WD_BREADCRUMB_TELEMETRY         0x07
+#define WD_BREADCRUMB_UDP_PROCESS       0x08
+#define WD_BREADCRUMB_USB_PROCESS       0x09
+#define WD_BREADCRUMB_TX_QUEUE          0x0A
+#define WD_BREADCRUMB_UDP_SEND          0x0B
 #define WD_BREADCRUMB_UNKNOWN           0xFF
 #endif
 
@@ -728,6 +732,10 @@ void Pressboi::handleWatchdogRecovery() {
             case WD_BREADCRUMB_FORCE_UPDATE: breadcrumb_name = "FORCE_UPDATE"; break;
             case WD_BREADCRUMB_MOTOR_UPDATE: breadcrumb_name = "MOTOR_UPDATE"; break;
             case WD_BREADCRUMB_TELEMETRY: breadcrumb_name = "TELEMETRY"; break;
+            case WD_BREADCRUMB_UDP_PROCESS: breadcrumb_name = "UDP_PROCESS"; break;
+            case WD_BREADCRUMB_USB_PROCESS: breadcrumb_name = "USB_PROCESS"; break;
+            case WD_BREADCRUMB_TX_QUEUE: breadcrumb_name = "TX_QUEUE"; break;
+            case WD_BREADCRUMB_UDP_SEND: breadcrumb_name = "UDP_SEND"; break;
         }
         snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >128ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
         m_comms.reportEvent(STATUS_PREFIX_RECOVERY, recoveryMsg);

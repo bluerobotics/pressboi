@@ -21,6 +21,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// Watchdog breadcrumb definitions (from pressboi.cpp)
+#if WATCHDOG_ENABLED
+extern volatile uint32_t g_watchdogBreadcrumb;
+#define WD_BREADCRUMB_UDP_PROCESS       0x08
+#define WD_BREADCRUMB_USB_PROCESS       0x09
+#define WD_BREADCRUMB_TX_QUEUE          0x0A
+#define WD_BREADCRUMB_UDP_SEND          0x0B
+#endif
+
 /**
  * @struct Message
  * @brief Represents a single data packet for communication.

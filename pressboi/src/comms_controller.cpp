@@ -26,8 +26,19 @@ void CommsController::setup() {
 }
 
 void CommsController::update() {
+	#if WATCHDOG_ENABLED
+	g_watchdogBreadcrumb = WD_BREADCRUMB_UDP_PROCESS;
+	#endif
 	processUdp();
+	
+	#if WATCHDOG_ENABLED
+	g_watchdogBreadcrumb = WD_BREADCRUMB_USB_PROCESS;
+	#endif
 	processUsbSerial();
+	
+	#if WATCHDOG_ENABLED
+	g_watchdogBreadcrumb = WD_BREADCRUMB_TX_QUEUE;
+	#endif
 	processTxQueue();
 }
 
@@ -135,6 +146,9 @@ void CommsController::processTxQueue() {
 		m_txQueueTail = (m_txQueueTail + 1) % TX_QUEUE_SIZE;
 		
 		// Send over UDP
+		#if WATCHDOG_ENABLED
+		g_watchdogBreadcrumb = WD_BREADCRUMB_UDP_SEND;
+		#endif
 		m_udp.Connect(msg.remoteIp, msg.remotePort);
 		m_udp.PacketWrite(msg.buffer);
 		m_udp.PacketSend();
