@@ -354,6 +354,13 @@ void Pressboi::dispatchCommand(const Message& msg) {
         }
         case CMD_REBOOT_BOOTLOADER: {
             reportEvent(STATUS_PREFIX_INFO, "Rebooting to bootloader...");
+            
+            #if WATCHDOG_ENABLED
+            // Disable watchdog before rebooting - bootloader doesn't feed it
+            WDT->CTRLA.reg = 0;
+            while(WDT->SYNCBUSY.reg);
+            #endif
+            
             SysMgr.ResetBoard(SysManager::RESET_TO_BOOTLOADER);
             break; // The system will reset before reaching here
         }
