@@ -58,7 +58,7 @@ MotorController::MotorController(MotorDriver* motorA, MotorDriver* motorB, Press
     m_firstTorqueReading0 = true;
     m_firstTorqueReading1 = true;
     m_machineHomeReferenceSteps = 0;
-    m_retractReferenceSteps = 0;
+    m_retractReferenceSteps = LONG_MIN;  // Use LONG_MIN as sentinel for "not set"
     m_cumulative_distance_mm = 0.0f;
     m_moveStartTime = 0;
     m_active_op_target_position_steps = 0;
@@ -496,7 +496,7 @@ void MotorController::updateState() {
                         }
                         
                         // Use home position (0mm) as default if retract position not explicitly set
-                        long retract_target = (m_retractReferenceSteps == 0) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
+                        long retract_target = (m_retractReferenceSteps == LONG_MIN) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
                         
                         // CRITICAL: Clear force_action to prevent infinite retract loop
                         m_active_op_force_action[0] = '\0';
@@ -747,9 +747,9 @@ void MotorController::retract(const char* args) {
         return;
     }
     
-    if (m_retractReferenceSteps == 0) {
+    if (m_retractReferenceSteps == LONG_MIN) {
         char dbg[128];
-        snprintf(dbg, sizeof(dbg), "Retract debug: reference steps still zero (home=%ld)", m_machineHomeReferenceSteps);
+        snprintf(dbg, sizeof(dbg), "Retract debug: reference steps not set (home=%ld)", m_machineHomeReferenceSteps);
         reportEvent(STATUS_PREFIX_INFO, dbg);
         reportEvent(STATUS_PREFIX_ERROR, "Error: Retract position not set. Use SET_RETRACT first.");
         return;
@@ -1377,7 +1377,7 @@ void MotorController::handleLimitReached(const char* limit_type, float limit_val
         }
         
         // Use home position (0mm) as default if retract position not explicitly set
-        long retract_target = (m_retractReferenceSteps == 0) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
+        long retract_target = (m_retractReferenceSteps == LONG_MIN) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
         
         // CRITICAL: Clear force_action to prevent infinite retract loop
         m_active_op_force_action[0] = '\0';
@@ -1407,7 +1407,7 @@ void MotorController::handleLimitReached(const char* limit_type, float limit_val
         }
         
         // Use home position (0mm) as default if retract position not explicitly set
-        long retract_target = (m_retractReferenceSteps == 0) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
+        long retract_target = (m_retractReferenceSteps == LONG_MIN) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
         
         // CRITICAL: Clear force_action to prevent infinite retract loop
         m_active_op_force_action[0] = '\0';
