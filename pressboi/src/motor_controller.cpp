@@ -851,6 +851,13 @@ void MotorController::moveAbsolute(const char* args) {
     long current_pos = m_motorA->PositionRefCommanded();
     long steps_to_move = target_steps - current_pos;
     
+    // Check if we're already at the target position
+    if (steps_to_move == 0) {
+        reportEvent(STATUS_PREFIX_INFO, "Already at target position. Move complete.");
+        reportEvent(STATUS_PREFIX_DONE, "move_abs");
+        return;
+    }
+    
     int velocity_sps = (int)(speed_mms * STEPS_PER_MM);
     
     // Set torque limit based on mode
@@ -983,6 +990,14 @@ void MotorController::moveIncremental(const char* args) {
     }
     
     long steps_to_move = (long)(distance_mm * STEPS_PER_MM);
+    
+    // Check if the move distance is zero
+    if (steps_to_move == 0) {
+        reportEvent(STATUS_PREFIX_INFO, "Move distance is zero. Move complete.");
+        reportEvent(STATUS_PREFIX_DONE, "move_inc");
+        return;
+    }
+    
     long current_pos = m_motorA->PositionRefCommanded();
     int velocity_sps = (int)(speed_mms * STEPS_PER_MM);
     
