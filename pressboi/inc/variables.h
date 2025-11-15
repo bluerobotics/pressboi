@@ -36,6 +36,7 @@
 #define TELEM_KEY_CURRENT_POS                    "current_pos"  ///< Current position of press axis
 #define TELEM_KEY_RETRACT_POS                    "retract_pos"  ///< Preset retract position for the press
 #define TELEM_KEY_TARGET_POS                     "target_pos"  ///< Target position for current move operation
+#define TELEM_KEY_ENDPOINT                       "endpoint"  ///< Actual position where last move ended (force trigger or completion)
 #define TELEM_KEY_TORQUE_AVG                     "torque_avg"  ///< Average motor torque percentage
 #define TELEM_KEY_HOMED                          "homed"  ///< Indicates if press has been homed to zero position
 /** @} */
@@ -62,6 +63,7 @@ typedef struct {
     float        current_pos                   ; ///< Current position of press axis
     float        retract_pos                   ; ///< Preset retract position for the press
     float        target_pos                    ; ///< Target position for current move operation
+    float        endpoint                      ; ///< Actual position where last move ended (force trigger or completion)
     float        torque_avg                    ; ///< Average motor torque percentage
     int32_t      homed                         ; ///< Indicates if press has been homed to zero position
 } TelemetryData;

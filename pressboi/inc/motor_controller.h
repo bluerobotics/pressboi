@@ -324,6 +324,7 @@ private:
     int m_active_op_torque_percent;         ///< Torque limit (%) for the current operation.
     uint32_t m_moveStartTime;               ///< Timestamp (ms) when a move operation started.
     double m_joules;                        ///< Energy expended (Joules) during current move, integrated at 50Hz.
+    float m_endpoint_mm;                    ///< Actual position (mm) where last move ended (force trigger or completion).
     double m_prev_position_mm;              ///< Previous position (mm) for joule integration calculations.
     double m_machineStrainBaselinePosMm;    ///< Absolute position (mm) that defines zero deflection for strain compensation.
     double m_prevMachineDeflectionMm;       ///< Estimated machine flex deflection (mm) at previous sample.

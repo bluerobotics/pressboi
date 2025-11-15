@@ -63,6 +63,7 @@ MotorController::MotorController(MotorDriver* motorA, MotorDriver* motorB, Press
     m_moveStartTime = 0;
     m_active_op_target_position_steps = 0;
     m_joules = 0.0;
+    m_endpoint_mm = 0.0f;
     m_prev_position_mm = 0.0;
     m_machineStrainBaselinePosMm = 0.0;
     m_prevMachineDeflectionMm = 0.0;
@@ -479,6 +480,10 @@ void MotorController::updateState() {
                     m_state = STATE_STANDBY;
                 } else if (!isStarting) {
                     // Move completed normally (was in ACTIVE state)
+                    // Record endpoint before finalizing
+                    long current_pos_steps = m_motorA->PositionRefCommanded();
+                    m_endpoint_mm = static_cast<float>(static_cast<double>(current_pos_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM);
+                    
                     if (m_activeMoveCommand) {
                         // Send standardized DONE message with just the command name
                         reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
@@ -1318,6 +1323,10 @@ void MotorController::handleLimitReached(const char* limit_type, float limit_val
     m_forceLimitTriggered = true;
     m_prevForceValid = false;
     
+    // Record endpoint where force limit was reached
+    long current_pos_steps = m_motorA->PositionRefCommanded();
+    m_endpoint_mm = static_cast<float>(static_cast<double>(current_pos_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM);
+    
     char msg[STATUS_MESSAGE_BUFFER_SIZE];
     snprintf(msg, sizeof(msg), "%s reached.", limit_type);
     reportEvent(STATUS_PREFIX_INFO, msg);
@@ -1672,6 +1681,9 @@ void MotorController::updateTelemetry(TelemetryData* data, ForceSensor* forceSen
     
     // Update joules (energy expended during move)
     data->joules = static_cast<float>(m_joules);
+    
+    // Update endpoint (position where last move ended)
+    data->endpoint = m_endpoint_mm;
 }
 
 bool MotorController::isBusy() const {

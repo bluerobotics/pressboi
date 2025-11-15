@@ -33,6 +33,7 @@ void telemetry_init(TelemetryData* data) {
     data->current_pos = 0.0f;
     data->retract_pos = 0.0f;
     data->target_pos = 0.0f;
+    data->endpoint = 0.0f;
     data->torque_avg = 0.0f;
     data->homed = 0;
 }
@@ -107,6 +108,11 @@ int telemetry_build_message(const TelemetryData* data, char* buffer, size_t buff
     // target_pos
     if (pos < buffer_size) {
         pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_TARGET_POS, data->target_pos);
+    }
+    
+    // endpoint
+    if (pos < buffer_size) {
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_ENDPOINT, data->endpoint);
     }
     
     // torque_avg
