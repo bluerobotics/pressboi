@@ -115,9 +115,9 @@ void Pressboi::setup() {
     m_forceSensor.setup();
     
 #if WATCHDOG_ENABLED
-    // Check for watchdog recovery, but DON'T enable watchdog yet
-    // We'll enable it after a few main loop iterations to avoid false triggers during startup
+    // Initialize watchdog AFTER comms setup to avoid timeout during network initialization
     handleWatchdogRecovery();
+    initializeWatchdog();
 #endif
     
     // Only report normal startup if not in RECOVERED state
@@ -130,16 +130,6 @@ void Pressboi::setup() {
  * @brief The main execution loop for the Pressboi system.
  */
 void Pressboi::loop() {
-    #if WATCHDOG_ENABLED
-    // Enable watchdog after 10 loop iterations to allow startup communication to complete
-    static uint32_t loop_count = 0;
-    static bool watchdog_initialized = false;
-    if (!watchdog_initialized && loop_count++ >= 10) {
-        initializeWatchdog();
-        watchdog_initialized = true;
-    }
-    #endif
-    
     // 1. Perform safety checks and feed the watchdog timer.
     performSafetyCheck();
 
