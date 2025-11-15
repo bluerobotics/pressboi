@@ -484,8 +484,8 @@ void MotorController::updateState() {
                     long current_pos_steps = m_motorA->PositionRefCommanded();
                     m_endpoint_mm = static_cast<float>(static_cast<double>(current_pos_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM);
                     
-                    // Check if retract or abort action is configured
-                    if (strcmp(m_active_op_force_action, "retract") == 0 || strcmp(m_active_op_force_action, "abort") == 0) {
+                    // Check if retract action is configured (NOT abort - abort only retracts on force limit)
+                    if (strcmp(m_active_op_force_action, "retract") == 0) {
                         // Move completed to target - start retract
                         if (m_activeMoveCommand) {
                             reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
@@ -514,7 +514,7 @@ void MotorController::updateState() {
                         startMove(steps_to_retract, velocity_sps, m_moveDefaultAccelSPS2);
                         reportEvent(STATUS_PREFIX_START, "retract");
                     } else {
-                        // No retract - just complete normally
+                        // No retract - just complete normally (includes "abort" action when no force limit hit)
                         if (m_activeMoveCommand) {
                             reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
                         }
