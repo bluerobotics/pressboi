@@ -494,6 +494,9 @@ void MotorController::updateState() {
                         // Use home position (0mm) as default if retract position not explicitly set
                         long retract_target = (m_retractReferenceSteps == 0) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
                         
+                        // CRITICAL: Clear force_action to prevent infinite retract loop
+                        m_active_op_force_action[0] = '\0';
+                        
                         // Start retract move
                         m_moveState = MOVE_TO_HOME;
                         m_activeMoveCommand = "retract";
@@ -1369,6 +1372,9 @@ void MotorController::handleLimitReached(const char* limit_type, float limit_val
         // Use home position (0mm) as default if retract position not explicitly set
         long retract_target = (m_retractReferenceSteps == 0) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
         
+        // CRITICAL: Clear force_action to prevent infinite retract loop
+        m_active_op_force_action[0] = '\0';
+        
         // Start retract move
         m_moveState = MOVE_TO_HOME;
         m_activeMoveCommand = "retract";
@@ -1395,6 +1401,9 @@ void MotorController::handleLimitReached(const char* limit_type, float limit_val
         
         // Use home position (0mm) as default if retract position not explicitly set
         long retract_target = (m_retractReferenceSteps == 0) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
+        
+        // CRITICAL: Clear force_action to prevent infinite retract loop
+        m_active_op_force_action[0] = '\0';
         
         // Start retract move
         m_moveState = MOVE_TO_HOME;
