@@ -10,6 +10,7 @@ All notable changes to the Pressboi firmware will be documented in this file.
 ### Fixed
 - **CRITICAL**: Fixed infinite retract loop that caused watchdog timeouts when using `retract` or `abort` force actions. The `force_action` parameter is now properly cleared before starting a retract move to prevent re-triggering.
 - Fixed `abort` force action to only trigger retract when force limit is actually hit. Previously, `abort` action would retract even when the move completed normally without hitting the force limit.
+- Fixed zero-step moves causing timeout errors. Moves with 0 steps now immediately return `DONE` instead of attempting to execute and timing out.
 
 ### Changed
 - Updated `force_action` parameter documentation to clarify behavior: `retract` always retracts on any completion, `abort` only retracts when force limit is hit.
