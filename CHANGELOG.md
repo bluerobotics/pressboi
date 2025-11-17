@@ -2,6 +2,12 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.6.1] - 2025-11-17
+
+### Changed
+- **Repository structure**: Reorganized project layout - moved libraries to `lib/` folder and flattened `pressboi/` subfolder to root
+- **Build system**: Updated project paths to reflect new library locations
+
 ## [1.6.0] - 2025-11-15
 
 ### Added
