@@ -1,2 +1,8 @@
 .vs/
 Debug/
+!Debug/*.uf2
+!Debug/*.bin
+!Debug/*.elf
+!Debug/*.map
+!Debug/Makefile
+!Debug/makedep.mk

@@ -34,7 +34,7 @@ jobs:
       - name: Check for pre-built firmware
         id: check_firmware
         run: |
-          if [ -f "pressboi/Debug/pressboi.bin" ] && [ -f "pressboi/Debug/pressboi.uf2" ]; then
+          if [ -f "Debug/pressboi.bin" ] && [ -f "Debug/pressboi.uf2" ]; then
             echo "FIRMWARE_EXISTS=true" >> $GITHUB_OUTPUT
           else
             echo "FIRMWARE_EXISTS=false" >> $GITHUB_OUTPUT
@@ -46,8 +46,8 @@ jobs:
           name: ${{ steps.get_version.outputs.VERSION }}
           body: ${{ steps.changelog.outputs.CHANGELOG }}
           files: |
-            pressboi/Debug/pressboi.bin
-            pressboi/Debug/pressboi.uf2
+            Debug/pressboi.bin
+            Debug/pressboi.uf2
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -55,6 +55,6 @@ jobs:
       - name: Note about firmware binaries
         if: steps.check_firmware.outputs.FIRMWARE_EXISTS == 'false'
         run: |
-          echo "⚠️  No pre-built firmware binaries found in pressboi/Debug/"
+          echo "⚠️  No pre-built firmware binaries found in Debug/"
           echo "Build the firmware locally and commit the .bin and .uf2 files before tagging."
 
