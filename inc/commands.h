@@ -2,7 +2,7 @@
  * @file commands.h
  * @brief Defines the command interface for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from commands.json on 2025-11-13 10:44:58
+ * Generated from commands.json on 2025-11-18 11:43:06
  * 
  * This header file defines all commands that can be sent TO the Pressboi device.
  * For message prefixes and events, see events.h

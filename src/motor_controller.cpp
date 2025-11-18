@@ -1713,7 +1713,15 @@ void MotorController::updateTelemetry(TelemetryData* data, ForceSensor* forceSen
     data->enabled0 = enabled0;
     data->enabled1 = enabled1;
     data->current_pos = static_cast<float>(current_pos_mm);
-    data->retract_pos = static_cast<float>(static_cast<double>(m_retractReferenceSteps - m_machineHomeReferenceSteps) / STEPS_PER_MM);
+
+    // Only report retract position if we've actually captured one.
+    if (m_retractReferenceSteps == LONG_MIN) {
+        data->retract_pos = 0.0f;
+    } else {
+        const double retract_delta_steps =
+            static_cast<double>(m_retractReferenceSteps - m_machineHomeReferenceSteps);
+        data->retract_pos = static_cast<float>(retract_delta_steps / STEPS_PER_MM);
+    }
     // Calculate target position in mm from stored target steps (always show, don't reset)
     double target_pos_mm = static_cast<double>(m_active_op_target_position_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM;
     data->target_pos = static_cast<float>(target_pos_mm);

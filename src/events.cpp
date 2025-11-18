@@ -2,7 +2,7 @@
  * @file events.cpp
  * @brief Event sending implementation for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from events.json on 2025-11-13 10:44:58
+ * Generated from events.json on 2025-11-18 11:43:06
  */
 
 #include "events.h"

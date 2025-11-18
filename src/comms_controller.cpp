@@ -157,9 +157,14 @@ void CommsController::processTxQueue() {
 		// Note: If ethernet link is down, message is silently dropped
 		// This prevents watchdog timeouts from blocking UDP sends
 		
-		// Mirror to USB serial (always works)
-		ConnectorUsb.Send(msg.buffer);
-		ConnectorUsb.Send("\n");
+		// Mirror to USB serial (check buffer space to prevent blocking)
+		// USB sends can block if buffer is full, so check availability first
+		if (ConnectorUsb.AvailableForWrite() >= (int)strlen(msg.buffer) + 1) {
+			ConnectorUsb.Send(msg.buffer);
+			ConnectorUsb.Send("\n");
+		}
+		// If buffer is full, message is silently dropped to prevent blocking
+		// This prevents watchdog timeouts from blocking USB sends
 	}
 }
 

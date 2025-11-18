@@ -1,18 +1,16 @@
 /**
- * @file variables.cpp
+ * @file telemetry.cpp
  * @brief Telemetry construction implementation for the Pressboi controller.
  * @details AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from telemetry.json on 2025-11-18 11:43:06
+ * Generated from telemetry.json on 2025-11-03 11:25:17
  */
 
-#include "variables.h"
-#include "commands.h"
-#include "events.h"
+#include "telemetry.h"
 #include <stdio.h>
 #include <string.h>
+// #include "ClearCore.h"  // Include if using ClearCore hardware
 
-// Forward declaration - implemented in comms_controller
-extern void sendMessage(const char* msg);
+#define TELEM_PREFIX "PRESSBOI_TELEM: "
 
 //==================================================================================================
 // Telemetry Initialization
@@ -21,20 +19,16 @@ extern void sendMessage(const char* msg);
 void telemetry_init(TelemetryData* data) {
     if (data == NULL) return;
     
-    data->MAIN_STATE = "standby";
-    data->force_load_cell = 0.0f;
-    data->force_motor_torque = 0.0f;
+    data->MAIN_STATE = STANDBY;
+    data->force = 0.0f;
     data->force_limit = 1000.0f;
-    data->force_source = "load_cell";
-    data->force_adc_raw = 0;
-    data->joules = 0.0f;
     data->enabled0 = 1;
     data->enabled1 = 1;
     data->current_pos = 0.0f;
-    data->retract_pos = 0.0f;
+    data->start_pos = 0.0f;
     data->target_pos = 0.0f;
-    data->endpoint = 0.0f;
-    data->torque_avg = 0.0f;
+    data->torque_m1 = 0.0f;
+    data->torque_m2 = 0.0f;
     data->homed = 0;
 }
 
@@ -45,24 +39,19 @@ void telemetry_init(TelemetryData* data) {
 int telemetry_build_message(const TelemetryData* data, char* buffer, size_t buffer_size) {
     if (data == NULL || buffer == NULL || buffer_size == 0) return 0;
     
-    size_t pos = 0;
+    int pos = 0;
     
     // Write prefix
     pos += snprintf(buffer + pos, buffer_size - pos, "%s", TELEM_PREFIX);
     
     // MAIN_STATE
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%s,", TELEM_KEY_MAIN_STATE, data->MAIN_STATE);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%d,", TELEM_KEY_MAIN_STATE, data->MAIN_STATE);
     }
     
-    // force_load_cell
+    // force
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_FORCE_LOAD_CELL, data->force_load_cell);
-    }
-    
-    // force_motor_torque
-    if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_FORCE_MOTOR_TORQUE, data->force_motor_torque);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.1f,", TELEM_KEY_FORCE, data->force);
     }
     
     // force_limit
@@ -70,29 +59,14 @@ int telemetry_build_message(const TelemetryData* data, char* buffer, size_t buff
         pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.1f,", TELEM_KEY_FORCE_LIMIT, data->force_limit);
     }
     
-    // force_source
-    if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%s,", TELEM_KEY_FORCE_SOURCE, data->force_source);
-    }
-    
-    // force_adc_raw
-    if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%ld,", TELEM_KEY_FORCE_ADC_RAW, (long)data->force_adc_raw);
-    }
-    
-    // joules
-    if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.3f,", TELEM_KEY_JOULES, data->joules);
-    }
-    
     // enabled0
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%ld,", TELEM_KEY_ENABLED0, (long)data->enabled0);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%d,", TELEM_KEY_ENABLED0, data->enabled0);
     }
     
     // enabled1
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%ld,", TELEM_KEY_ENABLED1, (long)data->enabled1);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%d,", TELEM_KEY_ENABLED1, data->enabled1);
     }
     
     // current_pos
@@ -100,9 +74,9 @@ int telemetry_build_message(const TelemetryData* data, char* buffer, size_t buff
         pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_CURRENT_POS, data->current_pos);
     }
     
-    // retract_pos
+    // start_pos
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_RETRACT_POS, data->retract_pos);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_START_POS, data->start_pos);
     }
     
     // target_pos
@@ -110,22 +84,22 @@ int telemetry_build_message(const TelemetryData* data, char* buffer, size_t buff
         pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_TARGET_POS, data->target_pos);
     }
     
-    // endpoint
+    // torque_m1
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.2f,", TELEM_KEY_ENDPOINT, data->endpoint);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.1f,", TELEM_KEY_TORQUE_M1, data->torque_m1);
     }
     
-    // torque_avg
+    // torque_m2
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.1f,", TELEM_KEY_TORQUE_AVG, data->torque_avg);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%.1f,", TELEM_KEY_TORQUE_M2, data->torque_m2);
     }
     
     // homed
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%ld", TELEM_KEY_HOMED, (long)data->homed);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%d", TELEM_KEY_HOMED, data->homed);
     }
     
-    return (int)pos;
+    return pos;
 }
 
 //==================================================================================================

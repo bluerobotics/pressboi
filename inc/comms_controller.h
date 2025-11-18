@@ -199,6 +199,9 @@ class CommsController {
      */
 	void setupUsbSerial();
 
+    void queueUsbMirrorMessage(const char* buffer);
+    void flushUsbMirrorBuffer();
+
 	EthernetUdp m_udp;          ///< The underlying UDP communication object.
 	IpAddress m_guiIp;          ///< The IP address of the remote GUI application.
 	uint16_t m_guiPort;         ///< The port number of the remote GUI application.
@@ -214,4 +217,10 @@ class CommsController {
 	Message m_txQueue[TX_QUEUE_SIZE];   ///< The circular buffer for outgoing messages.
 	volatile int m_txQueueHead;         ///< Index of the next free slot in the TX queue.
 	volatile int m_txQueueTail;         ///< Index of the next message to be sent from the TX queue.
+
+    // USB mirror state for chunked writes
+    bool m_usbMirrorActive;
+    size_t m_usbMirrorLength;
+    size_t m_usbMirrorPosition;
+    char m_usbMirrorBuffer[MAX_MESSAGE_LENGTH + 1];
 };

@@ -1,0 +1,178 @@
+{
+    "reset": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Clear error states and reset system to standby.",
+        "params": [],
+        "returns": ["done", "error"]
+    },
+    "home": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Homes the press axis to its zero position.",
+        "params": [],
+        "returns": ["done", "error"]
+    },
+    "move_abs": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Moves the press to an absolute position with speed and force limits.",
+        "params": [
+            { "parameter": "position", "unit": "mm", "type": "float" },
+            { "parameter": "speed", "unit": "mm/s", "type": "float" },
+            { "parameter": "force", "unit": "kg", "type": "float", "help": "In motor_torque mode: 50-2000 kg. In load_cell mode: 0.2-1000 kg." },
+            { "parameter": "force_action", "type": "string", "enum": ["retract", "hold", "skip", "abort"], "optional": true, "default": "hold", "help": "Action when force limit reached: retract (retracts to retract position on ANY completion and returns done), hold (stops and waits), skip (ignores limit), abort (retracts ONLY if force limit hit, throws error to halt script)" }
+        ],
+        "returns": ["done", "error"]
+    },
+    "move_inc": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Moves the press by a relative distance with speed and force limits.",
+        "params": [
+            { "parameter": "distance", "unit": "mm", "type": "float" },
+            { "parameter": "speed", "unit": "mm/s", "type": "float" },
+            { "parameter": "force", "unit": "kg", "type": "float", "help": "In motor_torque mode: 50-2000 kg. In load_cell mode: 0.2-1000 kg." },
+            { "parameter": "force_action", "type": "string", "enum": ["retract", "hold", "skip"], "optional": true, "default": "hold" }
+        ],
+        "returns": ["done", "error"]
+    },
+    "set_force_mode": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Sets the force sensing mode (persisted to NVM).",
+        "params": [
+            { "parameter": "mode", "type": "string", "enum": ["motor_torque", "load_cell"], "help": "motor_torque = use motor torque calculation (no load cell needed), load_cell = use actual load cell sensor" }
+        ],
+        "returns": ["done", "error"]
+    },
+    "set_retract": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Sets the retract position for the press.",
+        "params": [
+            { "parameter": "position", "unit": "mm", "type": "float" },
+            { "parameter": "speed", "unit": "mm/s", "type": "float", "optional": true, "default": 25.0, "help": "Optional retract speed to store for future retract commands." }
+        ],
+        "returns": ["done", "error"]
+    },
+    "retract": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Moves the press to the preset retract position with optional speed.",
+        "params": [
+            { "parameter": "speed", "unit": "mm/s", "type": "float", "optional": true, "default": 25.0 }
+        ],
+        "returns": ["done", "error"]
+    },
+    "pause": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Pauses any active move operation.",
+        "params": [],
+        "returns": ["done", "error"]
+    },
+    "resume": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Resumes a paused move operation.",
+        "params": [],
+        "returns": ["done", "error"]
+    },
+    "cancel": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Cancels any active move operation and returns to standby.",
+        "params": [],
+        "returns": ["done", "error"]
+    },
+    "enable": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Enables power to the press motors.",
+        "params": [],
+        "returns": ["done", "error"]
+    },
+    "disable": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Disables power to the press motors.",
+        "params": [],
+        "returns": ["done", "error"]
+    },
+    "test_watchdog": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Test command that triggers the watchdog by blocking for 1 second.",
+        "params": [],
+        "returns": ["done", "error"]
+    },
+    "set_force_offset": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Set force calibration offset and save to NVM. Routes to load cell or motor torque calibration based on current force mode.",
+        "params": [
+            {
+                "parameter": "offset",
+                "type": "float",
+                "help": "In load_cell mode: offset in kg. In motor_torque mode: torque% intercept (default 1.04)"
+            }
+        ],
+        "returns": ["done", "error"]
+    },
+    "set_force_zero": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Adjusts the current force calibration offset so the present force reading becomes zero.",
+        "params": [],
+        "returns": ["info", "done", "error"]
+    },
+    "set_force_scale": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Set force sensor scale/linearity factor and save to non-volatile memory.",
+        "params": [
+            {
+                "parameter": "scale",
+                "type": "float",
+                "help": "In load_cell mode: kg per raw ADC unit. In motor_torque mode: torque% per kg slope (default 0.0335)"
+            }
+        ],
+        "returns": ["done", "error"]
+    },
+    "set_strain_cal": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Set machine strain energy compensation coefficients (force vs distance polynomial) and save to NVM.",
+        "params": [
+            { "parameter": "x4", "type": "float", "unit": "x^4", "help": "Coefficient for x^4 term" },
+            { "parameter": "x3", "type": "float", "unit": "x^3", "help": "Coefficient for x^3 term" },
+            { "parameter": "x2", "type": "float", "unit": "x^2", "help": "Coefficient for x^2 term" },
+            { "parameter": "x1", "type": "float", "unit": "x",   "help": "Coefficient for x term" },
+            { "parameter": "c",  "type": "float", "unit": "C",   "help": "Constant term" }
+        ],
+        "returns": ["done", "error"]
+    },
+    "reboot_bootloader": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Reboots the controller into ClearCore USB bootloader mode for firmware flashing.",
+        "params": [],
+        "returns": ["info", "error"]
+    },
+    "dump_nvm": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Dump Pressboi non-volatile memory contents to the GUI.",
+        "params": [],
+        "returns": ["info", "done", "error"]
+    },
+    "reset_nvm": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Restore Pressboi non-volatile memory to factory defaults.",
+        "params": [],
+        "returns": ["info", "done", "error"]
+    }
+}
+

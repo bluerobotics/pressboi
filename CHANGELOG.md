@@ -2,6 +2,15 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.7.0] - 2025-11-18
+
+### Changed
+- **Device definition restructuring**: Moved device definition from Equipment Control App to firmware repository
+  - Command definitions, telemetry schemas, and GUI layouts now live in `pressboi/definition/` folder
+  - Versioning of device protocol now happens alongside firmware
+  - Equipment Control App automatically discovers and loads definitions from device paths
+  - Supports both standalone definition folders and definitions embedded in firmware repos
+
 ## [1.6.1] - 2025-11-17
 
 ### Changed

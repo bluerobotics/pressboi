@@ -1,0 +1,11 @@
+{
+  "device_name": "pressboi",
+  "firmware_type": "clearcore",
+  "repo": "bluerobotics/pressboi",
+  "asset_name": "pressboi.uf2",
+  "label": "Pressboi",
+  "bootloader_command": "reboot_bootloader",
+  "volume_label": "CLEAR_BOOT",
+  "usb_identifiers": ["PressBoi", "ClearCore"]
+}
+

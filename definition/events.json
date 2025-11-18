@@ -1,0 +1,9 @@
+{
+    "script_hold": {
+        "device": "pressboi",
+        "description": "Triggered when the press pauses due to force limit reached or force sensor error.",
+        "params": [
+            { "parameter": "reason", "type": "string" }
+        ]
+    }
+}

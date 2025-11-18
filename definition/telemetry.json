@@ -1,0 +1,121 @@
+{
+    "MAIN_STATE": {
+        "type": "string",
+        "default": "standby",
+        "help": "Overall press system state",
+        "gui_var": "pressboi_main_state_var"
+    },
+    "force_load_cell": {
+        "unit": "kg",
+        "type": "float",
+        "default": 0.0,
+        "precision": 2,
+        "help": "Force from load cell sensor",
+        "gui_var": "pressboi_force_load_cell_var"
+    },
+    "force_motor_torque": {
+        "unit": "kg",
+        "type": "float",
+        "default": 0.0,
+        "precision": 2,
+        "help": "Force calculated from motor torque",
+        "gui_var": "pressboi_force_motor_torque_var"
+    },
+    "force_limit": {
+        "unit": "kg",
+        "type": "float",
+        "default": 1000.0,
+        "precision": 1,
+        "help": "Maximum force limit for current operation",
+        "gui_var": "pressboi_force_limit_var"
+    },
+    "force_source": {
+        "type": "string",
+        "default": "load_cell",
+        "help": "Source of force reading: load_cell or motor_torque",
+        "gui_var": "pressboi_force_source_var"
+    },
+    "force_adc_raw": {
+        "type": "int",
+        "default": 0,
+        "help": "Raw ADC value from HX711 load cell amplifier (for calibration)"
+    },
+    "joules": {
+        "unit": "J",
+        "type": "float",
+        "default": 0.0,
+        "precision": 3,
+        "help": "Energy expended during current move (force × distance integrated at 50Hz)",
+        "gui_var": "pressboi_joules_var"
+    },
+    "enabled0": {
+        "type": "int",
+        "default": 1,
+        "map": {
+            "0": "disabled",
+            "1": "enabled"
+        },
+        "help": "Power enable status for motor 1",
+        "gui_var": "pressboi_enabled0_var"
+    },
+    "enabled1": {
+        "type": "int",
+        "default": 1,
+        "map": {
+            "0": "disabled",
+            "1": "enabled"
+        },
+        "help": "Power enable status for motor 2",
+        "gui_var": "pressboi_enabled1_var"
+    },
+    "current_pos": {
+        "unit": "mm",
+        "type": "float",
+        "default": 0.0,
+        "precision": 2,
+        "help": "Current position of press axis",
+        "gui_var": "pressboi_current_pos_var"
+    },
+    "retract_pos": {
+        "unit": "mm",
+        "type": "float",
+        "default": 0.0,
+        "precision": 2,
+        "help": "Preset retract position for the press",
+        "gui_var": "pressboi_retract_pos_var"
+    },
+    "target_pos": {
+        "unit": "mm",
+        "type": "float",
+        "default": 0.0,
+        "precision": 2,
+        "help": "Target position for current move operation",
+        "gui_var": "pressboi_target_pos_var"
+    },
+    "endpoint": {
+        "unit": "mm",
+        "type": "float",
+        "default": 0.0,
+        "precision": 2,
+        "help": "Actual position where last move ended (force trigger or completion)",
+        "gui_var": "pressboi_endpoint_var"
+    },
+    "torque_avg": {
+        "unit": "%",
+        "type": "float",
+        "default": 0.0,
+        "precision": 1,
+        "help": "Average motor torque percentage",
+        "gui_var": "pressboi_torque_avg_var"
+    },
+    "homed": {
+        "type": "int",
+        "default": 0,
+        "map": {
+            "0": "not homed",
+            "1": "homed"
+        },
+        "help": "Indicates if press has been homed to zero position",
+        "gui_var": "pressboi_homed_var"
+    }
+}
