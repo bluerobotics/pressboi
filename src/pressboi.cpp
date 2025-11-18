@@ -57,7 +57,13 @@ extern Pressboi pressboi;
 
 void sendMessage(const char* msg) {
     // Events and telemetry already have their prefixes, so send directly
-    pressboi.m_comms.enqueueTx(msg, pressboi.m_comms.getGuiIp(), pressboi.m_comms.getGuiPort());
+    // Always queue messages - they will be sent to network (if GUI discovered) and USB
+    // If GUI not discovered, use dummy IP - processTxQueue will still mirror to USB
+    bool guiDiscovered = pressboi.m_comms.isGuiDiscovered();
+    IpAddress targetIp = guiDiscovered ? pressboi.m_comms.getGuiIp() : IpAddress(0, 0, 0, 0);
+    uint16_t targetPort = guiDiscovered ? pressboi.m_comms.getGuiPort() : 0;
+    
+    pressboi.m_comms.enqueueTx(msg, targetIp, targetPort);
 }
 
 //==================================================================================================
@@ -181,7 +187,8 @@ void Pressboi::loop() {
     // 6. Handle time-based periodic tasks.
     uint32_t now = Milliseconds();
 	
-    if (m_comms.isGuiDiscovered() && (now - m_lastTelemetryTime >= TELEMETRY_INTERVAL_MS)) {
+    // Always send telemetry (for both network and USB)
+    if (now - m_lastTelemetryTime >= TELEMETRY_INTERVAL_MS) {
         // Skip telemetry if we're too close to discovery time (network may not be stable yet)
         static uint32_t discoveryTime = 0;
         static bool wasDiscovered = false;
@@ -193,15 +200,17 @@ void Pressboi::loop() {
             wasDiscovered = false;
         }
         
-        // Wait at least 500ms after discovery before sending telemetry
-        if (now - discoveryTime < 500) {
-            m_lastTelemetryTime = now; // Reset timer so we don't immediately spam after 500ms
-        } else {
+        // Wait at least 500ms after GUI discovery before sending (only affects network, USB always works)
+        bool skipForNetworkStability = m_comms.isGuiDiscovered() && (now - discoveryTime < 500);
+        
+        if (!skipForNetworkStability) {
             #if WATCHDOG_ENABLED
             g_watchdogBreadcrumb = WD_BREADCRUMB_TELEMETRY;
             #endif
             m_lastTelemetryTime = now;
             publishTelemetry();
+        } else {
+            m_lastTelemetryTime = now; // Reset timer so we don't immediately spam after 500ms
         }
     }
     
@@ -358,13 +367,28 @@ void Pressboi::dispatchCommand(const Message& msg) {
         case CMD_DISCOVER_DEVICE: {
             char* portStr = strstr(msg.buffer, "PORT=");
             if (portStr) {
-                m_comms.setGuiIp(msg.remoteIp);
-                m_comms.setGuiPort(atoi(portStr + 5));
-                m_comms.setGuiDiscovered(true);
+                uint16_t guiPort = atoi(portStr + 5);
+                
+                // Always respond to the IP that sent the discovery command
+                // Don't update stored GUI IP if it came from localhost (USB)
+                IpAddress localhost(127, 0, 0, 1);
+                bool fromUsb = (msg.remoteIp == localhost);
+                
+                if (!fromUsb) {
+                    // Network discovery - update stored GUI IP
+                    m_comms.setGuiIp(msg.remoteIp);
+                    m_comms.setGuiPort(guiPort);
+                    m_comms.setGuiDiscovered(true);
+                }
+                // USB discovery - don't update, keep previous GUI IP
+                
                 // Report device ID, port, and firmware version
-                char discoveryMsg[96];
-                snprintf(discoveryMsg, sizeof(discoveryMsg), "DEVICE_ID=pressboi PORT=%d FW=%s", LOCAL_PORT, FIRMWARE_VERSION);
-                m_comms.reportEvent(STATUS_PREFIX_DISCOVERY, discoveryMsg);
+                char discoveryMsg[128];
+                snprintf(discoveryMsg, sizeof(discoveryMsg), "%sDEVICE_ID=pressboi PORT=%d FW=%s", 
+                        STATUS_PREFIX_DISCOVERY, LOCAL_PORT, FIRMWARE_VERSION);
+                
+                // Send response directly to the requester (not via reportEvent which uses stored GUI IP)
+                m_comms.enqueueTx(discoveryMsg, msg.remoteIp, guiPort);
             }
             break;
         }
@@ -633,8 +657,9 @@ void Pressboi::dispatchCommand(const Message& msg) {
  * @brief Aggregates telemetry data from all sub-controllers and sends it as a single UDP packet.
  */
 void Pressboi::publishTelemetry() {
-    if (!m_comms.isGuiDiscovered()) return;
-
+    // Always publish telemetry - it will be sent to both network (if GUI discovered) and USB
+    
+    
     // Update telemetry data from motor controller (includes force calculation)
     m_motor.updateTelemetry(&g_telemetry, &m_forceSensor);
     
@@ -653,7 +678,12 @@ void Pressboi::publishTelemetry() {
     // Build and send telemetry message
     char telemetryBuffer[1024];
     telemetry_build_message(&g_telemetry, telemetryBuffer, sizeof(telemetryBuffer));
-    m_comms.enqueueTx(telemetryBuffer, m_comms.getGuiIp(), m_comms.getGuiPort());
+    
+    // Always queue telemetry - use dummy IP if GUI not discovered yet
+    IpAddress targetIp = m_comms.isGuiDiscovered() ? m_comms.getGuiIp() : IpAddress(0, 0, 0, 0);
+    uint16_t targetPort = m_comms.isGuiDiscovered() ? m_comms.getGuiPort() : 0;
+    
+    m_comms.enqueueTx(telemetryBuffer, targetIp, targetPort);
 }
 
 /**

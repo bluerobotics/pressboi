@@ -35,7 +35,7 @@
  * @name General System Behavior
  * @{
  */
-#define FIRMWARE_VERSION                "1.6.1"   ///< Pressboi firmware version
+#define FIRMWARE_VERSION                "1.7.0"   ///< Pressboi firmware version
 #define STATUS_MESSAGE_BUFFER_SIZE      256       ///< Standard buffer size for composing status and error messages.
 #define POST_ABORT_DELAY_MS             100       ///< Delay in milliseconds after an abort command to allow motors to come to a complete stop.
 /** @} */

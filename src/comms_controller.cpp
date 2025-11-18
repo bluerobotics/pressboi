@@ -111,6 +111,7 @@ void CommsController::processUsbSerial() {
 	int charsProcessed = 0;
 	const int MAX_CHARS_PER_CALL = 32;
 	
+	
 	while (ConnectorUsb.AvailableForRead() > 0 && charsProcessed < MAX_CHARS_PER_CALL) {
 		char c = ConnectorUsb.CharGet();
 		charsProcessed++;
@@ -119,6 +120,7 @@ void CommsController::processUsbSerial() {
 		if (c == '\n' || c == '\r') {
 			if (usbBufferIndex > 0) {
 				usbBuffer[usbBufferIndex] = '\0';
+				
 				// Enqueue as if from local host (use dummy IP)
 				IpAddress dummyIp(127, 0, 0, 1);
 				if (!enqueueRx(usbBuffer, dummyIp, CLIENT_PORT)) {
@@ -145,23 +147,86 @@ void CommsController::processTxQueue() {
 		Message msg = m_txQueue[m_txQueueTail];
 		m_txQueueTail = (m_txQueueTail + 1) % TX_QUEUE_SIZE;
 		
-		// Send over UDP only if ethernet link is up (prevents blocking)
+		
+		// Send over UDP if ethernet link is up AND we have a valid network GUI IP
 		#if WATCHDOG_ENABLED
 		g_watchdogBreadcrumb = WD_BREADCRUMB_UDP_SEND;
 		#endif
-		if (EthernetMgr.PhyLinkActive()) {
+		
+		// Check if we have a valid network IP (not localhost, not 0.0.0.0)
+		IpAddress localhost(127, 0, 0, 1);
+		IpAddress zeroIp(0, 0, 0, 0);
+		bool isLocalhost = (msg.remoteIp == localhost);
+		bool isZero = (msg.remoteIp == zeroIp);
+		bool hasValidNetworkIp = !isLocalhost && !isZero;
+		
+		if (EthernetMgr.PhyLinkActive() && hasValidNetworkIp) {
 			m_udp.Connect(msg.remoteIp, msg.remotePort);
 			m_udp.PacketWrite(msg.buffer);
 			m_udp.PacketSend();
 		}
-		// Note: If ethernet link is down, message is silently dropped
+		// Note: If ethernet link is down or no valid network IP, UDP send is skipped
 		// This prevents watchdog timeouts from blocking UDP sends
 		
-		// Mirror to USB serial (check buffer space to prevent blocking)
-		// USB sends can block if buffer is full, so check availability first
-		if (ConnectorUsb.AvailableForWrite() >= (int)strlen(msg.buffer) + 1) {
-			ConnectorUsb.Send(msg.buffer);
-			ConnectorUsb.Send("\n");
+		// Mirror to USB serial with chunking for large messages
+		// This happens ALWAYS, regardless of network state
+		// USB CDC buffer is 64 bytes, so we chunk messages larger than 50 bytes
+		const int CHUNK_SIZE = 50;
+		int msgLen = strlen(msg.buffer);
+		
+		if (msgLen <= CHUNK_SIZE) {
+			// Small message - send directly if buffer available
+			int usbAvail = ConnectorUsb.AvailableForWrite();
+			if (usbAvail >= msgLen + 1) {
+				ConnectorUsb.Send(msg.buffer);
+				ConnectorUsb.Send("\n");
+			} else {
+				// Debug: Report dropped messages
+				static uint32_t dropCount = 0;
+				static uint32_t lastReport = 0;
+				dropCount++;
+				uint32_t now = Milliseconds();
+				if (now - lastReport > 2000) {
+					char dbg[64];
+					snprintf(dbg, sizeof(dbg), "USB_DROP: %lu msgs, avail=%d need=%d\n", dropCount, usbAvail, msgLen + 1);
+					// Try to send error if space available
+					if (ConnectorUsb.AvailableForWrite() > 60) {
+						ConnectorUsb.Send(dbg);
+					}
+					lastReport = now;
+					dropCount = 0;
+				}
+			}
+		} else {
+			// Large message - send in chunks with continuation markers
+			// Format: "MSG_PART_1/3: first_50_chars"
+			int totalChunks = (msgLen + CHUNK_SIZE - 1) / CHUNK_SIZE;
+			for (int chunk = 0; chunk < totalChunks; chunk++) {
+				int offset = chunk * CHUNK_SIZE;
+				int chunkLen = (msgLen - offset > CHUNK_SIZE) ? CHUNK_SIZE : (msgLen - offset);
+				
+				char chunkMsg[80];
+				snprintf(chunkMsg, sizeof(chunkMsg), "CHUNK_%d/%d:", chunk + 1, totalChunks);
+				int headerLen = strlen(chunkMsg);
+				
+				// Add chunk data
+				strncat(chunkMsg, msg.buffer + offset, chunkLen);
+				chunkMsg[headerLen + chunkLen] = '\0';
+				
+				// Wait for buffer space (with timeout to prevent watchdog)
+				uint32_t startWait = Milliseconds();
+				while (ConnectorUsb.AvailableForWrite() < (int)strlen(chunkMsg) + 1) {
+					if (Milliseconds() - startWait > 10) {
+						// Timeout - skip this chunk to prevent blocking
+						break;
+					}
+				}
+				
+				if (ConnectorUsb.AvailableForWrite() >= (int)strlen(chunkMsg) + 1) {
+					ConnectorUsb.Send(chunkMsg);
+					ConnectorUsb.Send("\n");
+				}
+			}
 		}
 		// If buffer is full, message is silently dropped to prevent blocking
 		// This prevents watchdog timeouts from blocking USB sends
@@ -172,9 +237,12 @@ void CommsController::reportEvent(const char* statusType, const char* message) {
 	char fullMsg[MAX_MESSAGE_LENGTH];
 	snprintf(fullMsg, sizeof(fullMsg), "%s%s", statusType, message);
 	
-	if (m_guiDiscovered) {
-		enqueueTx(fullMsg, m_guiIp, m_guiPort);
-	}
+	// Always queue messages for TX - they will be sent to both network (if GUI discovered) and USB
+	// If GUI not discovered, use dummy IP - processTxQueue will still mirror to USB
+	IpAddress targetIp = m_guiDiscovered ? m_guiIp : IpAddress(0, 0, 0, 0);
+	uint16_t targetPort = m_guiDiscovered ? m_guiPort : 0;
+	
+	enqueueTx(fullMsg, targetIp, targetPort);
 }
 
 void CommsController::setupUsbSerial(void) {
@@ -207,6 +275,9 @@ void CommsController::setupEthernet() {
     }
 
     m_udp.Begin(LOCAL_PORT);
+    
+    // Send status message over USB to confirm network is ready
+    ConnectorUsb.Send("PRESSBOI_INFO: Network ready, listening on port 8888\n");
 }
 
 // parseCommand is now in commands.cpp as a global function

@@ -11,6 +11,13 @@ All notable changes to the Pressboi firmware will be documented in this file.
   - Equipment Control App automatically discovers and loads definitions from device paths
   - Supports both standalone definition folders and definitions embedded in firmware repos
 
+### Fixed
+- **USB telemetry**: Fixed firmware not sending telemetry over USB serial when GUI not discovered via network
+- **USB message buffer**: Implemented chunked message sending for telemetry packets larger than 64-byte USB CDC buffer
+- **Network discovery**: Fixed firmware accepting discovery commands even when GUI already discovered, allowing reconnection
+- **Retract position telemetry**: Fixed `retract_pos` reporting garbage values when motor not homed (now reports 0.0)
+- **Dual connection support**: Both USB and network telemetry now stream simultaneously when both connections present
+
 ## [1.6.1] - 2025-11-17
 
 ### Changed
