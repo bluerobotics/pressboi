@@ -323,8 +323,15 @@ def create_gui_components(parent, shared_gui_refs):
             else:
                 # Default to showing waiting for data
                 force_source_label.config(text="[---]", foreground=theme.COMMENT_COLOR)
-        except Exception as e:
-            force_source_label.config(text="[---]", foreground=theme.COMMENT_COLOR)
+        except tk.TclError:
+            # Widget destroyed; ignore
+            pass
+        except Exception:
+            # Other error; try to update label
+            try:
+                force_source_label.config(text="[---]", foreground=theme.COMMENT_COLOR)
+            except tk.TclError:
+                pass
     
     shared_gui_refs['pressboi_force_source_var'].trace_add('write', update_force_source)
     update_force_source()
@@ -638,15 +645,15 @@ def create_gui_components(parent, shared_gui_refs):
                 graph_canvas.create_line(x1, y1, x2, y2,
                                         fill=theme.PRIMARY_ACCENT,
                                         width=2)
+            
+            # Draw points
+            for x, y in points:
+                graph_canvas.create_oval(x-2, y-2, x+2, y+2,
+                                        fill=theme.SUCCESS_GREEN,
+                                        outline=theme.SUCCESS_GREEN)
         except tk.TclError:
             # Canvas was likely destroyed; ignore drawing
             pass
-        
-        # Draw points
-        for x, y in points:
-            graph_canvas.create_oval(x-2, y-2, x+2, y+2,
-                                    fill=theme.SUCCESS_GREEN,
-                                    outline=theme.SUCCESS_GREEN)
     
     # Add button to clear graph data
     button_frame = ttk.Frame(graph_container, style='Card.TFrame')
