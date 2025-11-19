@@ -46,7 +46,8 @@ bool CommsController::enqueueRx(const char* msg, const IpAddress& ip, uint16_t p
 	int next_head = (m_rxQueueHead + 1) % RX_QUEUE_SIZE;
 	if (next_head == m_rxQueueTail) {
 		if(m_guiDiscovered && EthernetMgr.PhyLinkActive()) {
-			char errorMsg[] = "PRESSBOI_ERROR: RX QUEUE OVERFLOW - COMMAND DROPPED";
+			char errorMsg[128];
+			snprintf(errorMsg, sizeof(errorMsg), "%s_ERROR: RX QUEUE OVERFLOW - COMMAND DROPPED", DEVICE_NAME_UPPER);
 			m_udp.Connect(m_guiIp, m_guiPort);
 			m_udp.PacketWrite(errorMsg);
 			m_udp.PacketSend();
@@ -74,7 +75,8 @@ bool CommsController::enqueueTx(const char* msg, const IpAddress& ip, uint16_t p
 	int next_head = (m_txQueueHead + 1) % TX_QUEUE_SIZE;
 	if (next_head == m_txQueueTail) {
 		if(m_guiDiscovered && EthernetMgr.PhyLinkActive()) {
-			char errorMsg[] = "PRESSBOI_ERROR: TX QUEUE OVERFLOW - MESSAGE DROPPED";
+			char errorMsg[128];
+			snprintf(errorMsg, sizeof(errorMsg), "%s_ERROR: TX QUEUE OVERFLOW - MESSAGE DROPPED", DEVICE_NAME_UPPER);
 			m_udp.Connect(m_guiIp, m_guiPort);
 			m_udp.PacketWrite(errorMsg);
 			m_udp.PacketSend();
@@ -136,7 +138,9 @@ void CommsController::processUsbSerial() {
 		// Buffer overflow protection - discard message
 		else {
 			usbBufferIndex = 0;
-			ConnectorUsb.Send("PRESSBOI_ERROR: USB command too long\n");
+			char errorMsg[128];
+			snprintf(errorMsg, sizeof(errorMsg), "%s_ERROR: USB command too long\n", DEVICE_NAME_UPPER);
+			ConnectorUsb.Send(errorMsg);
 		}
 	}
 }
@@ -168,35 +172,50 @@ void CommsController::processTxQueue() {
 		// Note: If ethernet link is down or no valid network IP, UDP send is skipped
 		// This prevents watchdog timeouts from blocking UDP sends
 		
-		// Mirror to USB serial with chunking for large messages
-		// This happens ALWAYS, regardless of network state
-		// USB CDC buffer is 64 bytes, so we chunk messages larger than 50 bytes
+	// Mirror to USB serial (if USB host is connected and reading)
+	// USB CDC buffer is 64 bytes, so we chunk messages larger than 50 bytes
+	// 
+	// USB Connection Detection:
+	// - If USB buffer has space, a host is connected and reading data
+	// - If USB buffer stays full for >3 seconds, no host is reading (disconnected or app closed)
+	// - Stop sending to prevent buffer deadlock, resume automatically when host reconnects
+	
+	static uint32_t lastUsbHealthy = 0;
+	static bool usbHostConnected = true;  // Assume connected at boot
+	uint32_t now = Milliseconds();
+	int usbAvail = ConnectorUsb.AvailableForWrite();
+	
+	// Check if USB buffer has space - if yes, a host is actively reading
+	if (usbAvail > 5) {
+		lastUsbHealthy = now;
+		if (!usbHostConnected) {
+			// USB host reconnected! Resume sending
+			usbHostConnected = true;
+			char recoveryMsg[64];
+			snprintf(recoveryMsg, sizeof(recoveryMsg), "%s_INFO: USB host reconnected\n", DEVICE_NAME_UPPER);
+			ConnectorUsb.Send(recoveryMsg);
+		}
+	} else {
+		// Buffer is nearly full - either host is slow or disconnected
+		if (usbHostConnected && (now - lastUsbHealthy) > 3000) {
+			// Buffer full for 3+ seconds - host disconnected or stopped reading
+			usbHostConnected = false;
+			// Stop sending to prevent buffer deadlock
+		}
+	}
+	
+	// Only send to USB if a host is connected and reading
+	if (usbHostConnected) {
 		const int CHUNK_SIZE = 50;
 		int msgLen = strlen(msg.buffer);
 		
 		if (msgLen <= CHUNK_SIZE) {
 			// Small message - send directly if buffer available
-			int usbAvail = ConnectorUsb.AvailableForWrite();
 			if (usbAvail >= msgLen + 1) {
 				ConnectorUsb.Send(msg.buffer);
 				ConnectorUsb.Send("\n");
-			} else {
-				// Debug: Report dropped messages
-				static uint32_t dropCount = 0;
-				static uint32_t lastReport = 0;
-				dropCount++;
-				uint32_t now = Milliseconds();
-				if (now - lastReport > 2000) {
-					char dbg[64];
-					snprintf(dbg, sizeof(dbg), "USB_DROP: %lu msgs, avail=%d need=%d\n", dropCount, usbAvail, msgLen + 1);
-					// Try to send error if space available
-					if (ConnectorUsb.AvailableForWrite() > 60) {
-						ConnectorUsb.Send(dbg);
-					}
-					lastReport = now;
-					dropCount = 0;
-				}
 			}
+			// If buffer full, just drop the message silently
 		} else {
 			// Large message - send in chunks with continuation markers
 			// Format: "MSG_PART_1/3: first_50_chars"
@@ -228,8 +247,9 @@ void CommsController::processTxQueue() {
 				}
 			}
 		}
-		// If buffer is full, message is silently dropped to prevent blocking
-		// This prevents watchdog timeouts from blocking USB sends
+	}
+	// If USB unhealthy or buffer full, message is silently dropped to prevent blocking
+	// USB will auto-recover when buffer has space again (host reconnects)
 	}
 }
 
@@ -251,6 +271,9 @@ void CommsController::setupUsbSerial(void) {
 	ConnectorUsb.PortOpen();
 	// USB setup is non-blocking - the connector will become available when ready
 	// No need to wait here, as the main loop will handle USB when available
+	
+	// Send a startup message after a delay to confirm USB is working
+	// (Will be sent in the main loop once USB is ready)
 }
 
 void CommsController::setupEthernet() {
@@ -277,7 +300,9 @@ void CommsController::setupEthernet() {
     m_udp.Begin(LOCAL_PORT);
     
     // Send status message over USB to confirm network is ready
-    ConnectorUsb.Send("PRESSBOI_INFO: Network ready, listening on port 8888\n");
+    char infoMsg[128];
+    snprintf(infoMsg, sizeof(infoMsg), "%s_INFO: Network ready, listening on port %d\n", DEVICE_NAME_UPPER, LOCAL_PORT);
+    ConnectorUsb.Send(infoMsg);
 }
 
 // parseCommand is now in commands.cpp as a global function

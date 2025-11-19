@@ -2,6 +2,15 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.8.0] - 2025-11-19
+
+### Fixed
+- **USB buffer improvements**: Implemented automatic USB host connection detection to prevent buffer overflow
+- **Message filtering**: Firmware now only sends USB/network messages when respective interfaces have active listeners
+
+### Changed
+- **Device naming portability**: Replaced hardcoded "PRESSBOI" strings with `DEVICE_NAME_UPPER` and `DEVICE_NAME_LOWER` defines from `config.h`
+
 ## [1.7.0] - 2025-11-18
 
 ### Changed
