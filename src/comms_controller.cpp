@@ -279,6 +279,14 @@ void CommsController::notifyUsbHostActive() {
 	// Called when a command is received over USB
 	// Immediately mark the host as connected and reset the health timer
 	if (!m_usbHostConnected) {
+		// Clear TX queue - any messages queued while host was disconnected are stale
+		// This prevents the USB buffer from being flooded with old telemetry
+		m_txQueueHead = 0;
+		m_txQueueTail = 0;
+		
+		// Clear USB input buffer to remove any stale data
+		ConnectorUsb.FlushInput();
+		
 		// Queue a message to indicate USB host was detected (don't send directly to avoid blocking)
 		char msg[80];
 		snprintf(msg, sizeof(msg), "%s_INFO: USB host detected via command", DEVICE_NAME_UPPER);
