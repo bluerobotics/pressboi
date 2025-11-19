@@ -205,6 +205,7 @@ void CommsController::processTxQueue() {
 		// Buffer is nearly full - either host is slow or disconnected
 		if (m_usbHostConnected && (now - m_lastUsbHealthy) > 3000) {
 			// Buffer full for 3+ seconds - host disconnected or stopped reading
+			// Note: Can't send message here since buffer is full, but log state change internally
 			m_usbHostConnected = false;
 			// Stop sending to prevent buffer deadlock
 		}
@@ -274,6 +275,12 @@ void CommsController::reportEvent(const char* statusType, const char* message) {
 void CommsController::notifyUsbHostActive() {
 	// Called when a command is received over USB
 	// Immediately mark the host as connected and reset the health timer
+	if (!m_usbHostConnected) {
+		// Send a message to indicate USB host was detected
+		char msg[80];
+		snprintf(msg, sizeof(msg), "%s_INFO: USB host detected via command\n", DEVICE_NAME_UPPER);
+		ConnectorUsb.Send(msg);
+	}
 	m_usbHostConnected = true;
 	m_lastUsbHealthy = Milliseconds();
 }
