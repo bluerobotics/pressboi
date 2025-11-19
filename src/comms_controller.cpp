@@ -153,37 +153,12 @@ void CommsController::processUsbSerial() {
 }
 
 void CommsController::processTxQueue() {
-	// Process one message per call - this is fine since watchdog is fed every loop iteration
-	if (m_txQueueHead != m_txQueueTail) {
-		Message msg = m_txQueue[m_txQueueTail];
-		m_txQueueTail = (m_txQueueTail + 1) % TX_QUEUE_SIZE;
-		
-		
-		// Send over UDP if ethernet link is up AND we have a valid network GUI IP
-		#if WATCHDOG_ENABLED
-		g_watchdogBreadcrumb = WD_BREADCRUMB_UDP_SEND;
-		#endif
-		
-		// Check if we have a valid network IP (not localhost, not 0.0.0.0)
-		IpAddress localhost(127, 0, 0, 1);
-		IpAddress zeroIp(0, 0, 0, 0);
-		bool isLocalhost = (msg.remoteIp == localhost);
-		bool isZero = (msg.remoteIp == zeroIp);
-		bool hasValidNetworkIp = !isLocalhost && !isZero;
-		
-		if (EthernetMgr.PhyLinkActive() && hasValidNetworkIp) {
-			m_udp.Connect(msg.remoteIp, msg.remotePort);
-			m_udp.PacketWrite(msg.buffer);
-			m_udp.PacketSend();
-		}
-		// Note: If ethernet link is down or no valid network IP, UDP send is skipped
-		// This prevents watchdog timeouts from blocking UDP sends
-		
-	// Mirror to USB serial (if USB host is connected and reading)
-	// USB CDC buffer is 64 bytes, so we chunk messages larger than 50 bytes
+	// USB Connection Detection - check every loop, even if queue is empty
+	// This ensures we detect host reconnection promptly
+	// USB CDC buffer is 64 bytes total
 	// 
-	// USB Connection Detection:
-	// - If USB buffer has space, a host is connected and reading data
+	// USB Connection Detection Logic:
+	// - If USB buffer has space (>5 bytes), a host is connected and reading data
 	// - If USB buffer stays full for >3 seconds, no host is reading (disconnected or app closed)
 	// - Stop sending to prevent buffer deadlock, resume automatically when host reconnects
 	// - If host sends ANY data (commands), immediately mark as connected (via notifyUsbHostActive)
@@ -214,7 +189,34 @@ void CommsController::processTxQueue() {
 		}
 	}
 	
-	// Only send to USB if a host is connected and reading
+	// Process one message per call - this is fine since watchdog is fed every loop iteration
+	if (m_txQueueHead != m_txQueueTail) {
+		Message msg = m_txQueue[m_txQueueTail];
+		m_txQueueTail = (m_txQueueTail + 1) % TX_QUEUE_SIZE;
+		
+		
+		// Send over UDP if ethernet link is up AND we have a valid network GUI IP
+		#if WATCHDOG_ENABLED
+		g_watchdogBreadcrumb = WD_BREADCRUMB_UDP_SEND;
+		#endif
+		
+		// Check if we have a valid network IP (not localhost, not 0.0.0.0)
+		IpAddress localhost(127, 0, 0, 1);
+		IpAddress zeroIp(0, 0, 0, 0);
+		bool isLocalhost = (msg.remoteIp == localhost);
+		bool isZero = (msg.remoteIp == zeroIp);
+		bool hasValidNetworkIp = !isLocalhost && !isZero;
+		
+		if (EthernetMgr.PhyLinkActive() && hasValidNetworkIp) {
+			m_udp.Connect(msg.remoteIp, msg.remotePort);
+			m_udp.PacketWrite(msg.buffer);
+			m_udp.PacketSend();
+		}
+		// Note: If ethernet link is down or no valid network IP, UDP send is skipped
+		// This prevents watchdog timeouts from blocking UDP sends
+		
+		// Mirror to USB serial (if USB host is connected and reading)
+		// Only send to USB if a host is connected and reading
 	if (m_usbHostConnected) {
 		const int CHUNK_SIZE = 50;
 		int msgLen = strlen(msg.buffer);

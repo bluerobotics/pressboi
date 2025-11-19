@@ -2,6 +2,16 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.8.5] - 2025-11-19
+
+### Fixed
+- **USB host detection**: Fixed USB connection health check only running when messages were queued, causing firmware to stay in "disconnected" state after app restart without power cycle. Health check now runs every loop iteration regardless of queue state, ensuring prompt reconnection detection.
+
+## [1.8.4] - 2025-11-19
+
+### Fixed
+- **USB buffer management**: Modified `notifyUsbHostActive()` to clear the TX queue and flush USB input buffer when a USB command is received, preventing stale messages from accumulating
+
 ## [1.8.3] - 2025-11-19
 
 ### Fixed
