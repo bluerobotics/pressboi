@@ -162,6 +162,13 @@ class CommsController {
      * @param port The new port number.
      */
 	void setGuiPort(uint16_t port) { m_guiPort = port; }
+	
+	/**
+	 * @brief Notifies the comms controller that USB host has sent data.
+	 * @details Called when a command is received over USB. This marks the
+	 * USB host as connected and resets the health check timer.
+	 */
+	void notifyUsbHostActive();
 
 	private:
 	/**
@@ -223,4 +230,8 @@ class CommsController {
     size_t m_usbMirrorLength;
     size_t m_usbMirrorPosition;
     char m_usbMirrorBuffer[MAX_MESSAGE_LENGTH + 1];
+    
+    // USB host health tracking
+    uint32_t m_lastUsbHealthy;
+    bool m_usbHostConnected;
 };

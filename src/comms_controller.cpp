@@ -18,6 +18,10 @@ CommsController::CommsController() {
 	m_rxQueueTail = 0;
 	m_txQueueHead = 0;
 	m_txQueueTail = 0;
+	
+	// USB host health tracking - start pessimistic (wait for first sign of host)
+	m_lastUsbHealthy = 0;
+	m_usbHostConnected = false;
 }
 
 void CommsController::setup() {
@@ -123,6 +127,9 @@ void CommsController::processUsbSerial() {
 			if (usbBufferIndex > 0) {
 				usbBuffer[usbBufferIndex] = '\0';
 				
+				// Mark USB host as active when we receive a command
+				notifyUsbHostActive();
+				
 				// Enqueue as if from local host (use dummy IP)
 				IpAddress dummyIp(127, 0, 0, 1);
 				if (!enqueueRx(usbBuffer, dummyIp, CLIENT_PORT)) {
@@ -179,33 +186,32 @@ void CommsController::processTxQueue() {
 	// - If USB buffer has space, a host is connected and reading data
 	// - If USB buffer stays full for >3 seconds, no host is reading (disconnected or app closed)
 	// - Stop sending to prevent buffer deadlock, resume automatically when host reconnects
+	// - If host sends ANY data (commands), immediately mark as connected (via notifyUsbHostActive)
 	
-	static uint32_t lastUsbHealthy = 0;
-	static bool usbHostConnected = true;  // Assume connected at boot
 	uint32_t now = Milliseconds();
 	int usbAvail = ConnectorUsb.AvailableForWrite();
 	
 	// Check if USB buffer has space - if yes, a host is actively reading
 	if (usbAvail > 5) {
-		lastUsbHealthy = now;
-		if (!usbHostConnected) {
+		m_lastUsbHealthy = now;
+		if (!m_usbHostConnected) {
 			// USB host reconnected! Resume sending
-			usbHostConnected = true;
+			m_usbHostConnected = true;
 			char recoveryMsg[64];
 			snprintf(recoveryMsg, sizeof(recoveryMsg), "%s_INFO: USB host reconnected\n", DEVICE_NAME_UPPER);
 			ConnectorUsb.Send(recoveryMsg);
 		}
 	} else {
 		// Buffer is nearly full - either host is slow or disconnected
-		if (usbHostConnected && (now - lastUsbHealthy) > 3000) {
+		if (m_usbHostConnected && (now - m_lastUsbHealthy) > 3000) {
 			// Buffer full for 3+ seconds - host disconnected or stopped reading
-			usbHostConnected = false;
+			m_usbHostConnected = false;
 			// Stop sending to prevent buffer deadlock
 		}
 	}
 	
 	// Only send to USB if a host is connected and reading
-	if (usbHostConnected) {
+	if (m_usbHostConnected) {
 		const int CHUNK_SIZE = 50;
 		int msgLen = strlen(msg.buffer);
 		
@@ -263,6 +269,13 @@ void CommsController::reportEvent(const char* statusType, const char* message) {
 	uint16_t targetPort = m_guiDiscovered ? m_guiPort : 0;
 	
 	enqueueTx(fullMsg, targetIp, targetPort);
+}
+
+void CommsController::notifyUsbHostActive() {
+	// Called when a command is received over USB
+	// Immediately mark the host as connected and reset the health timer
+	m_usbHostConnected = true;
+	m_lastUsbHealthy = Milliseconds();
 }
 
 void CommsController::setupUsbSerial(void) {
