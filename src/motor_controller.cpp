@@ -42,6 +42,7 @@ MotorController::MotorController(MotorDriver* motorA, MotorDriver* motorB, Press
 
     m_homingDone = false;
     m_retractDone = false;
+    m_originalMoveCommand = nullptr;
     m_homingStartTime = 0;
     m_isEnabled = true;
     m_pausedMessageSent = false;
@@ -491,9 +492,11 @@ void MotorController::updateState() {
                     // Check if retract action is configured (NOT abort - abort only retracts on force limit)
                     if (strcmp(m_active_op_force_action, "retract") == 0) {
                         // Move completed to target - start retract
-                        if (m_activeMoveCommand) {
-                            reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
-                        }
+                        // Send INFO instead of DONE - DONE comes after retract completes
+                        reportEvent(STATUS_PREFIX_INFO, "Move complete, retracting...");
+                        
+                        // Store the original command name before we change to "retract"
+                        m_originalMoveCommand = m_activeMoveCommand;
                         
                         // Use home position (0mm) as default if retract position not explicitly set
                         long retract_target = (m_retractReferenceSteps == LONG_MIN) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
@@ -519,7 +522,15 @@ void MotorController::updateState() {
                         reportEvent(STATUS_PREFIX_START, "retract");
                     } else {
                         // No retract - just complete normally (includes "abort" action when no force limit hit)
-                        if (m_activeMoveCommand) {
+                        // OR: This is the completion of a retract that was started by a move with retract action
+                        
+                        // If we have an original move command, this is completing a retract sequence
+                        // Send DONE for the original command, not for "retract"
+                        if (m_originalMoveCommand != nullptr) {
+                            reportEvent(STATUS_PREFIX_DONE, m_originalMoveCommand);
+                            m_originalMoveCommand = nullptr; // Clear it
+                        } else if (m_activeMoveCommand) {
+                            // Normal completion of a single-step command
                             reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
                         }
                         finalizeAndResetActiveMove(true);
@@ -1386,10 +1397,11 @@ void MotorController::handleLimitReached(const char* limit_type, float limit_val
     
     // Handle action based on force_action parameter
     if (strcmp(m_active_op_force_action, "retract") == 0) {
-        // Send DONE for the original command, then start retract
-        if (m_activeMoveCommand) {
-            reportEvent(STATUS_PREFIX_DONE, m_activeMoveCommand);
-        }
+        // Force limit reached - send INFO, will send DONE when retract completes
+        reportEvent(STATUS_PREFIX_INFO, "Force limit reached, retracting...");
+        
+        // Store the original command name before we change to "retract"
+        m_originalMoveCommand = m_activeMoveCommand;
         
         // Use home position (0mm) as default if retract position not explicitly set
         long retract_target = (m_retractReferenceSteps == LONG_MIN) ? m_machineHomeReferenceSteps : m_retractReferenceSteps;
@@ -1512,6 +1524,7 @@ void MotorController::fullyResetActiveMove() {
     m_active_op_segment_initial_axis_steps = 0;
     m_active_op_initial_axis_steps = 0;
     m_activeMoveCommand = nullptr;
+    m_originalMoveCommand = nullptr;
     m_jouleIntegrationActive = false;
     m_forceLimitTriggered = false;
     m_prevForceValid = false;

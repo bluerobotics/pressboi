@@ -2,6 +2,15 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.9.0] - 2025-11-19
+
+### Changed
+- **Multi-step command handling**: Commands with `force_action=retract` now send a single DONE message only when the entire sequence (move + retract) completes
+  - Move completion sends INFO message: "Move complete, retracting..." or "Force limit reached, retracting..."
+  - DONE message sent only when retract finishes, using original command name (e.g., `DONE: move_abs`)
+  - Simplifies app-side logic - app waits for one DONE per command regardless of internal steps
+  - Makes firmware responsible for its own multi-step command flow
+
 ## [1.8.5] - 2025-11-19
 
 ### Fixed

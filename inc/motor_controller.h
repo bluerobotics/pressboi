@@ -304,6 +304,7 @@ private:
     int m_homingBackoffSps;            ///< Backoff speed (steps/sec) for a homing move.
     int m_homingAccelSps2;             ///< Acceleration (steps/sec^2) for homing moves.
     const char* m_activeMoveCommand;   ///< Stores the original move command string for logging upon completion.
+    const char* m_originalMoveCommand; ///< Stores the very first command before any retract substitution.
     
     /**
      * @name Active Move Operation Variables
