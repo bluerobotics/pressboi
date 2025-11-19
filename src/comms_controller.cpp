@@ -197,9 +197,12 @@ void CommsController::processTxQueue() {
 		if (!m_usbHostConnected) {
 			// USB host reconnected! Resume sending
 			m_usbHostConnected = true;
-			char recoveryMsg[64];
-			snprintf(recoveryMsg, sizeof(recoveryMsg), "%s_INFO: USB host reconnected\n", DEVICE_NAME_UPPER);
-			ConnectorUsb.Send(recoveryMsg);
+			// Send recovery message only if buffer has enough space (avoid blocking)
+			if (usbAvail > 40) {
+				char recoveryMsg[64];
+				snprintf(recoveryMsg, sizeof(recoveryMsg), "%s_INFO: USB host reconnected\n", DEVICE_NAME_UPPER);
+				ConnectorUsb.Send(recoveryMsg);
+			}
 		}
 	} else {
 		// Buffer is nearly full - either host is slow or disconnected
@@ -276,10 +279,12 @@ void CommsController::notifyUsbHostActive() {
 	// Called when a command is received over USB
 	// Immediately mark the host as connected and reset the health timer
 	if (!m_usbHostConnected) {
-		// Send a message to indicate USB host was detected
+		// Queue a message to indicate USB host was detected (don't send directly to avoid blocking)
 		char msg[80];
-		snprintf(msg, sizeof(msg), "%s_INFO: USB host detected via command\n", DEVICE_NAME_UPPER);
-		ConnectorUsb.Send(msg);
+		snprintf(msg, sizeof(msg), "%s_INFO: USB host detected via command", DEVICE_NAME_UPPER);
+		// Use dummy IP for USB-originated message
+		IpAddress dummyIp(127, 0, 0, 1);
+		enqueueTx(msg, dummyIp, 0);
 	}
 	m_usbHostConnected = true;
 	m_lastUsbHealthy = Milliseconds();
