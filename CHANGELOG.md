@@ -2,6 +2,22 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.8.3] - 2025-11-19
+
+### Fixed
+- **Watchdog timeouts**: Fixed watchdog timer triggering during USB host detection and reconnection by queueing messages instead of blocking on `ConnectorUsb.Send()`
+- **USB reconnection**: USB host reconnection message now only sends when sufficient buffer space is available (>40 bytes) to prevent blocking
+
+## [1.8.2] - 2025-11-19
+
+### Fixed
+- **USB host detection**: Fixed USB host connection tracking not resetting properly when receiving commands, causing firmware to remain in "host disconnected" state after app restart without power cycle
+
+## [1.8.1] - 2025-11-19
+
+### Fixed
+- **USB host detection**: Moved USB connection state variables from static to class members to ensure proper state management across app restarts
+
 ## [1.8.0] - 2025-11-19
 
 ### Fixed
