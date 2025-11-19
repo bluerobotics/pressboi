@@ -258,19 +258,23 @@ def create_gui_components(parent, shared_gui_refs):
                     pass
         
         def pressboi_conn_tracer(*args):
-            full_status = shared_gui_refs['status_var_pressboi'].get()
-            if '(' in full_status and ')' in full_status:
-                try:
-                    address = full_status.split('(')[1].split(')')[0]
-                    if 'SIM' in full_status.upper() or 'SIMULATOR' in full_status.upper():
-                        ip_label.config(text="[Simulator]", foreground=theme.WARNING_YELLOW)
-                    else:
-                        # Show @ for both IP addresses and COM ports
-                        ip_label.config(text=f"@ {address}", foreground=theme.SUCCESS_GREEN)
-                except (IndexError, AttributeError):
+            try:
+                full_status = shared_gui_refs['status_var_pressboi'].get()
+                if '(' in full_status and ')' in full_status:
+                    try:
+                        address = full_status.split('(')[1].split(')')[0]
+                        if 'SIM' in full_status.upper() or 'SIMULATOR' in full_status.upper():
+                            ip_label.config(text="[Simulator]", foreground=theme.WARNING_YELLOW)
+                        else:
+                            # Show @ for both IP addresses and COM ports
+                            ip_label.config(text=f"@ {address}", foreground=theme.SUCCESS_GREEN)
+                    except (IndexError, AttributeError):
+                        ip_label.config(text="", foreground=theme.COMMENT_COLOR)
+                else:
                     ip_label.config(text="", foreground=theme.COMMENT_COLOR)
-            else:
-                ip_label.config(text="", foreground=theme.COMMENT_COLOR)
+            except tk.TclError:
+                # Widget destroyed; ignore
+                pass
         
         shared_gui_refs['status_var_pressboi'].trace_add('write', pressboi_conn_tracer)
         pressboi_conn_tracer()
