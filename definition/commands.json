@@ -23,12 +23,7 @@
             { "parameter": "force", "unit": "kg", "type": "float", "help": "In motor_torque mode: 50-2000 kg. In load_cell mode: 0.2-1000 kg." },
             { "parameter": "force_action", "type": "string", "enum": ["retract", "hold", "skip", "abort"], "optional": true, "default": "hold", "help": "Action when force limit reached: retract (retracts to retract position on ANY completion and returns done), hold (stops and waits), skip (ignores limit), abort (retracts ONLY if force limit hit, throws error to halt script)" }
         ],
-        "returns": ["done", "error"],
-        "additional_done_on": {
-            "force_action": {
-                "retract": ["retract"]
-            }
-        }
+        "returns": ["done", "error"]
     },
     "move_inc": {
         "device": "pressboi",
@@ -40,12 +35,7 @@
             { "parameter": "force", "unit": "kg", "type": "float", "help": "In motor_torque mode: 50-2000 kg. In load_cell mode: 0.2-1000 kg." },
             { "parameter": "force_action", "type": "string", "enum": ["retract", "hold", "skip"], "optional": true, "default": "hold" }
         ],
-        "returns": ["done", "error"],
-        "additional_done_on": {
-            "force_action": {
-                "retract": ["retract"]
-            }
-        }
+        "returns": ["done", "error"]
     },
     "set_force_mode": {
         "device": "pressboi",
