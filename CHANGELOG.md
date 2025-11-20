@@ -2,6 +2,22 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.10.0] - 2025-11-20
+
+### Added
+- **Error logging system**: Circular buffer with 100 entries (8.8KB) supporting DEBUG/INFO/WARN/ERROR/CRITICAL levels
+- **Heartbeat log**: 24-hour USB/network status tracker (2880 × 8-byte entries, 23KB) recorded every 30 seconds
+- **`dump_error_log` command**: Retrieve diagnostic logs via USB or network
+- **USB auto-recovery**: Detects stuck TX buffer (2s timeout) and automatically reopens port with watchdog protection
+
+### Changed
+- **Motor fault detection**: 500ms grace period after clearing faults prevents false alarms during status register stabilization
+
+### Fixed
+- **Watchdog timeout during USB recovery**: Removed blocking delay and added watchdog feeds during port operations
+- **Double-reset requirement**: Single RESET command now properly clears watchdog recovery state
+- **USB connection persistence**: Auto-recovery eliminates need for power cycle after app restart
+
 ## [1.9.0] - 2025-11-19
 
 ### Changed
