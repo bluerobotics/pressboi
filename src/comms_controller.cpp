@@ -9,6 +9,9 @@
  * processing UDP packets, and parsing command strings.
  */
 #include "comms_controller.h"
+#include "error_log.h"
+#include "pressboi.h"  // For WATCHDOG_ENABLED and watchdog access
+#include <sam.h>       // For WDT register access
 
 CommsController::CommsController() {
 	m_guiDiscovered = false;
@@ -22,6 +25,8 @@ CommsController::CommsController() {
 	// USB host health tracking - start pessimistic (wait for first sign of host)
 	m_lastUsbHealthy = 0;
 	m_usbHostConnected = false;
+	
+	g_errorLog.log(LOG_INFO, "CommsController initialized");
 }
 
 void CommsController::setup() {
@@ -112,11 +117,25 @@ void CommsController::processUdp() {
 void CommsController::processUsbSerial() {
 	static char usbBuffer[MAX_MESSAGE_LENGTH];
 	static int usbBufferIndex = 0;
+	static bool usbFirstData = false;  // Track if we've seen first data
 	
 	// Limit characters processed per call to prevent watchdog timeout (128ms)
 	int charsProcessed = 0;
 	const int MAX_CHARS_PER_CALL = 32;
 	
+	// Log when we first see data after startup
+	int available = ConnectorUsb.AvailableForRead();
+	if (available > 0 && !usbFirstData) {
+		g_errorLog.logf(LOG_INFO, "USB: First data seen (%d bytes)", available);
+		usbFirstData = true;
+	}
+	
+	// Periodic debug log if we keep getting data
+	static uint32_t lastDataLog = 0;
+	if (available > 0 && (Milliseconds() - lastDataLog > 5000)) {
+		g_errorLog.logf(LOG_DEBUG, "USB: %d bytes available", available);
+		lastDataLog = Milliseconds();
+	}
 	
 	while (ConnectorUsb.AvailableForRead() > 0 && charsProcessed < MAX_CHARS_PER_CALL) {
 		char c = ConnectorUsb.CharGet();
@@ -127,12 +146,26 @@ void CommsController::processUsbSerial() {
 			if (usbBufferIndex > 0) {
 				usbBuffer[usbBufferIndex] = '\0';
 				
+				// Track last receive time
+				static uint32_t lastRxTime = Milliseconds();
+				uint32_t now = Milliseconds();
+				uint32_t timeSinceLastRx = now - lastRxTime;
+				
+				// Log if it's been a while since last command
+				if (timeSinceLastRx > 10000) {  // More than 10 seconds
+					g_errorLog.logf(LOG_WARNING, "USB RX after %lu ms gap: %s", timeSinceLastRx, usbBuffer);
+				} else {
+					g_errorLog.logf(LOG_INFO, "USB RX: %s", usbBuffer);
+				}
+				lastRxTime = now;
+				
 				// Mark USB host as active when we receive a command
 				notifyUsbHostActive();
 				
 				// Enqueue as if from local host (use dummy IP)
 				IpAddress dummyIp(127, 0, 0, 1);
 				if (!enqueueRx(usbBuffer, dummyIp, CLIENT_PORT)) {
+					g_errorLog.log(LOG_ERROR, "USB RX queue overflow");
 					// Error handled in enqueueRx
 				}
 				usbBufferIndex = 0;
@@ -148,6 +181,7 @@ void CommsController::processUsbSerial() {
 			char errorMsg[128];
 			snprintf(errorMsg, sizeof(errorMsg), "%s_ERROR: USB command too long\n", DEVICE_NAME_UPPER);
 			ConnectorUsb.Send(errorMsg);
+			g_errorLog.log(LOG_ERROR, "USB command too long - discarded");
 		}
 	}
 }
@@ -166,12 +200,26 @@ void CommsController::processTxQueue() {
 	uint32_t now = Milliseconds();
 	int usbAvail = ConnectorUsb.AvailableForWrite();
 	
+	// Heartbeat log - compact 8-byte entries tracking USB and network status
+	static uint32_t lastHeartbeat = 0;
+	if (now - lastHeartbeat > 30000) {  // Every 30 seconds
+		// Check network status
+		bool networkActive = EthernetMgr.PhyLinkActive();
+		
+		// Log compact heartbeat (only 8 bytes per entry!)
+		// Clamp usbAvail to 0-255 to fit in uint8_t
+		uint8_t usbAvailClamped = (usbAvail > 255) ? 255 : (uint8_t)usbAvail;
+		g_heartbeatLog.log(m_usbHostConnected, networkActive, usbAvailClamped);
+		lastHeartbeat = now;
+	}
+	
 	// Check if USB buffer has space - if yes, a host is actively reading
 	if (usbAvail > 5) {
 		m_lastUsbHealthy = now;
 		if (!m_usbHostConnected) {
 			// USB host reconnected! Resume sending
 			m_usbHostConnected = true;
+			g_errorLog.logf(LOG_INFO, "USB host reconnected (buffer space: %d)", usbAvail);
 			// Send recovery message only if buffer has enough space (avoid blocking)
 			if (usbAvail > 40) {
 				char recoveryMsg[64];
@@ -183,9 +231,42 @@ void CommsController::processTxQueue() {
 		// Buffer is nearly full - either host is slow or disconnected
 		if (m_usbHostConnected && (now - m_lastUsbHealthy) > 3000) {
 			// Buffer full for 3+ seconds - host disconnected or stopped reading
-			// Note: Can't send message here since buffer is full, but log state change internally
 			m_usbHostConnected = false;
+			g_errorLog.logf(LOG_WARNING, "USB host disconnected (buffer full for 3s, space: %d)", usbAvail);
 			// Stop sending to prevent buffer deadlock
+		}
+		
+		// Critical: If buffer has been full for too long, try to recover USB
+		// This prevents permanent USB deadlock that requires power cycle
+		if (!m_usbHostConnected && (now - m_lastUsbHealthy) > 2000) {
+			// Buffer full for 2+ seconds - USB is stuck, try to recover
+			static uint32_t lastUsbResetAttempt = 0;
+			if (now - lastUsbResetAttempt > 5000) {  // Retry every 5 seconds
+				lastUsbResetAttempt = now;
+				g_errorLog.logf(LOG_WARNING, "USB stuck for %lu ms - attempting recovery", now - m_lastUsbHealthy);
+				
+				// Feed watchdog before potentially slow USB operations
+				#if WATCHDOG_ENABLED
+				WDT->CLEAR.reg = WDT_CLEAR_CLEAR_KEY;
+				while(WDT->SYNCBUSY.reg);
+				#endif
+				
+				// Try to flush the TX buffer by closing and reopening the port
+				ConnectorUsb.PortClose();
+				// No delay needed - USB stack handles this internally
+				ConnectorUsb.PortOpen();
+				
+				// Feed watchdog after USB operations
+				#if WATCHDOG_ENABLED
+				WDT->CLEAR.reg = WDT_CLEAR_CLEAR_KEY;
+				while(WDT->SYNCBUSY.reg);
+				#endif
+				
+				// Reset state
+				m_lastUsbHealthy = now;
+				
+				g_errorLog.log(LOG_INFO, "USB recovery attempted - port reopened");
+			}
 		}
 	}
 	
@@ -281,13 +362,23 @@ void CommsController::notifyUsbHostActive() {
 	// Called when a command is received over USB
 	// Immediately mark the host as connected and reset the health timer
 	if (!m_usbHostConnected) {
+		g_errorLog.log(LOG_INFO, "USB host detected via command");
+		
 		// Clear TX queue - any messages queued while host was disconnected are stale
 		// This prevents the USB buffer from being flooded with old telemetry
+		int oldQueueSize = (m_txQueueHead >= m_txQueueTail) ? 
+			(m_txQueueHead - m_txQueueTail) : 
+			(TX_QUEUE_SIZE - m_txQueueTail + m_txQueueHead);
 		m_txQueueHead = 0;
 		m_txQueueTail = 0;
 		
+		if (oldQueueSize > 0) {
+			g_errorLog.logf(LOG_INFO, "Cleared %d stale TX messages", oldQueueSize);
+		}
+		
 		// Clear USB input buffer to remove any stale data
 		ConnectorUsb.FlushInput();
+		g_errorLog.log(LOG_DEBUG, "Flushed USB input buffer");
 		
 		// Queue a message to indicate USB host was detected (don't send directly to avoid blocking)
 		char msg[80];
@@ -307,6 +398,8 @@ void CommsController::setupUsbSerial(void) {
 	// USB setup is non-blocking - the connector will become available when ready
 	// No need to wait here, as the main loop will handle USB when available
 	
+	g_errorLog.log(LOG_INFO, "USB serial port opened");
+	
 	// Send a startup message after a delay to confirm USB is working
 	// (Will be sent in the main loop once USB is ready)
 }
@@ -316,6 +409,7 @@ void CommsController::setupEthernet() {
 
     // Start DHCP but don't hang if it fails - the system can still function via USB
     if (!EthernetMgr.DhcpBegin()) {
+        g_errorLog.log(LOG_WARNING, "DHCP failed - network unavailable");
         // DHCP failed - continue anyway, network features won't work but USB will
         return;
     }
@@ -325,6 +419,7 @@ void CommsController::setupEthernet() {
     uint32_t link_start = Milliseconds();
     while (!EthernetMgr.PhyLinkActive()) {
         if (Milliseconds() - link_start > link_timeout) {
+            g_errorLog.log(LOG_WARNING, "Ethernet link timeout - network unavailable");
             // Link didn't come up - continue anyway, USB will still work
             // Network may become available later
             return;
@@ -333,6 +428,7 @@ void CommsController::setupEthernet() {
     }
 
     m_udp.Begin(LOCAL_PORT);
+    g_errorLog.logf(LOG_INFO, "Network ready on port %d", LOCAL_PORT);
     
     // Send status message over USB to confirm network is ready
     char infoMsg[128];

@@ -1,13 +1,10 @@
-## Gantry Firmware
-
-### Gantry
+### Pressboi
 - Public
-    - Gantry
+    - Pressboi
     - setup
     - loop
     - reportEvent
 - Private
-    - abort
     - enable
     - disable
     - clearErrors
@@ -15,175 +12,79 @@
     - dispatchCommand
     - publishTelemetry
     - updateState
-    - getState
+    - performSafetyCheck
+    - handleWatchdogRecovery
+    - initializeWatchdog
+    - feedWatchdog
+    - clearWatchdogRecovery
 
-### Axis
+### MotorController
 - Public
-    - Axis
-    - setup
-    - setupMotors
-    - updateState
-    - move
-    - home
-    - abort
-    - enable
-    - disable
-    - reset
-    - isMoving
-    - isHomed
-    - getState
-    - getStateEnum
-    - getPositionMm
-    - getSmoothedTorque
-    - isEnabled
-    - startMove
-- Private
-    - moveSteps
-    - checkTorqueLimit
-    - getRawTorque
-    - reportEvent
-
-### CommsController (Gantry)
-- Public
-    - CommsController
-    - setup
-    - update
-    - enqueueRx
-    - dequeueRx
-    - enqueueTx
-    - reportEvent
-    - parseCommand
-    - isGuiDiscovered
-    - getGuiIp
-    - getGuiPort
-    - setGuiDiscovered
-    - setGuiIp
-    - setGuiPort
-- Private
-    - processUdp
-    - processTxQueue
-    - setupEthernet
-    - setupUsbSerial
-
----
-
-## Fillhead Firmware
-
-### Fillhead
-- Public
-    - Fillhead
-    - setup
-    - loop
-    - reportEvent
-- Private
-    - abort
-    - enable
-    - disable
-    - clearErrors
-    - standby
-    - dispatchCommand
-    - publishTelemetry
-    - updateState
-
-### Injector
-- Public
-    - Injector
+    - MotorController
     - setup
     - updateState
     - handleCommand
-    - getTelemetryString
+    - updateTelemetry
     - enable
     - disable
     - abortMove
     - reset
-    - isInFault
     - isBusy
-    - getState
-- Private
-    - startMove
-    - isMoving
-    - getSmoothedTorque
-    - checkTorqueLimit
-    - finalizeAndResetActiveDispenseOperation
-    - fullyResetActiveDispenseOperation
-    - reportEvent
-    - jogMove
-    - machineHome
-    - cartridgeHome
-    - moveToCartridgeHome
-    - moveToCartridgeRetract
-    - initiateInjectMove
-    - pauseOperation
-    - resumeOperation
-    - cancelOperation
-    - setTorqueOffset
-
-### PinchValve
-- Public
-    - PinchValve
-    - setup
-    - updateState
-    - handleCommand
-    - home
-    - open
-    - close
-    - jog
-    - enable
-    - disable
-    - abort
-    - reset
+    - isInFault
     - isHomed
-    - isOpen
-    - getTelemetryString
-    - isInFault
-    - isBusy
     - getState
+    - getPositionMm
+    - getCurrentForceLbs
+    - getForceMode
+    - setForceMode
+    - setForceLimit
 - Private
-    - moveSteps
-    - getSmoothedTorque
-    - getInstantaneousTorque
+    - home
+    - moveToPosition
+    - moveDistance
     - checkTorqueLimit
+    - checkForceSensorLimit
+    - updateTorque
     - reportEvent
 
-### HeaterController
+### ForceSensor
 - Public
-    - HeaterController
+    - ForceSensor
     - setup
-    - updateTemperature
-    - updateState
-    - handleCommand
-    - getTelemetryString
-    - getState
+    - update
+    - getForceKg
+    - getForceLbs
+    - tare
+    - setOffset
+    - getOffset
+    - isReady
 - Private
-    - resetPID
+    - readRawValue
     - reportEvent
-    - heaterOn
-    - heaterOff
-    - setGains
-    - setSetpoint
 
-### VacuumController
+### ErrorLog
 - Public
-    - VacuumController
-    - setup
-    - updateVacuum
-    - updateState
-    - handleCommand
-    - getTelemetryString
-    - resetState
-    - isBusy
-    - getState
+    - ErrorLog
+    - log (multiple overloads)
+    - logf
+    - dump
+    - clear
+    - getCount
 - Private
-    - reportEvent
-    - vacuumOn
-    - vacuumOff
-    - leakTest
-    - setTarget
-    - setTimeout
-    - setLeakDelta
-    - setLeakDuration
+    - None
 
-### CommsController (Fillhead)
+### HeartbeatLog
+- Public
+    - HeartbeatLog
+    - log
+    - dumpHeartbeat
+    - clear
+    - getCount
+    - getEntry
+- Private
+    - None
+
+### CommsController (Pressboi)
 - Public
     - CommsController
     - setup
@@ -199,8 +100,9 @@
     - setGuiDiscovered
     - setGuiIp
     - setGuiPort
+    - notifyUsbHostActive
 - Private
     - processUdp
+    - processUsbSerial
     - processTxQueue
     - setupEthernet
-    - setupUsbSerial

@@ -17,6 +17,7 @@
 #include "commands.h"
 #include "variables.h"
 #include "events.h"
+#include "error_log.h"
 #include "NvmManager.h"
 #include <cstring>
 #include <cstdlib>
@@ -118,6 +119,7 @@ Pressboi::Pressboi() :
     m_mainState = STATE_STANDBY;
     m_lastTelemetryTime = 0;
     m_resetStartTime = 0;
+    m_faultGracePeriodEnd = 0;
     
     // Initialize telemetry
     telemetry_init(&g_telemetry);
@@ -130,6 +132,10 @@ void Pressboi::setup() {
     // Configure all motors for step and direction control mode.
     MotorMgr.MotorModeSet(MotorManager::MOTOR_ALL, Connector::CPM_MODE_STEP_AND_DIR);
 
+    // Log firmware startup
+    g_errorLog.log(LOG_INFO, "=== FIRMWARE STARTUP ===");
+    g_errorLog.logf(LOG_INFO, "Firmware version: %s", FIRMWARE_VERSION);
+    
     // Initialize comms first (can take time for network setup)
     m_comms.setup();
     m_motor.setup();
@@ -144,6 +150,9 @@ void Pressboi::setup() {
     // Only report normal startup if not in RECOVERED state
     if (m_mainState != STATE_RECOVERED) {
         m_comms.reportEvent(STATUS_PREFIX_INFO, "Pressboi system setup complete. All components initialized.");
+        g_errorLog.log(LOG_INFO, "Setup complete - normal boot");
+    } else {
+        g_errorLog.log(LOG_ERROR, "Setup complete - RECOVERED from watchdog");
     }
 }
 
@@ -274,18 +283,25 @@ void Pressboi::updateState() {
         case STATE_STANDBY:
         case STATE_BUSY: {
             // In normal operation, constantly monitor for faults.
-            if (m_motor.isInFault()) {
+            // Skip fault detection during grace period (after clearing faults) to prevent false alarms
+            uint32_t now = Milliseconds();
+            bool inGracePeriod = (now < m_faultGracePeriodEnd);
+            
+            if (!inGracePeriod && m_motor.isInFault()) {
                 m_mainState = STATE_ERROR;
+                g_errorLog.log(LOG_ERROR, "Motor fault detected -> ERROR state");
                 reportEvent(STATUS_PREFIX_ERROR, "Motor fault detected. System entering ERROR state. Use CLEAR_ERRORS to reset.");
                 break;
             }
 
             // If no faults, update the state based on whether motor is busy.
-            if (m_motor.isBusy()) {
-                m_mainState = STATE_BUSY;
-            } else {
-                m_mainState = STATE_STANDBY;
+            MainState newState = m_motor.isBusy() ? STATE_BUSY : STATE_STANDBY;
+            if (newState != m_mainState) {
+                g_errorLog.logf(LOG_DEBUG, "State: %s -> %s", 
+                    (m_mainState == STATE_STANDBY) ? "STANDBY" : "BUSY",
+                    (newState == STATE_STANDBY) ? "STANDBY" : "BUSY");
             }
+            m_mainState = newState;
             break;
         }
 
@@ -315,6 +331,10 @@ void Pressboi::updateState() {
                 // Re-enable motors
                 m_motor.enable();
                 
+                // Set grace period to ignore faults for 500ms after clearing
+                // This prevents false alarms as the motor driver status stabilizes
+                m_faultGracePeriodEnd = now + 500;
+                
                 // Reset complete, transition to standby
                 standby();
                 reportEvent(STATUS_PREFIX_DONE, "reset");
@@ -339,18 +359,25 @@ void Pressboi::updateState() {
 void Pressboi::dispatchCommand(const Message& msg) {
     Command command_enum = parseCommand(msg.buffer);
     
+    // Log incoming commands (except telemetry spam and discovery)
+    if (command_enum != CMD_DISCOVER_DEVICE) {
+        g_errorLog.logf(LOG_DEBUG, "Dispatch cmd: %s", msg.buffer);
+    }
+    
     // If the system is in RECOVERED state, block ALL commands except reset
     if (m_mainState == STATE_RECOVERED) {
-        if (command_enum != CMD_DISCOVER_DEVICE && command_enum != CMD_RESET) {
+        if (command_enum != CMD_DISCOVER_DEVICE && command_enum != CMD_RESET && command_enum != CMD_DUMP_ERROR_LOG) {
             m_comms.reportEvent(STATUS_PREFIX_ERROR, "Command ignored: System in RECOVERED state from watchdog timeout. Send RESET to clear.");
+            g_errorLog.logf(LOG_WARNING, "Cmd blocked (RECOVERED): %s", msg.buffer);
             return;
         }
     }
     
     // If the system is in an error state, block most commands.
     if (m_mainState == STATE_ERROR) {
-        if (command_enum != CMD_DISCOVER_DEVICE && command_enum != CMD_RESET) {
+        if (command_enum != CMD_DISCOVER_DEVICE && command_enum != CMD_RESET && command_enum != CMD_DUMP_ERROR_LOG) {
             m_comms.reportEvent(STATUS_PREFIX_ERROR, "Command ignored: System is in ERROR state. Send reset to recover.");
+            g_errorLog.logf(LOG_WARNING, "Cmd blocked (ERROR): %s", msg.buffer);
             return;
         }
     }
@@ -620,6 +647,75 @@ void Pressboi::dispatchCommand(const Message& msg) {
 
             reportEvent(STATUS_PREFIX_INFO, "All NVM locations reset to erased state. Reboot required for changes to take effect.");
             reportEvent(STATUS_PREFIX_DONE, "reset_nvm");
+            break;
+        }
+
+        case CMD_DUMP_ERROR_LOG: {
+            // Send error log entries over network/USB
+            int entryCount = g_errorLog.getEntryCount();
+            
+            char msg[256];
+            snprintf(msg, sizeof(msg), "=== ERROR LOG: %d entries ===", entryCount);
+            reportEvent(STATUS_PREFIX_INFO, msg);
+            
+            // Send each entry
+            for (int i = 0; i < entryCount; i++) {
+                LogEntry entry;
+                if (g_errorLog.getEntry(i, &entry)) {
+                    const char* levelStr;
+                    switch (entry.level) {
+                        case LOG_DEBUG:    levelStr = "DEBUG"; break;
+                        case LOG_INFO:     levelStr = "INFO"; break;
+                        case LOG_WARNING:  levelStr = "WARN"; break;
+                        case LOG_ERROR:    levelStr = "ERROR"; break;
+                        case LOG_CRITICAL: levelStr = "CRIT"; break;
+                        default:           levelStr = "???"; break;
+                    }
+                    
+                    // Format: [timestamp_ms] LEVEL: message
+                    snprintf(msg, sizeof(msg), "[%lu] %s: %s", entry.timestamp, levelStr, entry.message);
+                    reportEvent(STATUS_PREFIX_INFO, msg);
+                }
+            }
+            
+            snprintf(msg, sizeof(msg), "=== END ERROR LOG ===");
+            reportEvent(STATUS_PREFIX_INFO, msg);
+            
+            // Also dump heartbeat log (24 hours of data!)
+            int heartbeatCount = g_heartbeatLog.getEntryCount();
+            
+            // Calculate time span
+            if (heartbeatCount > 0) {
+                HeartbeatEntry firstEntry, lastEntry;
+                g_heartbeatLog.getEntry(0, &firstEntry);
+                g_heartbeatLog.getEntry(heartbeatCount - 1, &lastEntry);
+                uint32_t spanMs = lastEntry.timestamp - firstEntry.timestamp;
+                uint32_t spanHours = spanMs / 3600000;
+                uint32_t spanMins = (spanMs % 3600000) / 60000;
+                
+                snprintf(msg, sizeof(msg), "=== HEARTBEAT LOG: %d entries (%luh%lum span) ===", 
+                         heartbeatCount, (unsigned long)spanHours, (unsigned long)spanMins);
+            } else {
+                snprintf(msg, sizeof(msg), "=== HEARTBEAT LOG: 0 entries ===");
+            }
+            reportEvent(STATUS_PREFIX_INFO, msg);
+            
+            // Send entries in compact format: timestamp,U,N,A (USB,Network,Available)
+            for (int i = 0; i < heartbeatCount; i++) {
+                HeartbeatEntry entry;
+                if (g_heartbeatLog.getEntry(i, &entry)) {
+                    // Ultra-compact format: [timestamp] U:0/1 N:0/1 A:bytes
+                    snprintf(msg, sizeof(msg), "[%lu] U:%d N:%d A:%d", 
+                             entry.timestamp, entry.usbConnected, 
+                             entry.networkActive, entry.usbAvailable);
+                    reportEvent(STATUS_PREFIX_INFO, msg);
+                }
+            }
+            
+            snprintf(msg, sizeof(msg), "=== END HEARTBEAT LOG ===");
+            reportEvent(STATUS_PREFIX_INFO, msg);
+            
+            reportEvent(STATUS_PREFIX_DONE, "dump_error_log");
             break;
         }
 

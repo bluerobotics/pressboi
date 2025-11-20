@@ -270,6 +270,9 @@
     <Compile Include="inc\variables.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="inc\error_log.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="Device_Startup\flash_with_bootloader.ld">
       <SubType>compile</SubType>
     </Compile>
@@ -295,6 +298,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\variables.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\error_log.cpp">
       <SubType>compile</SubType>
     </Compile>
     <None Include="Device_Startup\flash_without_bootloader.ld">

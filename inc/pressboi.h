@@ -16,6 +16,7 @@
 #include "motor_controller.h"
 #include "force_sensor.h"
 #include "commands.h"
+#include "error_log.h"
 
 /**
  * @enum MainState
@@ -180,4 +181,5 @@ private:
     // Timers for periodic tasks
     uint32_t m_lastTelemetryTime;       ///< Timestamp of the last telemetry transmission.
     uint32_t m_resetStartTime;          ///< Timestamp when reset operation started (for non-blocking delay).
+    uint32_t m_faultGracePeriodEnd;     ///< Timestamp when fault detection grace period ends (after clearing faults).
 };

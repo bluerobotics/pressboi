@@ -36,6 +36,7 @@ Command parseCommand(const char* cmdStr) {
     if (strncmp(cmdStr, CMD_STR_REBOOT_BOOTLOADER, strlen(CMD_STR_REBOOT_BOOTLOADER)) == 0) return CMD_REBOOT_BOOTLOADER;
     if (strncmp(cmdStr, CMD_STR_DUMP_NVM, strlen(CMD_STR_DUMP_NVM)) == 0) return CMD_DUMP_NVM;
     if (strncmp(cmdStr, CMD_STR_RESET_NVM, strlen(CMD_STR_RESET_NVM)) == 0) return CMD_RESET_NVM;
+    if (strncmp(cmdStr, CMD_STR_DUMP_ERROR_LOG, strlen(CMD_STR_DUMP_ERROR_LOG)) == 0) return CMD_DUMP_ERROR_LOG;
     return CMD_UNKNOWN;
 }
 

@@ -173,6 +173,13 @@
         "description": "Restore Pressboi non-volatile memory to factory defaults.",
         "params": [],
         "returns": ["info", "done", "error"]
+    },
+    "dump_error_log": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Dump internal error log buffer for diagnostics.",
+        "params": [],
+        "returns": ["info", "done", "error"]
     }
 }
 

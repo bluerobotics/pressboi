@@ -36,6 +36,7 @@
 #define CMD_STR_REBOOT_BOOTLOADER                   "reboot_bootloader" ///< Reboots the controller into ClearCore USB bootloader mode for firmware flashing.
 #define CMD_STR_DUMP_NVM                            "dump_nvm" ///< Dump Pressboi non-volatile memory contents to the GUI.
 #define CMD_STR_RESET_NVM                           "reset_nvm" ///< Restore Pressboi non-volatile memory to factory defaults.
+#define CMD_STR_DUMP_ERROR_LOG                      "dump_error_log" ///< Dump internal error log buffer for diagnostics.
 /** @} */
 
 /**
@@ -82,6 +83,7 @@ typedef enum {
     CMD_REBOOT_BOOTLOADER,                                    ///< @see CMD_STR_REBOOT_BOOTLOADER
     CMD_DUMP_NVM,                                    ///< @see CMD_STR_DUMP_NVM
     CMD_RESET_NVM,                                    ///< @see CMD_STR_RESET_NVM
+    CMD_DUMP_ERROR_LOG,                                    ///< @see CMD_STR_DUMP_ERROR_LOG
 
     // Motion Commands
     CMD_HOME,                                    ///< @see CMD_STR_HOME
