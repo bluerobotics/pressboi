@@ -35,24 +35,7 @@ TelemetryData g_telemetry;
 // Place in .noinit section so it survives reset but is cleared on power-up
 __attribute__((section(".noinit"))) volatile uint32_t g_watchdogRecoveryFlag;
 __attribute__((section(".noinit"))) volatile uint32_t g_watchdogBreadcrumb;
-
-// Breadcrumb codes to identify where the watchdog timeout occurred
-#define WD_BREADCRUMB_SAFETY_CHECK      0x01
-#define WD_BREADCRUMB_COMMS_UPDATE      0x02
-#define WD_BREADCRUMB_RX_DEQUEUE        0x03
-#define WD_BREADCRUMB_UPDATE_STATE      0x04
-#define WD_BREADCRUMB_FORCE_UPDATE      0x05
-#define WD_BREADCRUMB_MOTOR_UPDATE      0x06
-#define WD_BREADCRUMB_TELEMETRY         0x07
-#define WD_BREADCRUMB_UDP_PROCESS       0x08
-#define WD_BREADCRUMB_USB_PROCESS       0x09
-#define WD_BREADCRUMB_TX_QUEUE          0x0A
-#define WD_BREADCRUMB_UDP_SEND          0x0B
-#define WD_BREADCRUMB_NETWORK_REFRESH   0x0C
-#define WD_BREADCRUMB_USB_SEND          0x0D
-#define WD_BREADCRUMB_USB_RECONNECT     0x0E
-#define WD_BREADCRUMB_USB_RECOVERY      0x0F
-#define WD_BREADCRUMB_UNKNOWN           0xFF
+// Breadcrumb codes are now defined in config.h
 #endif
 
 //==================================================================================================

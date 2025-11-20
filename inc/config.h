@@ -175,6 +175,24 @@
 #define WATCHDOG_ENABLED                    true      ///< Enable/disable watchdog timer. When enabled, system must call safety check regularly or motors will be disabled.
 #define WATCHDOG_TIMEOUT_MS                 100       ///< Watchdog timeout period in milliseconds. System will reset if not fed within this time.
 #define WATCHDOG_RECOVERY_FLAG              0xDEADBEEF ///< Magic number written to backup register to indicate watchdog recovery.
+
+// Breadcrumb codes to identify where the watchdog timeout occurred
+#define WD_BREADCRUMB_SAFETY_CHECK          0x01      ///< Watchdog timeout in safety check
+#define WD_BREADCRUMB_COMMS_UPDATE          0x02      ///< Watchdog timeout in communications update
+#define WD_BREADCRUMB_RX_DEQUEUE            0x03      ///< Watchdog timeout in RX message dequeue
+#define WD_BREADCRUMB_UPDATE_STATE          0x04      ///< Watchdog timeout in state machine update
+#define WD_BREADCRUMB_FORCE_UPDATE          0x05      ///< Watchdog timeout in force sensor update
+#define WD_BREADCRUMB_MOTOR_UPDATE          0x06      ///< Watchdog timeout in motor update
+#define WD_BREADCRUMB_TELEMETRY             0x07      ///< Watchdog timeout in telemetry publishing
+#define WD_BREADCRUMB_UDP_PROCESS           0x08      ///< Watchdog timeout in UDP packet processing
+#define WD_BREADCRUMB_USB_PROCESS           0x09      ///< Watchdog timeout in USB serial processing
+#define WD_BREADCRUMB_TX_QUEUE              0x0A      ///< Watchdog timeout in TX queue processing
+#define WD_BREADCRUMB_UDP_SEND              0x0B      ///< Watchdog timeout in UDP packet send
+#define WD_BREADCRUMB_NETWORK_REFRESH       0x0C      ///< Watchdog timeout in network packet refresh
+#define WD_BREADCRUMB_USB_SEND              0x0D      ///< Watchdog timeout in USB send operation
+#define WD_BREADCRUMB_USB_RECONNECT         0x0E      ///< Watchdog timeout in USB reconnection handling
+#define WD_BREADCRUMB_USB_RECOVERY          0x0F      ///< Watchdog timeout in USB recovery operation
+#define WD_BREADCRUMB_UNKNOWN               0xFF      ///< Watchdog timeout in unknown location
 /** @} */
 /** @} */
 
