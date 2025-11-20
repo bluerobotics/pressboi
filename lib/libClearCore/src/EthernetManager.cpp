@@ -456,7 +456,13 @@ void EthernetManager::Setup() {
 }
 
 void EthernetManager::Refresh() {
-    while (true) {
+    // Process maximum N packets per call to prevent watchdog timeout
+    // If more packets arrive than we can process in one loop, they'll be
+    // handled in the next iteration (remaining packets stay in hardware buffer)
+    const int MAX_PACKETS_PER_CALL = 10;
+    int packetsProcessed = 0;
+    
+    while (packetsProcessed < MAX_PACKETS_PER_CALL) {
         // Check for an available packet.
         struct pbuf *packet = low_level_input(&m_macInterface);
         if (packet == NULL) {
@@ -464,7 +470,11 @@ void EthernetManager::Refresh() {
         }
         // Send the packet as input to LwIP.
         ethernetif_input(&m_macInterface, packet);
+        packetsProcessed++;
     }
+    
+    // Check timeouts (DHCP, ARP, TCP retransmissions, etc.)
+    // This can also be time-consuming if many connections are active
     sys_check_timeouts();
 }
 

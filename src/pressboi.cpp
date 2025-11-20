@@ -48,6 +48,10 @@ __attribute__((section(".noinit"))) volatile uint32_t g_watchdogBreadcrumb;
 #define WD_BREADCRUMB_USB_PROCESS       0x09
 #define WD_BREADCRUMB_TX_QUEUE          0x0A
 #define WD_BREADCRUMB_UDP_SEND          0x0B
+#define WD_BREADCRUMB_NETWORK_REFRESH   0x0C
+#define WD_BREADCRUMB_USB_SEND          0x0D
+#define WD_BREADCRUMB_USB_RECONNECT     0x0E
+#define WD_BREADCRUMB_USB_RECOVERY      0x0F
 #define WD_BREADCRUMB_UNKNOWN           0xFF
 #endif
 
@@ -243,6 +247,10 @@ void Pressboi::loop() {
             case WD_BREADCRUMB_USB_PROCESS: breadcrumb_name = "USB_PROCESS"; break;
             case WD_BREADCRUMB_TX_QUEUE: breadcrumb_name = "TX_QUEUE"; break;
             case WD_BREADCRUMB_UDP_SEND: breadcrumb_name = "UDP_SEND"; break;
+            case WD_BREADCRUMB_NETWORK_REFRESH: breadcrumb_name = "NETWORK_REFRESH"; break;
+            case WD_BREADCRUMB_USB_SEND: breadcrumb_name = "USB_SEND"; break;
+            case WD_BREADCRUMB_USB_RECONNECT: breadcrumb_name = "USB_RECONNECT"; break;
+            case WD_BREADCRUMB_USB_RECOVERY: breadcrumb_name = "USB_RECOVERY"; break;
         }
         snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >128ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
         reportEvent(STATUS_PREFIX_RECOVERY, recoveryMsg);
@@ -902,6 +910,10 @@ void Pressboi::handleWatchdogRecovery() {
             case WD_BREADCRUMB_USB_PROCESS: breadcrumb_name = "USB_PROCESS"; break;
             case WD_BREADCRUMB_TX_QUEUE: breadcrumb_name = "TX_QUEUE"; break;
             case WD_BREADCRUMB_UDP_SEND: breadcrumb_name = "UDP_SEND"; break;
+            case WD_BREADCRUMB_NETWORK_REFRESH: breadcrumb_name = "NETWORK_REFRESH"; break;
+            case WD_BREADCRUMB_USB_SEND: breadcrumb_name = "USB_SEND"; break;
+            case WD_BREADCRUMB_USB_RECONNECT: breadcrumb_name = "USB_RECONNECT"; break;
+            case WD_BREADCRUMB_USB_RECOVERY: breadcrumb_name = "USB_RECOVERY"; break;
         }
         snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >128ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
         m_comms.reportEvent(STATUS_PREFIX_RECOVERY, recoveryMsg);

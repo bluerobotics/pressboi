@@ -2,6 +2,17 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Extended watchdog breadcrumbs**: Added `NETWORK_REFRESH`, `USB_SEND`, `USB_RECONNECT`, and `USB_RECOVERY` breadcrumbs for finer-grained watchdog timeout diagnostics
+
+### Fixed
+- **CRITICAL: Unbounded network processing**: Limited `EthernetManager::Refresh()` to process maximum 10 packets per call, preventing watchdog timeouts when network accumulates many packets during USB reconnection
+- **Unbounded UDP processing**: Limited `processUdp()` to process maximum 10 UDP packets per call, preventing main loop from blocking >128ms
+- **USB recovery watchdog feeding removed**: Removed watchdog feeds during USB port recovery operations - if USB operations hang, watchdog should fire to recover system (feeding defeats the purpose of the watchdog)
+- **Watchdog timeout on USB reconnection**: USB host reconnection and message sending now properly tracked with breadcrumbs, allowing identification of exactly where blocking occurs
+
 ## [1.10.0] - 2025-11-20
 
 ### Added

@@ -101,7 +101,13 @@ bool CommsController::enqueueTx(const char* msg, const IpAddress& ip, uint16_t p
 }
 
 void CommsController::processUdp() {
-	while (m_udp.PacketParse()) {
+	// Limit UDP packets processed per call to prevent watchdog timeout
+	// PacketParse() internally calls EthernetMgr.Refresh() which processes network packets
+	// If more packets arrive than we can process, they'll be handled next loop iteration
+	const int MAX_UDP_PACKETS_PER_CALL = 10;
+	int packetsProcessed = 0;
+	
+	while (packetsProcessed < MAX_UDP_PACKETS_PER_CALL && m_udp.PacketParse()) {
 		IpAddress remoteIp = m_udp.RemoteIp();
 		uint16_t remotePort = m_udp.RemotePort();
 		int32_t bytesRead = m_udp.PacketRead(m_packetBuffer, MAX_PACKET_LENGTH - 1);
@@ -111,6 +117,7 @@ void CommsController::processUdp() {
 				// Error handled in enqueueRx
 			}
 		}
+		packetsProcessed++;
 	}
 }
 
@@ -218,14 +225,27 @@ void CommsController::processTxQueue() {
 		m_lastUsbHealthy = now;
 		if (!m_usbHostConnected) {
 			// USB host reconnected! Resume sending
+			#if WATCHDOG_ENABLED
+			g_watchdogBreadcrumb = WD_BREADCRUMB_USB_RECONNECT;
+			#endif
+			
 			m_usbHostConnected = true;
 			g_errorLog.logf(LOG_INFO, "USB host reconnected (buffer space: %d)", usbAvail);
 			// Send recovery message only if buffer has enough space (avoid blocking)
 			if (usbAvail > 40) {
+				#if WATCHDOG_ENABLED
+				g_watchdogBreadcrumb = WD_BREADCRUMB_USB_SEND;
+				#endif
+				
 				char recoveryMsg[64];
 				snprintf(recoveryMsg, sizeof(recoveryMsg), "%s_INFO: USB host reconnected\n", DEVICE_NAME_UPPER);
 				ConnectorUsb.Send(recoveryMsg);
 			}
+			
+			// Restore breadcrumb to TX_QUEUE after USB operations
+			#if WATCHDOG_ENABLED
+			g_watchdogBreadcrumb = WD_BREADCRUMB_TX_QUEUE;
+			#endif
 		}
 	} else {
 		// Buffer is nearly full - either host is slow or disconnected
@@ -245,21 +265,20 @@ void CommsController::processTxQueue() {
 				lastUsbResetAttempt = now;
 				g_errorLog.logf(LOG_WARNING, "USB stuck for %lu ms - attempting recovery", now - m_lastUsbHealthy);
 				
-				// Feed watchdog before potentially slow USB operations
+				// Set breadcrumb for USB recovery operations
 				#if WATCHDOG_ENABLED
-				WDT->CLEAR.reg = WDT_CLEAR_CLEAR_KEY;
-				while(WDT->SYNCBUSY.reg);
+				g_watchdogBreadcrumb = WD_BREADCRUMB_USB_RECOVERY;
 				#endif
 				
 				// Try to flush the TX buffer by closing and reopening the port
+				// If this hangs, watchdog should fire - don't feed it
 				ConnectorUsb.PortClose();
 				// No delay needed - USB stack handles this internally
 				ConnectorUsb.PortOpen();
 				
-				// Feed watchdog after USB operations
+				// Restore breadcrumb after USB operations
 				#if WATCHDOG_ENABLED
-				WDT->CLEAR.reg = WDT_CLEAR_CLEAR_KEY;
-				while(WDT->SYNCBUSY.reg);
+				g_watchdogBreadcrumb = WD_BREADCRUMB_TX_QUEUE;
 				#endif
 				
 				// Reset state
