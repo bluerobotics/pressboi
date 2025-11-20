@@ -2,7 +2,7 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
-## [Unreleased]
+## [1.10.1] - 2025-11-20
 
 ### Added
 - **Extended watchdog breadcrumbs**: Added `NETWORK_REFRESH`, `USB_SEND`, `USB_RECONNECT`, and `USB_RECOVERY` breadcrumbs for finer-grained watchdog timeout diagnostics
