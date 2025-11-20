@@ -6,3 +6,5 @@ Debug/
 !Debug/*.map
 !Debug/Makefile
 !Debug/makedep.mk
+__pycache__/
+*.pyc
