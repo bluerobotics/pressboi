@@ -52,6 +52,11 @@ void CommsController::update() {
 }
 
 bool CommsController::enqueueRx(const char* msg, const IpAddress& ip, uint16_t port) {
+	#if WATCHDOG_ENABLED
+	extern volatile uint8_t g_watchdogBreadcrumb;
+	g_watchdogBreadcrumb = WD_BREADCRUMB_RX_ENQUEUE;
+	#endif
+	
 	int next_head = (m_rxQueueHead + 1) % RX_QUEUE_SIZE;
 	if (next_head == m_rxQueueTail) {
 		if(m_guiDiscovered && EthernetMgr.PhyLinkActive()) {
@@ -109,6 +114,9 @@ void CommsController::processUdp() {
 	int packetsProcessed = 0;
 	
 	while (packetsProcessed < MAX_UDP_PACKETS_PER_CALL && m_udp.PacketParse()) {
+		#if WATCHDOG_ENABLED
+		g_watchdogBreadcrumb = WD_BREADCRUMB_UDP_PACKET_READ;
+		#endif
 		IpAddress remoteIp = m_udp.RemoteIp();
 		uint16_t remotePort = m_udp.RemotePort();
 		int32_t bytesRead = m_udp.PacketRead(m_packetBuffer, MAX_PACKET_LENGTH - 1);
@@ -123,6 +131,10 @@ void CommsController::processUdp() {
 }
 
 void CommsController::processUsbSerial() {
+	#if WATCHDOG_ENABLED
+	g_watchdogBreadcrumb = WD_BREADCRUMB_USB_AVAILABLE;
+	#endif
+	
 	static char usbBuffer[MAX_MESSAGE_LENGTH];
 	static int usbBufferIndex = 0;
 	static bool usbFirstData = false;  // Track if we've seen first data
@@ -195,6 +207,10 @@ void CommsController::processUsbSerial() {
 }
 
 void CommsController::processTxQueue() {
+	#if WATCHDOG_ENABLED
+	g_watchdogBreadcrumb = WD_BREADCRUMB_PROCESS_TX_QUEUE;
+	#endif
+	
 	// USB Connection Detection - check every loop, even if queue is empty
 	// This ensures we detect host reconnection promptly
 	// USB CDC buffer is 64 bytes total
@@ -292,13 +308,17 @@ void CommsController::processTxQueue() {
 	
 	// Process one message per call - this is fine since watchdog is fed every loop iteration
 	if (m_txQueueHead != m_txQueueTail) {
+		#if WATCHDOG_ENABLED
+		g_watchdogBreadcrumb = WD_BREADCRUMB_TX_QUEUE_DEQUEUE;
+		#endif
+		
 		Message msg = m_txQueue[m_txQueueTail];
 		m_txQueueTail = (m_txQueueTail + 1) % TX_QUEUE_SIZE;
 		
 		
 		// Send over UDP if ethernet link is up AND we have a valid network GUI IP
 		#if WATCHDOG_ENABLED
-		g_watchdogBreadcrumb = WD_BREADCRUMB_UDP_SEND;
+		g_watchdogBreadcrumb = WD_BREADCRUMB_TX_QUEUE_UDP;
 		#endif
 		
 		// Check if we have a valid network IP (not localhost, not 0.0.0.0)
@@ -318,6 +338,9 @@ void CommsController::processTxQueue() {
 		
 		// Mirror to USB serial (if USB host is connected and reading)
 		// Only send to USB if a host is connected and reading
+		#if WATCHDOG_ENABLED
+		g_watchdogBreadcrumb = WD_BREADCRUMB_TX_QUEUE_USB;
+		#endif
 	if (m_usbHostConnected) {
 		const int CHUNK_SIZE = 50;
 		int msgLen = strlen(msg.buffer);
@@ -367,6 +390,12 @@ void CommsController::processTxQueue() {
 }
 
 void CommsController::reportEvent(const char* statusType, const char* message) {
+	#if WATCHDOG_ENABLED
+	extern volatile uint8_t g_watchdogBreadcrumb;
+	uint8_t savedBreadcrumb = g_watchdogBreadcrumb;
+	g_watchdogBreadcrumb = 0x10; // reportEvent start
+	#endif
+	
 	char fullMsg[MAX_MESSAGE_LENGTH];
 	snprintf(fullMsg, sizeof(fullMsg), "%s%s", statusType, message);
 	
@@ -375,7 +404,14 @@ void CommsController::reportEvent(const char* statusType, const char* message) {
 	IpAddress targetIp = m_guiDiscovered ? m_guiIp : IpAddress(0, 0, 0, 0);
 	uint16_t targetPort = m_guiDiscovered ? m_guiPort : 0;
 	
+	#if WATCHDOG_ENABLED
+	g_watchdogBreadcrumb = 0x11; // enqueueTx call
+	#endif
 	enqueueTx(fullMsg, targetIp, targetPort);
+	
+	#if WATCHDOG_ENABLED
+	g_watchdogBreadcrumb = savedBreadcrumb; // restore
+	#endif
 }
 
 void CommsController::notifyUsbHostActive() {

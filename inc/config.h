@@ -46,7 +46,7 @@
  * @name General System Behavior
  * @{
  */
-#define FIRMWARE_VERSION                "1.10.3"   ///< Pressboi firmware version
+#define FIRMWARE_VERSION                "1.10.4"   ///< Pressboi firmware version
 #define STATUS_MESSAGE_BUFFER_SIZE      256       ///< Standard buffer size for composing status and error messages.
 /** @} */
 
@@ -192,6 +192,25 @@
 #define WD_BREADCRUMB_USB_SEND              0x0D      ///< Watchdog timeout in USB send operation
 #define WD_BREADCRUMB_USB_RECONNECT         0x0E      ///< Watchdog timeout in USB reconnection handling
 #define WD_BREADCRUMB_USB_RECOVERY          0x0F      ///< Watchdog timeout in USB recovery operation
+#define WD_BREADCRUMB_REPORT_EVENT          0x10      ///< Watchdog timeout in reportEvent (start)
+#define WD_BREADCRUMB_ENQUEUE_TX            0x11      ///< Watchdog timeout in enqueueTx
+#define WD_BREADCRUMB_MOTOR_IS_FAULT        0x12      ///< Watchdog timeout in motor fault check
+#define WD_BREADCRUMB_MOTOR_STATE_SWITCH    0x13      ///< Watchdog timeout in state machine switch
+#define WD_BREADCRUMB_PROCESS_TX_QUEUE      0x14      ///< Watchdog timeout in processTxQueue start
+#define WD_BREADCRUMB_TX_QUEUE_DEQUEUE      0x15      ///< Watchdog timeout in TX queue dequeue
+#define WD_BREADCRUMB_TX_QUEUE_UDP          0x16      ///< Watchdog timeout in TX queue UDP send
+#define WD_BREADCRUMB_TX_QUEUE_USB          0x17      ///< Watchdog timeout in TX queue USB send
+#define WD_BREADCRUMB_DISPATCH_CMD          0x18      ///< Watchdog timeout in dispatchCommand
+#define WD_BREADCRUMB_PARSE_CMD             0x19      ///< Watchdog timeout in parseCommand
+#define WD_BREADCRUMB_MOTOR_FAULT_REPORT    0x1A      ///< Watchdog timeout in motor fault report
+#define WD_BREADCRUMB_STATE_BUSY_CHECK      0x1B      ///< Watchdog timeout in motor busy check
+#define WD_BREADCRUMB_UDP_PACKET_READ       0x1C      ///< Watchdog timeout in UDP packet read
+#define WD_BREADCRUMB_RX_ENQUEUE            0x1D      ///< Watchdog timeout in RX enqueue
+#define WD_BREADCRUMB_USB_AVAILABLE         0x1E      ///< Watchdog timeout checking USB available
+#define WD_BREADCRUMB_USB_READ              0x1F      ///< Watchdog timeout in USB read
+#define WD_BREADCRUMB_NETWORK_INPUT         0x20      ///< Watchdog timeout in network low_level_input
+#define WD_BREADCRUMB_LWIP_INPUT            0x21      ///< Watchdog timeout in ethernetif_input (lwIP)
+#define WD_BREADCRUMB_LWIP_TIMEOUT          0x22      ///< Watchdog timeout in sys_check_timeouts (lwIP)
 #define WD_BREADCRUMB_UNKNOWN               0xFF      ///< Watchdog timeout in unknown location
 /** @} */
 /** @} */

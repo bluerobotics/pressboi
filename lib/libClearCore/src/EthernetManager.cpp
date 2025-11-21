@@ -456,6 +456,11 @@ void EthernetManager::Setup() {
 }
 
 void EthernetManager::Refresh() {
+    #if WATCHDOG_ENABLED
+    extern volatile uint8_t g_watchdogBreadcrumb;
+    g_watchdogBreadcrumb = 0x0C; // WD_BREADCRUMB_NETWORK_REFRESH
+    #endif
+    
     // Process maximum N packets per call to prevent watchdog timeout
     // If more packets arrive than we can process in one loop, they'll be
     // handled in the next iteration (remaining packets stay in hardware buffer)
@@ -465,17 +470,26 @@ void EthernetManager::Refresh() {
     
     while (packetsProcessed < MAX_PACKETS_PER_CALL) {
         // Check for an available packet.
+        #if WATCHDOG_ENABLED
+        g_watchdogBreadcrumb = 0x20; // WD_BREADCRUMB_NETWORK_INPUT
+        #endif
         struct pbuf *packet = low_level_input(&m_macInterface);
         if (packet == NULL) {
             break;
         }
         // Send the packet as input to LwIP.
+        #if WATCHDOG_ENABLED
+        g_watchdogBreadcrumb = 0x21; // WD_BREADCRUMB_LWIP_INPUT
+        #endif
         ethernetif_input(&m_macInterface, packet);
         packetsProcessed++;
     }
     
     // Check timeouts (DHCP, ARP, TCP retransmissions, etc.)
     // This can also be time-consuming if many connections are active
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = 0x22; // WD_BREADCRUMB_LWIP_TIMEOUT
+    #endif
     sys_check_timeouts();
 }
 

@@ -234,6 +234,25 @@ void Pressboi::loop() {
             case WD_BREADCRUMB_USB_SEND: breadcrumb_name = "USB_SEND"; break;
             case WD_BREADCRUMB_USB_RECONNECT: breadcrumb_name = "USB_RECONNECT"; break;
             case WD_BREADCRUMB_USB_RECOVERY: breadcrumb_name = "USB_RECOVERY"; break;
+            case WD_BREADCRUMB_REPORT_EVENT: breadcrumb_name = "REPORT_EVENT"; break;
+            case WD_BREADCRUMB_ENQUEUE_TX: breadcrumb_name = "ENQUEUE_TX"; break;
+            case WD_BREADCRUMB_MOTOR_IS_FAULT: breadcrumb_name = "MOTOR_IS_FAULT"; break;
+            case WD_BREADCRUMB_MOTOR_STATE_SWITCH: breadcrumb_name = "MOTOR_STATE_SWITCH"; break;
+            case WD_BREADCRUMB_PROCESS_TX_QUEUE: breadcrumb_name = "PROCESS_TX_QUEUE"; break;
+            case WD_BREADCRUMB_TX_QUEUE_DEQUEUE: breadcrumb_name = "TX_QUEUE_DEQUEUE"; break;
+            case WD_BREADCRUMB_TX_QUEUE_UDP: breadcrumb_name = "TX_QUEUE_UDP"; break;
+            case WD_BREADCRUMB_TX_QUEUE_USB: breadcrumb_name = "TX_QUEUE_USB"; break;
+            case WD_BREADCRUMB_DISPATCH_CMD: breadcrumb_name = "DISPATCH_CMD"; break;
+            case WD_BREADCRUMB_PARSE_CMD: breadcrumb_name = "PARSE_CMD"; break;
+            case WD_BREADCRUMB_MOTOR_FAULT_REPORT: breadcrumb_name = "MOTOR_FAULT_REPORT"; break;
+            case WD_BREADCRUMB_STATE_BUSY_CHECK: breadcrumb_name = "STATE_BUSY_CHECK"; break;
+            case WD_BREADCRUMB_UDP_PACKET_READ: breadcrumb_name = "UDP_PACKET_READ"; break;
+            case WD_BREADCRUMB_RX_ENQUEUE: breadcrumb_name = "RX_ENQUEUE"; break;
+            case WD_BREADCRUMB_USB_AVAILABLE: breadcrumb_name = "USB_AVAILABLE"; break;
+            case WD_BREADCRUMB_USB_READ: breadcrumb_name = "USB_READ"; break;
+            case WD_BREADCRUMB_NETWORK_INPUT: breadcrumb_name = "NETWORK_INPUT"; break;
+            case WD_BREADCRUMB_LWIP_INPUT: breadcrumb_name = "LWIP_INPUT"; break;
+            case WD_BREADCRUMB_LWIP_TIMEOUT: breadcrumb_name = "LWIP_TIMEOUT"; break;
         }
         snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >128ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
         reportEvent(STATUS_PREFIX_RECOVERY, recoveryMsg);
@@ -276,6 +295,9 @@ void Pressboi::updateState() {
     #if WATCHDOG_ENABLED
     g_watchdogBreadcrumb = WD_BREADCRUMB_UPDATE_STATE;
     #endif
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_MOTOR_STATE_SWITCH;
+    #endif
     switch (m_mainState) {
         case STATE_STANDBY:
         case STATE_BUSY: {
@@ -284,7 +306,13 @@ void Pressboi::updateState() {
             uint32_t now = Milliseconds();
             bool inGracePeriod = (now < m_faultGracePeriodEnd);
             
+            #if WATCHDOG_ENABLED
+            g_watchdogBreadcrumb = WD_BREADCRUMB_MOTOR_IS_FAULT;
+            #endif
             if (!inGracePeriod && m_motor.isInFault()) {
+                #if WATCHDOG_ENABLED
+                g_watchdogBreadcrumb = WD_BREADCRUMB_MOTOR_FAULT_REPORT;
+                #endif
                 m_mainState = STATE_ERROR;
                 g_errorLog.log(LOG_ERROR, "Motor fault detected -> ERROR state");
                 reportEvent(STATUS_PREFIX_ERROR, "Motor fault detected. System entering ERROR state. Use CLEAR_ERRORS to reset.");
@@ -292,6 +320,9 @@ void Pressboi::updateState() {
             }
 
             // If no faults, update the state based on whether motor is busy.
+            #if WATCHDOG_ENABLED
+            g_watchdogBreadcrumb = WD_BREADCRUMB_STATE_BUSY_CHECK;
+            #endif
             MainState newState = m_motor.isBusy() ? STATE_BUSY : STATE_STANDBY;
             if (newState != m_mainState) {
                 g_errorLog.logf(LOG_DEBUG, "State: %s -> %s", 
@@ -354,7 +385,14 @@ void Pressboi::updateState() {
  * @param msg The message object containing the command string and remote IP details.
  */
 void Pressboi::dispatchCommand(const Message& msg) {
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_PARSE_CMD;
+    #endif
     Command command_enum = parseCommand(msg.buffer);
+    
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_DISPATCH_CMD;
+    #endif
     
     // Log incoming commands (except telemetry spam and discovery)
     if (command_enum != CMD_DISCOVER_DEVICE) {
@@ -903,6 +941,25 @@ void Pressboi::handleWatchdogRecovery() {
             case WD_BREADCRUMB_USB_SEND: breadcrumb_name = "USB_SEND"; break;
             case WD_BREADCRUMB_USB_RECONNECT: breadcrumb_name = "USB_RECONNECT"; break;
             case WD_BREADCRUMB_USB_RECOVERY: breadcrumb_name = "USB_RECOVERY"; break;
+            case WD_BREADCRUMB_REPORT_EVENT: breadcrumb_name = "REPORT_EVENT"; break;
+            case WD_BREADCRUMB_ENQUEUE_TX: breadcrumb_name = "ENQUEUE_TX"; break;
+            case WD_BREADCRUMB_MOTOR_IS_FAULT: breadcrumb_name = "MOTOR_IS_FAULT"; break;
+            case WD_BREADCRUMB_MOTOR_STATE_SWITCH: breadcrumb_name = "MOTOR_STATE_SWITCH"; break;
+            case WD_BREADCRUMB_PROCESS_TX_QUEUE: breadcrumb_name = "PROCESS_TX_QUEUE"; break;
+            case WD_BREADCRUMB_TX_QUEUE_DEQUEUE: breadcrumb_name = "TX_QUEUE_DEQUEUE"; break;
+            case WD_BREADCRUMB_TX_QUEUE_UDP: breadcrumb_name = "TX_QUEUE_UDP"; break;
+            case WD_BREADCRUMB_TX_QUEUE_USB: breadcrumb_name = "TX_QUEUE_USB"; break;
+            case WD_BREADCRUMB_DISPATCH_CMD: breadcrumb_name = "DISPATCH_CMD"; break;
+            case WD_BREADCRUMB_PARSE_CMD: breadcrumb_name = "PARSE_CMD"; break;
+            case WD_BREADCRUMB_MOTOR_FAULT_REPORT: breadcrumb_name = "MOTOR_FAULT_REPORT"; break;
+            case WD_BREADCRUMB_STATE_BUSY_CHECK: breadcrumb_name = "STATE_BUSY_CHECK"; break;
+            case WD_BREADCRUMB_UDP_PACKET_READ: breadcrumb_name = "UDP_PACKET_READ"; break;
+            case WD_BREADCRUMB_RX_ENQUEUE: breadcrumb_name = "RX_ENQUEUE"; break;
+            case WD_BREADCRUMB_USB_AVAILABLE: breadcrumb_name = "USB_AVAILABLE"; break;
+            case WD_BREADCRUMB_USB_READ: breadcrumb_name = "USB_READ"; break;
+            case WD_BREADCRUMB_NETWORK_INPUT: breadcrumb_name = "NETWORK_INPUT"; break;
+            case WD_BREADCRUMB_LWIP_INPUT: breadcrumb_name = "LWIP_INPUT"; break;
+            case WD_BREADCRUMB_LWIP_TIMEOUT: breadcrumb_name = "LWIP_TIMEOUT"; break;
         }
         snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >128ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
         m_comms.reportEvent(STATUS_PREFIX_RECOVERY, recoveryMsg);
