@@ -53,7 +53,6 @@ void CommsController::update() {
 
 bool CommsController::enqueueRx(const char* msg, const IpAddress& ip, uint16_t port) {
 	#if WATCHDOG_ENABLED
-	extern volatile uint8_t g_watchdogBreadcrumb;
 	g_watchdogBreadcrumb = WD_BREADCRUMB_RX_ENQUEUE;
 	#endif
 	
@@ -391,8 +390,7 @@ void CommsController::processTxQueue() {
 
 void CommsController::reportEvent(const char* statusType, const char* message) {
 	#if WATCHDOG_ENABLED
-	extern volatile uint8_t g_watchdogBreadcrumb;
-	uint8_t savedBreadcrumb = g_watchdogBreadcrumb;
+	uint32_t savedBreadcrumb = g_watchdogBreadcrumb;
 	g_watchdogBreadcrumb = 0x10; // reportEvent start
 	#endif
 	

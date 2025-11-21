@@ -457,7 +457,7 @@ void EthernetManager::Setup() {
 
 void EthernetManager::Refresh() {
     #if WATCHDOG_ENABLED
-    extern volatile uint8_t g_watchdogBreadcrumb;
+    extern volatile uint32_t g_watchdogBreadcrumb;
     g_watchdogBreadcrumb = 0x0C; // WD_BREADCRUMB_NETWORK_REFRESH
     #endif
     
