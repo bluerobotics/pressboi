@@ -2,6 +2,13 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.10.5] - 2025-11-21
+
+### Fixed
+- **TX queue overflow during log dumps**: Temporarily disable watchdog during `dump_error_log` command to prevent resets during large log transfers (100+ entries can take >500ms, exceeding 100ms watchdog timeout)
+- **Log dump reliability**: Added 5ms delay per error entry and 50ms delay every 10 heartbeat entries to prevent TX queue overflow errors
+- Watchdog disabled only for diagnostic `dump_error_log` command, maintains watchdog integrity for all normal operations
+
 ## [1.10.1] - 2025-11-20
 
 ### Added
