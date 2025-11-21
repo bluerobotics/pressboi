@@ -104,7 +104,8 @@ void CommsController::processUdp() {
 	// Limit UDP packets processed per call to prevent watchdog timeout
 	// PacketParse() internally calls EthernetMgr.Refresh() which processes network packets
 	// If more packets arrive than we can process, they'll be handled next loop iteration
-	const int MAX_UDP_PACKETS_PER_CALL = 10;
+	// Reduced to 3 to be more conservative, especially after USB reconnection bursts
+	const int MAX_UDP_PACKETS_PER_CALL = 3;
 	int packetsProcessed = 0;
 	
 	while (packetsProcessed < MAX_UDP_PACKETS_PER_CALL && m_udp.PacketParse()) {

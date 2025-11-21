@@ -459,7 +459,8 @@ void EthernetManager::Refresh() {
     // Process maximum N packets per call to prevent watchdog timeout
     // If more packets arrive than we can process in one loop, they'll be
     // handled in the next iteration (remaining packets stay in hardware buffer)
-    const int MAX_PACKETS_PER_CALL = 10;
+    // Reduced to 3 to be more conservative, especially after USB reconnection bursts
+    const int MAX_PACKETS_PER_CALL = 3;
     int packetsProcessed = 0;
     
     while (packetsProcessed < MAX_PACKETS_PER_CALL) {
