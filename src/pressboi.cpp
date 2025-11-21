@@ -267,9 +267,15 @@ void Pressboi::performSafetyCheck() {
  */
 void Pressboi::updateState() {
     // First, update the state of the motor controller
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_MOTOR_UPDATE;
+    #endif
     m_motor.updateState();
 
     // Now, update the main Pressboi state based on the motor controller state.
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_UPDATE_STATE;
+    #endif
     switch (m_mainState) {
         case STATE_STANDBY:
         case STATE_BUSY: {
