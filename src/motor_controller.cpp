@@ -120,6 +120,9 @@ void MotorController::setup() {
     if (magicValue != NVM_MAGIC_NUMBER) {
         // First boot detected - initialize all NVM locations with defaults
         
+        // Location 3 (byte 12): Polarity (0 = normal, 1 = inverted)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(3 * 4), 0);
+        
         // Location 4 (byte 16): Force mode (1 = load_cell default)
         nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(4 * 4), 1);
         
@@ -139,6 +142,19 @@ void MotorController::setup() {
         // Write magic number to indicate NVM is initialized (byte 28)
         nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(7 * 4), NVM_MAGIC_NUMBER);
     }
+    
+    // Load polarity from NVM (0 = normal, 1 = inverted)
+    int32_t polarityValue = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(3 * 4));  // Byte offset 12
+    bool isInverted = (polarityValue == 1);
+    if (isInverted) {
+        strcpy(m_polarity, "inverted");
+    } else {
+        strcpy(m_polarity, "normal"); // Default if NVM empty or set to 0
+    }
+    
+    // Apply polarity to motors
+    m_motorA->PolarityInvertSDDirection(isInverted);
+    m_motorB->PolarityInvertSDDirection(isInverted);
     
     // Load force mode from NVM (0 = motor_torque, 1 = load_cell)
     int32_t forceModeValue = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(4 * 4));  // Byte offset 16
@@ -1226,6 +1242,39 @@ bool MotorController::setForceMode(const char* mode) {
  */
 const char* MotorController::getForceMode() const {
     return m_force_mode;
+}
+
+/**
+ * @brief Sets the coordinate system polarity and saves to NVM.
+ */
+bool MotorController::setPolarity(const char* polarity) {
+    NvmManager &nvmMgr = NvmManager::Instance();
+    
+    if (strcmp(polarity, "normal") == 0) {
+        strcpy(m_polarity, "normal");
+        // Save to NVM (0 = normal, byte offset 12)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(3 * 4), 0);
+        // Apply polarity to motors (false = not inverted)
+        m_motorA->PolarityInvertSDDirection(false);
+        m_motorB->PolarityInvertSDDirection(false);
+        return true;
+    } else if (strcmp(polarity, "inverted") == 0) {
+        strcpy(m_polarity, "inverted");
+        // Save to NVM (1 = inverted, byte offset 12)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(3 * 4), 1);
+        // Apply polarity to motors (true = inverted)
+        m_motorA->PolarityInvertSDDirection(true);
+        m_motorB->PolarityInvertSDDirection(true);
+        return true;
+    }
+    return false; // Invalid polarity
+}
+
+/**
+ * @brief Gets the current coordinate system polarity.
+ */
+const char* MotorController::getPolarity() const {
+    return m_polarity;
 }
 
 /**

@@ -569,6 +569,23 @@ void Pressboi::dispatchCommand(const Message& msg) {
             break;
         }
 
+        case CMD_SET_POLARITY: {
+            char polarity[32] = "";
+            if (sscanf(args, "%31s", polarity) == 1) {
+                if (m_motor.setPolarity(polarity)) {
+                    char msg_buf[128];
+                    snprintf(msg_buf, sizeof(msg_buf), "Coordinate system polarity set to '%s' and saved to NVM", polarity);
+                    reportEvent(STATUS_PREFIX_INFO, msg_buf);
+                    reportEvent(STATUS_PREFIX_DONE, "set_polarity");
+                } else {
+                    reportEvent(STATUS_PREFIX_ERROR, "Invalid polarity. Use 'normal' or 'inverted'");
+                }
+            } else {
+                reportEvent(STATUS_PREFIX_ERROR, "Invalid parameter for set_polarity");
+            }
+            break;
+        }
+
         case CMD_SET_FORCE_ZERO: {
             const char* mode = m_motor.getForceMode();
             if (strcmp(mode, "load_cell") == 0) {

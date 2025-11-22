@@ -180,6 +180,15 @@
         "description": "Dump internal error log buffer for diagnostics.",
         "params": [],
         "returns": ["info", "done", "error"]
+    },
+    "set_polarity": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Sets the coordinate system polarity (normal or inverted) and saves to NVM. Inverted flips home direction and all moves.",
+        "params": [
+            { "parameter": "polarity", "type": "string", "enum": ["normal", "inverted"], "help": "normal = standard direction, inverted = all motions and home reversed" }
+        ],
+        "returns": ["done", "error"]
     }
 }
 

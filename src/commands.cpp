@@ -37,6 +37,7 @@ Command parseCommand(const char* cmdStr) {
     if (strncmp(cmdStr, CMD_STR_DUMP_NVM, strlen(CMD_STR_DUMP_NVM)) == 0) return CMD_DUMP_NVM;
     if (strncmp(cmdStr, CMD_STR_RESET_NVM, strlen(CMD_STR_RESET_NVM)) == 0) return CMD_RESET_NVM;
     if (strncmp(cmdStr, CMD_STR_DUMP_ERROR_LOG, strlen(CMD_STR_DUMP_ERROR_LOG)) == 0) return CMD_DUMP_ERROR_LOG;
+    if (strncmp(cmdStr, CMD_STR_SET_POLARITY, strlen(CMD_STR_SET_POLARITY)) == 0) return CMD_SET_POLARITY;
     return CMD_UNKNOWN;
 }
 
@@ -58,6 +59,8 @@ const char* getCommandParams(const char* cmdStr, Command cmd) {
             return cmdStr + strlen(CMD_STR_SET_FORCE_SCALE);
         case CMD_SET_STRAIN_CAL:
             return cmdStr + strlen(CMD_STR_SET_STRAIN_CAL);
+        case CMD_SET_POLARITY:
+            return cmdStr + strlen(CMD_STR_SET_POLARITY);
         default:
             return NULL;
     }
