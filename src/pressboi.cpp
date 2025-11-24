@@ -683,6 +683,14 @@ void Pressboi::dispatchCommand(const Message& msg) {
             snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:SUMMARY: MotorTorque: Scale=%.6f Offset=%.4f %%", 
                      mt_scale, mt_offset);
             m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
+            
+            // Polarity (location 3 - byte offset 12)
+            int32_t polarity_value = nvm_values[3];   // Location 3
+            const char* polarity_str = (polarity_value == 1) ? "inverted" : "normal";
+            
+            snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:SUMMARY: Polarity=%s", 
+                     polarity_str);
+            m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
 
             reportEvent(STATUS_PREFIX_DONE, "dump_nvm");
             break;
