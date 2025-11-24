@@ -703,13 +703,8 @@ void Pressboi::dispatchCommand(const Message& msg) {
         }
 
         case CMD_DUMP_ERROR_LOG: {
-            // Temporarily disable watchdog for log dump (diagnostic command only)
-            // Log dumps can take >100ms for large logs, which exceeds watchdog timeout
-            #if WATCHDOG_ENABLED
-            WDT->CTRLA.reg = 0;
-            while(WDT->SYNCBUSY.reg);
-            reportEvent(STATUS_PREFIX_INFO, "Watchdog disabled for log dump");
-            #endif
+            // Feed watchdog periodically during log dump (don't disable it - causes reboot!)
+            // Log dumps can take >100ms for large logs, so we need to feed watchdog every few entries
             
             // Send error log entries over network/USB
             int entryCount = g_errorLog.getEntryCount();
@@ -738,8 +733,16 @@ void Pressboi::dispatchCommand(const Message& msg) {
                     
                     // Small delay to allow TX queue to drain (prevent overflow)
                     Delay_ms(5);
+                    
+                    // Feed watchdog every 5 entries to prevent timeout
+                    if ((i + 1) % 5 == 0) {
+                        feedWatchdog();
+                    }
                 }
             }
+            
+            // Feed watchdog after error log
+            feedWatchdog();
             
             snprintf(msg, sizeof(msg), "=== END ERROR LOG ===");
             reportEvent(STATUS_PREFIX_INFO, msg);
@@ -773,22 +776,19 @@ void Pressboi::dispatchCommand(const Message& msg) {
                              entry.networkActive, entry.usbAvailable);
                     reportEvent(STATUS_PREFIX_INFO, msg);
                     
-                    // Every 10 entries, add delay to prevent TX queue overflow
+                    // Every 10 entries, add delay to prevent TX queue overflow and feed watchdog
                     if ((i + 1) % 10 == 0) {
                         Delay_ms(50);
+                        feedWatchdog();
                     }
                 }
             }
             
+            // Feed watchdog one final time
+            feedWatchdog();
+            
             snprintf(msg, sizeof(msg), "=== END HEARTBEAT LOG ===");
             reportEvent(STATUS_PREFIX_INFO, msg);
-            
-            // Re-enable watchdog after log dump is complete
-            #if WATCHDOG_ENABLED
-            WDT->CTRLA.reg = WDT_CTRLA_ENABLE;
-            while(WDT->SYNCBUSY.reg);
-            reportEvent(STATUS_PREFIX_INFO, "Watchdog re-enabled");
-            #endif
             
             reportEvent(STATUS_PREFIX_DONE, "dump_error_log");
             break;
