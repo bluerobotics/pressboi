@@ -22,9 +22,227 @@ if __name__ == "__main__":
 from src import theme
 
 
-def create_operator_view(parent, shared_gui_refs):
+def create_operator_view(parent, shared_gui_refs, view_id=None):
     """
     Create pressboi operator view content.
+    
+    Args:
+        parent: Parent frame to pack content into
+        shared_gui_refs: Shared GUI references dictionary
+        view_id: Optional view ID to determine which view to create
+        
+    Returns:
+        Widget containing operator view content
+    """
+    # Route to appropriate view creator based on view_id
+    if view_id == 'press_operator_view':
+        return create_press_operator_view(parent, shared_gui_refs)
+    elif view_id == 'injector_operator_view':
+        return create_injector_operator_view(parent, shared_gui_refs)
+    else:
+        # Default/generic view
+        return create_generic_operator_view(parent, shared_gui_refs)
+
+
+def create_press_operator_view(parent, shared_gui_refs):
+    """
+    Create simplified press operator view with job/serial tracking and PASS/FAIL indicator.
+    
+    Args:
+        parent: Parent frame to pack content into
+        shared_gui_refs: Shared GUI references dictionary
+        
+    Returns:
+        Widget containing operator view content
+    """
+    # Main container - fill parent
+    container = tk.Frame(parent, bg=theme.BG_COLOR)
+    container.pack(fill=tk.BOTH, expand=True)
+    
+    # Get serial manager from shared refs
+    serial_manager = shared_gui_refs.get('serial_manager')
+    
+    # Job Number
+    job_outer = tk.Frame(container, bg=theme.BG_COLOR)
+    job_outer.pack(fill=tk.X, pady=15)
+    
+    job_frame = tk.Frame(job_outer, bg=theme.BG_COLOR)
+    job_frame.pack()
+    
+    tk.Label(
+        job_frame,
+        text="Job Number:",
+        font=(theme.FONT_FAMILY, 24, 'bold'),
+        foreground='#B0A3D4',  # Lavender
+        bg=theme.BG_COLOR
+    ).pack(side=tk.LEFT, padx=(0, 20))
+    
+    job_var = tk.StringVar(value=serial_manager.get_job() if serial_manager else '')
+    job_entry = tk.Entry(
+        job_frame, 
+        textvariable=job_var, 
+        font=(theme.FONT_FAMILY, 24),
+        width=25,
+        bg=theme.WIDGET_BG,
+        fg=theme.FG_COLOR,
+        insertbackground=theme.PRIMARY_ACCENT,
+        relief='solid',
+        borderwidth=3
+    )
+    job_entry.pack(side=tk.LEFT)
+    
+    def on_job_changed(*args):
+        if serial_manager:
+            serial_manager.set_job(job_var.get())
+    job_var.trace_add('write', on_job_changed)
+    
+    # Serial Number
+    serial_outer = tk.Frame(container, bg=theme.BG_COLOR)
+    serial_outer.pack(fill=tk.X, pady=15)
+    
+    serial_frame = tk.Frame(serial_outer, bg=theme.BG_COLOR)
+    serial_frame.pack()
+    
+    tk.Label(
+        serial_frame,
+        text="Serial Number:",
+        font=(theme.FONT_FAMILY, 24, 'bold'),
+        foreground='#B0A3D4',  # Lavender
+        bg=theme.BG_COLOR
+    ).pack(side=tk.LEFT, padx=(0, 20))
+    
+    serial_var = tk.StringVar(value=serial_manager.get_serial() if serial_manager else '')
+    serial_entry = tk.Entry(
+        serial_frame, 
+        textvariable=serial_var, 
+        font=(theme.FONT_FAMILY, 24),
+        width=25,
+        bg=theme.WIDGET_BG,
+        fg=theme.FG_COLOR,
+        insertbackground=theme.PRIMARY_ACCENT,
+        relief='solid',
+        borderwidth=3
+    )
+    serial_entry.pack(side=tk.LEFT)
+    
+    def on_serial_changed(*args):
+        if serial_manager:
+            serial_manager.set_serial(serial_var.get())
+    serial_var.trace_add('write', on_serial_changed)
+    
+    # Separator
+    separator = tk.Frame(container, bg=theme.SECONDARY_ACCENT, height=3)
+    separator.pack(fill=tk.X, pady=40, padx=100)
+    
+    # PASS/FAIL Indicator Section (BIG and centered)
+    pass_fail_var = tk.StringVar(value='READY')
+    pass_fail_label = tk.Label(
+        container,
+        textvariable=pass_fail_var,
+        font=(theme.FONT_FAMILY, 180, 'bold'),
+        foreground=theme.COMMENT_COLOR,
+        bg=theme.BG_COLOR
+    )
+    pass_fail_label.pack(pady=(20, 40), expand=True)
+    
+    # Hook into script runner to track PASS/FAIL status
+    script_runner = shared_gui_refs.get('script_runner')
+    if script_runner:
+        # Track previous script state to detect transitions
+        prev_running = [False]
+        prev_held = [False]
+        
+        def update_pass_fail():
+            """Update PASS/FAIL indicator based on script state."""
+            try:
+                is_running = script_runner.is_running
+                is_held = script_runner.is_held
+                had_errors = getattr(script_runner, 'had_errors', False)
+                
+                # Detect state transitions
+                just_stopped = prev_running[0] and not is_running
+                just_held = not prev_held[0] and is_held
+                
+                if is_running and not is_held:
+                    # Script is actively running
+                    pass_fail_var.set('RUNNING')
+                    pass_fail_label.config(foreground=theme.BUSY_BLUE)
+                    print(f"[OPERATOR VIEW] PASS/FAIL: RUNNING")
+                elif is_held or just_held:
+                    # Script hit an error or warning
+                    pass_fail_var.set('FAIL')
+                    pass_fail_label.config(foreground=theme.ERROR_RED)
+                    print(f"[OPERATOR VIEW] PASS/FAIL: FAIL")
+                elif just_stopped:
+                    # Script just finished
+                    if had_errors:
+                        pass_fail_var.set('FAIL')
+                        pass_fail_label.config(foreground=theme.ERROR_RED)
+                        print(f"[OPERATOR VIEW] PASS/FAIL: FAIL (had errors)")
+                    else:
+                        pass_fail_var.set('PASS')
+                        pass_fail_label.config(foreground=theme.SUCCESS_GREEN)
+                        print(f"[OPERATOR VIEW] PASS/FAIL: PASS")
+                elif not is_running and not is_held and not had_errors:
+                    # Script is idle/reset
+                    if pass_fail_var.get() not in ['PASS', 'FAIL']:
+                        pass_fail_var.set('READY')
+                        pass_fail_label.config(foreground=theme.COMMENT_COLOR)
+                
+                # Update tracking
+                prev_running[0] = is_running
+                prev_held[0] = is_held
+            except Exception as e:
+                print(f"[OPERATOR VIEW] Error updating PASS/FAIL: {e}")
+        
+        # Poll script state periodically (every 100ms)
+        def poll_state():
+            try:
+                update_pass_fail()
+            except Exception as e:
+                print(f"[OPERATOR VIEW] Polling error: {e}")
+            # Schedule next poll if container still exists
+            if container.winfo_exists():
+                container.after(100, poll_state)
+        
+        # Start polling
+        print(f"[OPERATOR VIEW] Starting PASS/FAIL polling, initial value: {pass_fail_var.get()}")
+        poll_state()
+    else:
+        print(f"[OPERATOR VIEW] No script_runner found, PASS/FAIL will not update")
+    
+    return container
+
+
+def create_injector_operator_view(parent, shared_gui_refs):
+    """
+    Create simplified injector operator view.
+    
+    Args:
+        parent: Parent frame to pack content into
+        shared_gui_refs: Shared GUI references dictionary
+        
+    Returns:
+        Widget containing operator view content
+    """
+    # Main container
+    container = ttk.Frame(parent, style='Card.TFrame')
+    
+    # Placeholder
+    ttk.Label(
+        container,
+        text="Injector Operator View\n(Coming Soon)",
+        font=(theme.FONT_FAMILY, 24, 'bold'),
+        foreground='#B0A3D4',  # Lavender
+        style='Subtle.TLabel'
+    ).pack(expand=True, pady=50)
+    
+    return container
+
+
+def create_generic_operator_view(parent, shared_gui_refs):
+    """
+    Create generic pressboi operator view content (original implementation).
     
     Args:
         parent: Parent frame to pack content into
