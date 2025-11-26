@@ -138,7 +138,7 @@ void CommsController::processUsbSerial() {
 	static int usbBufferIndex = 0;
 	static bool usbFirstData = false;  // Track if we've seen first data
 	
-	// Limit characters processed per call to prevent watchdog timeout (128ms)
+	// Limit characters processed per call to prevent watchdog timeout (256ms)
 	int charsProcessed = 0;
 	const int MAX_CHARS_PER_CALL = 32;
 	
@@ -355,6 +355,13 @@ void CommsController::processTxQueue() {
 			// Large message - send in chunks with continuation markers
 			// Format: "MSG_PART_1/3: first_50_chars"
 			int totalChunks = (msgLen + CHUNK_SIZE - 1) / CHUNK_SIZE;
+			
+			// Reduce timeout during USB reconnection to prevent watchdog timeout
+			// During reconnection, USB buffer is often small (e.g. 63 bytes)
+			// Limit total blocking time to ~30ms max (3ms per chunk × 10 chunks worst case)
+			// With 256ms watchdog, this provides ample safety margin (30ms << 256ms)
+			const uint32_t CHUNK_TIMEOUT_MS = 3;  // Reduced from 10ms to 3ms
+			
 			for (int chunk = 0; chunk < totalChunks; chunk++) {
 				int offset = chunk * CHUNK_SIZE;
 				int chunkLen = (msgLen - offset > CHUNK_SIZE) ? CHUNK_SIZE : (msgLen - offset);
@@ -367,10 +374,10 @@ void CommsController::processTxQueue() {
 				strncat(chunkMsg, msg.buffer + offset, chunkLen);
 				chunkMsg[headerLen + chunkLen] = '\0';
 				
-				// Wait for buffer space (with timeout to prevent watchdog)
+				// Wait for buffer space (with shorter timeout to prevent watchdog)
 				uint32_t startWait = Milliseconds();
 				while (ConnectorUsb.AvailableForWrite() < (int)strlen(chunkMsg) + 1) {
-					if (Milliseconds() - startWait > 10) {
+					if (Milliseconds() - startWait > CHUNK_TIMEOUT_MS) {
 						// Timeout - skip this chunk to prevent blocking
 						break;
 					}

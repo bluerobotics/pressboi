@@ -46,7 +46,7 @@
  * @name General System Behavior
  * @{
  */
-#define FIRMWARE_VERSION                "1.11.2"   ///< Pressboi firmware version
+#define FIRMWARE_VERSION                "1.11.3"   ///< Pressboi firmware version
 #define STATUS_MESSAGE_BUFFER_SIZE      256       ///< Standard buffer size for composing status and error messages.
 /** @} */
 
@@ -173,7 +173,7 @@
  * @{
  */
 #define WATCHDOG_ENABLED                    true      ///< Enable/disable watchdog timer. When enabled, system must call safety check regularly or motors will be disabled.
-#define WATCHDOG_TIMEOUT_MS                 100       ///< Watchdog timeout period in milliseconds. System will reset if not fed within this time.
+#define WATCHDOG_TIMEOUT_MS                 256       ///< Watchdog timeout period in milliseconds. System will reset if not fed within this time.
 #define WATCHDOG_RECOVERY_FLAG              0xDEADBEEF ///< Magic number written to backup register to indicate watchdog recovery.
 
 // Breadcrumb codes to identify where the watchdog timeout occurred

@@ -254,7 +254,7 @@ void Pressboi::loop() {
             case WD_BREADCRUMB_LWIP_INPUT: breadcrumb_name = "LWIP_INPUT"; break;
             case WD_BREADCRUMB_LWIP_TIMEOUT: breadcrumb_name = "LWIP_TIMEOUT"; break;
         }
-        snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >128ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
+        snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >256ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
         reportEvent(STATUS_PREFIX_RECOVERY, recoveryMsg);
     }
     
@@ -1009,7 +1009,7 @@ void Pressboi::handleWatchdogRecovery() {
             case WD_BREADCRUMB_LWIP_INPUT: breadcrumb_name = "LWIP_INPUT"; break;
             case WD_BREADCRUMB_LWIP_TIMEOUT: breadcrumb_name = "LWIP_TIMEOUT"; break;
         }
-        snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >128ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
+        snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >256ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
         m_comms.reportEvent(STATUS_PREFIX_RECOVERY, recoveryMsg);
         
         // Keep LED on solid to indicate recovered state
@@ -1042,8 +1042,8 @@ void Pressboi::initializeWatchdog() {
     // Configure watchdog:
     // - For timeout at 1kHz WDT clock
     // - Period values: 0x3 = 64 cycles (~64ms), 0x4 = 128 cycles (~128ms), 0x5 = 256 cycles (~256ms)
-    // - Use 0x4 for ~128ms - aggressive timeout to catch real hangs quickly
-    uint8_t per_value = 0x4;  // 128 cycles ≈ 128ms at 1kHz
+    // - Use 0x5 for ~256ms - provides margin for USB reconnection without being too lenient
+    uint8_t per_value = 0x5;  // 256 cycles ≈ 256ms at 1kHz
     
     // Configure watchdog with early warning interrupt
     WDT->CONFIG.reg = WDT_CONFIG_PER(per_value);

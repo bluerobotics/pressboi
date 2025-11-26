@@ -2,6 +2,30 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.11.3] - 2025-11-26
+
+### Changed
+- **Watchdog timeout increased to 256ms**: Doubled from 128ms to provide better stability during USB reconnection
+- **USB chunking timeout reduced**: Lowered per-chunk timeout from 10ms to 3ms to prevent blocking (total ~30ms vs previous ~100ms)
+
+### Fixed
+- **Watchdog timeout on app restart**: Prevents main loop blocking during USB reconnection when TX queue processes large messages
+
+## [1.11.2] - 2025-11-24
+
+### Changed
+- **NVM dump output**: Added polarity information to `dump_nvm` command summary
+
+## [1.11.1] - 2025-11-24
+
+### Changed
+- Updated compiled binaries with latest source changes
+
+## [1.11.0] - 2025-11-24
+
+### Added
+- **`set_polarity` command**: Allows flipping coordinate system between 'normal' and 'inverted' modes, saved to NVM
+
 ## [1.10.5] - 2025-11-21
 
 ### Fixed
