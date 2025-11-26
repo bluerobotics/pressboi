@@ -107,6 +107,8 @@ Pressboi::Pressboi() :
     m_lastTelemetryTime = 0;
     m_resetStartTime = 0;
     m_faultGracePeriodEnd = 0;
+    m_homingPending = false;
+    m_homingDelayStart = 0;
     
     // Initialize telemetry
     telemetry_init(&g_telemetry);
@@ -139,10 +141,12 @@ void Pressboi::setup() {
         m_comms.reportEvent(STATUS_PREFIX_INFO, "Pressboi system setup complete. All components initialized.");
         g_errorLog.log(LOG_INFO, "Setup complete - normal boot");
         
-        // Auto-home if enabled in NVM (default is true)
+        // Auto-home will be initiated after a short delay in the main loop
+        // This prevents watchdog timeout during the busy startup/reconnection period
         if (m_motor.getHomeOnBoot()) {
-            m_comms.reportEvent(STATUS_PREFIX_INFO, "Auto-homing enabled. Initiating home sequence...");
-            m_motor.handleCommand(CMD_HOME, "");
+            m_homingPending = true;  // Flag to initiate homing after delay
+            m_homingDelayStart = 0;  // Will be set in first loop iteration
+            m_comms.reportEvent(STATUS_PREFIX_INFO, "Auto-homing enabled. Will initiate after startup stabilization...");
         } else {
             m_comms.reportEvent(STATUS_PREFIX_INFO, "Auto-homing disabled. System ready in standby mode.");
         }
@@ -215,6 +219,22 @@ void Pressboi::loop() {
             publishTelemetry();
         } else {
             m_lastTelemetryTime = now; // Reset timer so we don't immediately spam after 500ms
+        }
+    }
+    
+    // Handle delayed auto-homing on boot (prevents watchdog timeout during busy startup)
+    if (m_homingPending && m_mainState == STATE_STANDBY) {
+        // Initialize delay timer on first iteration
+        if (m_homingDelayStart == 0) {
+            m_homingDelayStart = now;
+        }
+        
+        // Wait 2 seconds after startup before initiating homing
+        // This allows USB/network to stabilize and message queues to clear
+        if (now - m_homingDelayStart > 2000) {
+            m_homingPending = false;
+            m_comms.reportEvent(STATUS_PREFIX_INFO, "Initiating delayed auto-home sequence...");
+            m_motor.handleCommand(CMD_HOME, "");
         }
     }
     

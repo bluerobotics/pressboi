@@ -182,4 +182,8 @@ private:
     uint32_t m_lastTelemetryTime;       ///< Timestamp of the last telemetry transmission.
     uint32_t m_resetStartTime;          ///< Timestamp when reset operation started (for non-blocking delay).
     uint32_t m_faultGracePeriodEnd;     ///< Timestamp when fault detection grace period ends (after clearing faults).
+    
+    // Auto-homing delay on boot (to prevent watchdog timeout during startup)
+    bool m_homingPending;               ///< Flag indicating homing should be initiated after delay.
+    uint32_t m_homingDelayStart;        ///< Timestamp when homing delay started.
 };
