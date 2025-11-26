@@ -38,6 +38,7 @@
 #define CMD_STR_RESET_NVM                           "reset_nvm" ///< Restore Pressboi non-volatile memory to factory defaults.
 #define CMD_STR_DUMP_ERROR_LOG                      "dump_error_log" ///< Dump internal error log buffer for diagnostics.
 #define CMD_STR_SET_POLARITY                        "set_polarity " ///< Sets the coordinate system polarity (normal or inverted) and saves to NVM. Inverted flips home direction and all moves.
+#define CMD_STR_HOME_ON_BOOT                        "home_on_boot " ///< Sets whether the press should automatically home on startup and saves to NVM.
 /** @} */
 
 /**
@@ -86,6 +87,7 @@ typedef enum {
     CMD_RESET_NVM,                                    ///< @see CMD_STR_RESET_NVM
     CMD_DUMP_ERROR_LOG,                                    ///< @see CMD_STR_DUMP_ERROR_LOG
     CMD_SET_POLARITY,                                    ///< @see CMD_STR_SET_POLARITY
+    CMD_HOME_ON_BOOT,                                    ///< @see CMD_STR_HOME_ON_BOOT
 
     // Motion Commands
     CMD_HOME,                                    ///< @see CMD_STR_HOME

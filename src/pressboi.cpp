@@ -138,6 +138,14 @@ void Pressboi::setup() {
     if (m_mainState != STATE_RECOVERED) {
         m_comms.reportEvent(STATUS_PREFIX_INFO, "Pressboi system setup complete. All components initialized.");
         g_errorLog.log(LOG_INFO, "Setup complete - normal boot");
+        
+        // Auto-home if enabled in NVM (default is true)
+        if (m_motor.getHomeOnBoot()) {
+            m_comms.reportEvent(STATUS_PREFIX_INFO, "Auto-homing enabled. Initiating home sequence...");
+            m_motor.handleCommand(CMD_HOME, "");
+        } else {
+            m_comms.reportEvent(STATUS_PREFIX_INFO, "Auto-homing disabled. System ready in standby mode.");
+        }
     } else {
         g_errorLog.log(LOG_ERROR, "Setup complete - RECOVERED from watchdog");
     }
@@ -586,6 +594,23 @@ void Pressboi::dispatchCommand(const Message& msg) {
             break;
         }
 
+        case CMD_HOME_ON_BOOT: {
+            char enabled[32] = "";
+            if (sscanf(args, "%31s", enabled) == 1) {
+                if (m_motor.setHomeOnBoot(enabled)) {
+                    char msg_buf[128];
+                    snprintf(msg_buf, sizeof(msg_buf), "Home on boot set to '%s' and saved to NVM", enabled);
+                    reportEvent(STATUS_PREFIX_INFO, msg_buf);
+                    reportEvent(STATUS_PREFIX_DONE, "home_on_boot");
+                } else {
+                    reportEvent(STATUS_PREFIX_ERROR, "Invalid parameter. Use 'true' or 'false'");
+                }
+            } else {
+                reportEvent(STATUS_PREFIX_ERROR, "Invalid parameter for home_on_boot");
+            }
+            break;
+        }
+
         case CMD_SET_FORCE_ZERO: {
             const char* mode = m_motor.getForceMode();
             if (strcmp(mode, "load_cell") == 0) {
@@ -690,6 +715,25 @@ void Pressboi::dispatchCommand(const Message& msg) {
             
             snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:SUMMARY: Polarity=%s", 
                      polarity_str);
+            m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
+            
+            // Home on boot (location 13 - byte offset 52)
+            int32_t home_on_boot_value = nvm_values[13];   // Location 13
+            const char* home_on_boot_str = (home_on_boot_value == 1) ? "true" : "false";
+            
+            snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:SUMMARY: HomeOnBoot=%s", 
+                     home_on_boot_str);
+            m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
+            
+            // Retract position (location 14 - byte offset 56)
+            int32_t retract_bits = nvm_values[14];   // Location 14
+            float retract_mm = 0.0f;
+            if (retract_bits != 0 && retract_bits != -1) {
+                memcpy(&retract_mm, &retract_bits, sizeof(float));
+            }
+            
+            snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:SUMMARY: RetractPosition=%.2f mm", 
+                     retract_mm);
             m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
 
             reportEvent(STATUS_PREFIX_DONE, "dump_nvm");

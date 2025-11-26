@@ -222,6 +222,19 @@ public:
      * @return The current polarity string ("normal" or "inverted")
      */
     const char* getPolarity() const;
+    
+    /**
+     * @brief Sets the home on boot setting and saves to NVM.
+     * @param enabled "true" or "false"
+     * @return true if successful, false if invalid parameter
+     */
+    bool setHomeOnBoot(const char* enabled);
+    
+    /**
+     * @brief Gets the current home on boot setting.
+     * @return true if home on boot is enabled, false otherwise
+     */
+    bool getHomeOnBoot() const;
 
 private:
     /**
@@ -304,6 +317,8 @@ private:
     float m_motor_torque_offset;       ///< Motor torque equation offset (stored in NVM, default 1.04)
     float m_motor_torque_scale;        ///< Motor torque equation scale (stored in NVM, default 0.0335)
     char m_polarity[16];               ///< Coordinate system polarity: "normal" or "inverted" (stored in NVM)
+    bool m_home_on_boot;               ///< Home on boot setting: true = auto-home, false = skip (stored in NVM, default true)
+    float m_retract_position_mm;       ///< Retract position in mm (stored in NVM, default 0.0)
     float m_smoothedTorqueValue0, m_smoothedTorqueValue1; ///< Smoothed torque values for each motor.
     bool m_firstTorqueReading0, m_firstTorqueReading1;   ///< Flags for initializing the torque smoothing EWMA filter.
     int32_t m_machineHomeReferenceSteps, m_retractReferenceSteps; ///< Stored step counts for home and retract positions.

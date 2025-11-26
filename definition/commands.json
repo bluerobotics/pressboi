@@ -49,7 +49,7 @@
     "set_retract": {
         "device": "pressboi",
         "target": "device",
-        "description": "Sets the retract position for the press.",
+        "description": "Sets the retract position for the press and saves to NVM.",
         "params": [
             { "parameter": "position", "unit": "mm", "type": "float" },
             { "parameter": "speed", "unit": "mm/s", "type": "float", "optional": true, "default": 25.0, "help": "Optional retract speed to store for future retract commands." }
@@ -187,6 +187,15 @@
         "description": "Sets the coordinate system polarity (normal or inverted) and saves to NVM. Inverted flips home direction and all moves.",
         "params": [
             { "parameter": "polarity", "type": "string", "enum": ["normal", "inverted"], "help": "normal = standard direction, inverted = all motions and home reversed" }
+        ],
+        "returns": ["done", "error"]
+    },
+    "home_on_boot": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Sets whether the press should automatically home on startup and saves to NVM.",
+        "params": [
+            { "parameter": "enabled", "type": "string", "enum": ["true", "false"], "help": "true = auto-home on boot, false = skip homing on boot" }
         ],
         "returns": ["done", "error"]
     }

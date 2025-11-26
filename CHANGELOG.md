@@ -2,6 +2,19 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.12.0] - 2025-11-26
+
+### Added
+- **`home_on_boot` command**: Configure whether press automatically homes on startup (default: true), saved to NVM
+- **Retract position persistence**: `set_retract` now saves position to NVM and restores after power cycle/reboot
+
+### Changed
+- **NVM dump enhanced**: Added `HomeOnBoot` and `RetractPosition` to dump summary output
+
+### Fixed
+- **Command parsing order**: Fixed `reset_nvm` being misinterpreted as `reset` by checking longer commands first
+- **Retract position restoration**: Correctly recalculates retract position after homing to prevent accumulation
+
 ## [1.11.3] - 2025-11-26
 
 ### Changed

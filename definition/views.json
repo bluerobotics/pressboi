@@ -1,0 +1,52 @@
+{
+  "press_operator_view": {
+    "name": "press operator view",
+    "description": "Simplified press operation interface with large force and position displays",
+    "icon": "",
+    "components": [
+      {
+        "type": "large_display",
+        "label": "FORCE",
+        "variable": "pressboi.force",
+        "unit": "kg",
+        "color_ranges": [
+          {"max": 100, "color": "default"},
+          {"max": 500, "color": "green"},
+          {"max": 800, "color": "yellow"},
+          {"min": 800, "color": "red"}
+        ]
+      },
+      {
+        "type": "position_display",
+        "current": "pressboi.current_pos",
+        "target": "pressboi.target_pos"
+      },
+      {
+        "type": "state_display",
+        "variable": "pressboi.main_state"
+      }
+    ]
+  },
+  "injector_operator_view": {
+    "name": "injector operator view",
+    "description": "Simplified injection operation interface with cycle monitoring",
+    "icon": "",
+    "components": [
+      {
+        "type": "large_display",
+        "label": "POSITION",
+        "variable": "pressboi.current_pos",
+        "unit": "mm"
+      },
+      {
+        "type": "state_display",
+        "variable": "pressboi.main_state"
+      },
+      {
+        "type": "cycle_counter",
+        "label": "CYCLES"
+      }
+    ]
+  }
+}
+

@@ -90,6 +90,8 @@ MotorController::MotorController(MotorDriver* motorA, MotorDriver* motorB, Press
     m_motor_torque_offset = 1.04f;
 
     m_retractSpeedMms = RETRACT_DEFAULT_SPEED_MMS;
+    m_home_on_boot = true;  // Default to true (will be overwritten by NVM in setup)
+    m_retract_position_mm = 0.0f;  // Default to 0 (will be overwritten by NVM in setup)
 
     fullyResetActiveMove();
     m_activeMoveCommand = nullptr;
@@ -138,6 +140,15 @@ void MotorController::setup() {
             memcpy(&coeffBits, &m_machineStrainCoeffs[i], sizeof(float));
             nvmMgr.Int32(static_cast<NvmManager::NvmLocations>((8 + i) * 4), coeffBits);
         }
+        
+        // Location 13 (byte 52): Home on boot (1 = true, 0 = false, default = true)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(13 * 4), 1);
+        
+        // Location 14 (byte 56): Retract position (float as bits, default = 0.0)
+        int32_t retractBits = 0;
+        float defaultRetract = 0.0f;
+        memcpy(&retractBits, &defaultRetract, sizeof(float));
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(14 * 4), retractBits);
         
         // Write magic number to indicate NVM is initialized (byte 28)
         nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(7 * 4), NVM_MAGIC_NUMBER);
@@ -209,6 +220,29 @@ void MotorController::setup() {
         int32_t defaultBits;
         memcpy(&defaultBits, &defaultCoeff, sizeof(float));
         nvmMgr.Int32(static_cast<NvmManager::NvmLocations>((8 + i) * 4), defaultBits);
+    }
+    
+    // Load home on boot setting (location 13, byte 52)
+    int32_t homeOnBootValue = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(13 * 4));
+    if (homeOnBootValue == 0) {
+        m_home_on_boot = false;
+    } else {
+        m_home_on_boot = true; // Default to true if not set or set to 1
+    }
+    
+    // Load retract position (location 14, byte 56)
+    // This is stored as an OFFSET from home (mm), not an absolute position
+    // It will be converted to steps AFTER homing when m_machineHomeReferenceSteps is known
+    int32_t retractBits = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(14 * 4));
+    if (retractBits != 0 && retractBits != -1) {
+        float tempRetract;
+        memcpy(&tempRetract, &retractBits, sizeof(float));
+        // Validate retract position is in reasonable range (-100mm to +100mm)
+        if (tempRetract >= -100.0f && tempRetract <= 100.0f) {
+            m_retract_position_mm = tempRetract;
+            // Don't set m_retractReferenceSteps yet - leave it as LONG_MIN
+            // It will be calculated after homing based on m_retract_position_mm
+        }
     }
 }
 
@@ -410,6 +444,18 @@ void MotorController::updateState() {
                     if (m_homingState == HOMING) {
                         m_machineHomeReferenceSteps = m_motorA->PositionRefCommanded();
                         m_homingDone = true;
+                        
+                        // If a retract position was loaded from NVM or set manually, recalculate it
+                        // based on the new home reference. We check m_retract_position_mm instead of
+                        // m_retractReferenceSteps to avoid accumulation on multiple boots.
+                        if (m_retract_position_mm != 0.0f) {
+                            m_retractReferenceSteps = m_machineHomeReferenceSteps + static_cast<long>(m_retract_position_mm * STEPS_PER_MM);
+                            
+                            char dbg[128];
+                            snprintf(dbg, sizeof(dbg), "Retract position recalculated after homing: %.2f mm (steps=%ld, home=%ld)", 
+                                     m_retract_position_mm, m_retractReferenceSteps, m_machineHomeReferenceSteps);
+                            reportEvent(STATUS_PREFIX_INFO, dbg);
+                        }
                         } else { // HOMING_CARTRIDGE
                         m_retractReferenceSteps = m_motorA->PositionRefCommanded();
                         m_retractDone = true;
@@ -753,9 +799,16 @@ void MotorController::setRetract(const char* args) {
     // Store the retract position as an offset from home
     long position_steps = (long)(position_mm * STEPS_PER_MM);
     m_retractReferenceSteps = m_machineHomeReferenceSteps + position_steps;
+    m_retract_position_mm = position_mm;
+    
+    // Save to NVM (location 14, byte 56)
+    NvmManager &nvmMgr = NvmManager::Instance();
+    int32_t retractBits;
+    memcpy(&retractBits, &m_retract_position_mm, sizeof(float));
+    nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(14 * 4), retractBits);
     
     char msg[128];
-    snprintf(msg, sizeof(msg), "Retract position set to %.2f mm (%ld steps from home) at %.2f mm/s", position_mm, position_steps, m_retractSpeedMms);
+    snprintf(msg, sizeof(msg), "Retract position set to %.2f mm (%ld steps from home) at %.2f mm/s and saved to NVM", position_mm, position_steps, m_retractSpeedMms);
     reportEvent(STATUS_PREFIX_INFO, msg);
     char dbg[128];
     snprintf(dbg, sizeof(dbg), "Retract debug: home_steps=%ld, retract_steps=%ld", m_machineHomeReferenceSteps, m_retractReferenceSteps);
@@ -1275,6 +1328,33 @@ bool MotorController::setPolarity(const char* polarity) {
  */
 const char* MotorController::getPolarity() const {
     return m_polarity;
+}
+
+/**
+ * @brief Sets the home on boot setting and saves to NVM.
+ */
+bool MotorController::setHomeOnBoot(const char* enabled) {
+    NvmManager &nvmMgr = NvmManager::Instance();
+    
+    if (strcmp(enabled, "true") == 0) {
+        m_home_on_boot = true;
+        // Save to NVM (1 = true, byte offset 52, location 13)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(13 * 4), 1);
+        return true;
+    } else if (strcmp(enabled, "false") == 0) {
+        m_home_on_boot = false;
+        // Save to NVM (0 = false, byte offset 52, location 13)
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(13 * 4), 0);
+        return true;
+    }
+    return false; // Invalid parameter
+}
+
+/**
+ * @brief Gets the current home on boot setting.
+ */
+bool MotorController::getHomeOnBoot() const {
+    return m_home_on_boot;
 }
 
 /**

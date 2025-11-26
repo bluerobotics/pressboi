@@ -46,7 +46,7 @@
  * @name General System Behavior
  * @{
  */
-#define FIRMWARE_VERSION                "1.11.3"   ///< Pressboi firmware version
+#define FIRMWARE_VERSION                "1.12.0"   ///< Pressboi firmware version
 #define STATUS_MESSAGE_BUFFER_SIZE      256       ///< Standard buffer size for composing status and error messages.
 /** @} */
 
