@@ -4,6 +4,9 @@ All notable changes to the Pressboi firmware will be documented in this file.
 
 ## [1.12.1] - 2025-11-26
 
+### Changed
+- **Operator View**: Redesigned press operator view with fullscreen layout, large controls, and PASS/FAIL indicator
+
 ### Fixed
 - **CRITICAL: Watchdog timeout on app restart**: Delayed auto-homing by 2 seconds after boot to prevent watchdog timeout during busy startup/reconnection period when message queues are processing and USB is reconnecting
 
