@@ -2,6 +2,13 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.13.0] - 2025-11-26
+
+### Added
+- **Operator View**: Cycle time display, error/warning status bar, "Show Stats" button
+- **Operator View**: On-screen keyboard support (Mac only)
+- **Operator View**: Hover effects on Run/Hold/Reset buttons matching main app
+
 ## [1.12.1] - 2025-11-26
 
 ### Changed
