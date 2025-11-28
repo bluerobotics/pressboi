@@ -422,6 +422,38 @@
             background: transparent;
         }
         .legend-dot.energy { background: rgba(168, 85, 247, 0.5); }
+        .legend-dot.polyfit { background: #f59e0b; }
+
+        .legend-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        
+        .legend-toggle:hover {
+            background: var(--bg-card-hover);
+        }
+        
+        .legend-toggle.active {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+        
+        .legend-toggle .toggle-icon {
+            font-size: 0.7rem;
+            opacity: 0.5;
+        }
+        
+        .legend-toggle.active .toggle-icon {
+            opacity: 1;
+        }
 
         /* Polynomial Coefficients Collapsible Display */
         .poly-coefficients {
@@ -936,6 +968,11 @@
                                     <span class="legend-dot energy"></span>
                                     <span>Energy Region</span>
                                 </div>
+                                <div class="legend-toggle" id="polyfit-toggle" onclick="togglePolyFit()">
+                                    <span class="legend-dot polyfit"></span>
+                                    <span>Poly Fit</span>
+                                    <span class="toggle-icon">○</span>
+                                </div>
                             </div>
                         </div>
                         <div id="force-chart"></div>
@@ -1183,13 +1220,15 @@
             hovertemplate: '<b>Position:</b> %{x:.3f} mm<br><b>Force:</b> %{y:.2f} kg<extra></extra>'
         });
         
-        // Polynomial fit trace
+        // Polynomial fit trace (hidden by default, toggled via button)
+        const polyFitTraceIndex = traces.length;  // Store index for toggling
         traces.push({
             x: fitX,
             y: fitY,
             type: 'scatter',
             mode: 'lines',
             name: 'Poly Fit',
+            visible: false,  // Hidden by default
             line: {
                 color: '#f59e0b',
                 width: 2,
@@ -1197,6 +1236,9 @@
             },
             hovertemplate: '<b>Polynomial Fit</b><br>Position: %{x:.3f} mm<br>Force: %{y:.2f} kg<extra></extra>'
         });
+        
+        // Store trace index globally for toggle function
+        window.polyFitTraceIndex = polyFitTraceIndex;
 
         // Pass zone box - threshold lines form a rectangle
         // Define bounds for the box
@@ -1427,6 +1469,25 @@
         };
 
         Plotly.newPlot('force-chart', traces, layout, config);
+        
+        // Toggle polynomial fit trace visibility
+        window.togglePolyFit = function() {
+            const toggle = document.getElementById('polyfit-toggle');
+            const chart = document.getElementById('force-chart');
+            const isVisible = toggle.classList.contains('active');
+            
+            // Toggle visibility
+            Plotly.restyle(chart, { visible: !isVisible }, [window.polyFitTraceIndex]);
+            
+            // Update button state
+            if (isVisible) {
+                toggle.classList.remove('active');
+                toggle.querySelector('.toggle-icon').textContent = '○';
+            } else {
+                toggle.classList.add('active');
+                toggle.querySelector('.toggle-icon').textContent = '●';
+            }
+        };
     </script>
 </body>
 </html>
