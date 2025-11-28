@@ -2,6 +2,28 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.14.0] - 2025-11-28
+
+### Added
+- **Press Report System**: HTML report generation with interactive graphs
+  - Force vs distance visualization with Plotly.js
+  - 4th order polynomial fit for machine strain calibration
+  - Pass/fail thresholds for force, endpoint, and energy
+  - Collapsible calibration data section with copy command button
+- **`set_press_threshold` command**: Configure force threshold for press detection (0.1-50.0 kg), saved to NVM
+- **`set_strain_cal` command**: Set machine strain compensation coefficients, saved to NVM
+- **Telemetry**: Added `startpoint`, `endpoint`, and `press_threshold` telemetry values
+- **NVM Storage**: Press threshold and strain calibration coefficients persisted across reboots
+
+### Changed
+- **Default press threshold**: 2.0 kg (configurable via command)
+- **Machine strain coefficients**: Updated defaults for improved energy accuracy
+- **Max deflection**: Increased `MACHINE_STRAIN_MAX_DEFLECTION_MM` to 5.0mm for flexible jigs
+
+### Fixed
+- **Joules calculation**: Fixed machine strain compensation consuming all energy
+- **Endpoint tracking**: Now correctly reports actual endpoint position via telemetry
+
 ## [1.13.0] - 2025-11-26
 
 ### Added

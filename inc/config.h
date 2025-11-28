@@ -46,7 +46,7 @@
  * @name General System Behavior
  * @{
  */
-#define FIRMWARE_VERSION                "1.13.0"   ///< Pressboi firmware version
+#define FIRMWARE_VERSION                "1.14.0"   ///< Pressboi firmware version
 #define STATUS_MESSAGE_BUFFER_SIZE      256       ///< Standard buffer size for composing status and error messages.
 /** @} */
 
@@ -153,12 +153,12 @@
 #define FORCE_SENSOR_OFFSET_KG              6.5f     ///< Default offset (kg) to add to all force readings for calibration.
 
 /** Machine strain compensation coefficients (force vs. distance polynomial) */
-#define MACHINE_STRAIN_COEFF_X4            -143.0f         ///< x^4 coefficient (force in kg, displacement in millimeters)
-#define MACHINE_STRAIN_COEFF_X3             592.0f         ///< x^3 coefficient
-#define MACHINE_STRAIN_COEFF_X2            -365.0f         ///< x^2 coefficient
-#define MACHINE_STRAIN_COEFF_X1             127.0f         ///< x coefficient
-#define MACHINE_STRAIN_COEFF_C              -2.15f         ///< Constant term
-#define MACHINE_STRAIN_MAX_DEFLECTION_MM     2.0f          ///< Max expected machine flex deflection used for inverse lookup
+#define MACHINE_STRAIN_COEFF_X4            -4617.6757f     ///< x^4 coefficient (force in kg, displacement in millimeters)
+#define MACHINE_STRAIN_COEFF_X3             6910.4430f     ///< x^3 coefficient
+#define MACHINE_STRAIN_COEFF_X2            -1585.3214f     ///< x^2 coefficient
+#define MACHINE_STRAIN_COEFF_X1             320.1528f      ///< x coefficient
+#define MACHINE_STRAIN_COEFF_C              -0.2376f       ///< Constant term
+#define MACHINE_STRAIN_MAX_DEFLECTION_MM     5.0f          ///< Max expected machine flex deflection used for inverse lookup (can expand to 4x this)
 #define MACHINE_STRAIN_CONTACT_FORCE_KG      3.0f          ///< Force threshold to declare contact and start flex compensation
 #define RETRACT_DEFAULT_SPEED_MMS           25.0f          ///< Default retract speed when none specified
 #define FORCE_SENSOR_MIN_KG                 -10.0f    ///< Minimum valid force reading (kg). Below this triggers an error.
@@ -211,6 +211,17 @@
 #define WD_BREADCRUMB_NETWORK_INPUT         0x20      ///< Watchdog timeout in network low_level_input
 #define WD_BREADCRUMB_LWIP_INPUT            0x21      ///< Watchdog timeout in ethernetif_input (lwIP)
 #define WD_BREADCRUMB_LWIP_TIMEOUT          0x22      ///< Watchdog timeout in sys_check_timeouts (lwIP)
+#define WD_BREADCRUMB_SETUP                 0xFE      ///< Watchdog timeout during setup (before loop)
+#define WD_BREADCRUMB_SETUP_MOTOR_MODE      0xF0      ///< Watchdog timeout in motor mode setup
+#define WD_BREADCRUMB_SETUP_COMMS           0xF1      ///< Watchdog timeout in comms.setup()
+#define WD_BREADCRUMB_SETUP_MOTOR           0xF2      ///< Watchdog timeout in motor.setup()
+#define WD_BREADCRUMB_SETUP_FORCE           0xF3      ///< Watchdog timeout in forceSensor.setup()
+#define WD_BREADCRUMB_SETUP_WD_RECOVERY     0xF4      ///< Watchdog timeout in handleWatchdogRecovery()
+#define WD_BREADCRUMB_SETUP_WD_INIT         0xF5      ///< Watchdog timeout in initializeWatchdog()
+#define WD_BREADCRUMB_SETUP_USB             0xF6      ///< Watchdog timeout in setupUsbSerial()
+#define WD_BREADCRUMB_SETUP_ETHERNET        0xF7      ///< Watchdog timeout in setupEthernet()
+#define WD_BREADCRUMB_SETUP_DHCP            0xF8      ///< Watchdog timeout in DHCP
+#define WD_BREADCRUMB_SETUP_LINK_WAIT       0xF9      ///< Watchdog timeout waiting for ethernet link
 #define WD_BREADCRUMB_UNKNOWN               0xFF      ///< Watchdog timeout in unknown location
 /** @} */
 /** @} */

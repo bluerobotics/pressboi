@@ -65,6 +65,7 @@ MotorController::MotorController(MotorDriver* motorA, MotorDriver* motorB, Press
     m_active_op_target_position_steps = 0;
     m_joules = 0.0;
     m_endpoint_mm = 0.0f;
+    m_press_startpoint_mm = 0.0f;
     m_prev_position_mm = 0.0;
     m_machineStrainBaselinePosMm = 0.0;
     m_prevMachineDeflectionMm = 0.0;
@@ -242,6 +243,18 @@ void MotorController::setup() {
             m_retract_position_mm = tempRetract;
             // Don't set m_retractReferenceSteps yet - leave it as LONG_MIN
             // It will be calculated after homing based on m_retract_position_mm
+        }
+    }
+    
+    // Load press threshold (location 15, byte 60) - default 2.0 kg
+    m_press_threshold_kg = 2.0f;  // Default
+    int32_t thresholdBits = nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(15 * 4));
+    if (thresholdBits != 0 && thresholdBits != -1) {
+        float tempThreshold;
+        memcpy(&tempThreshold, &thresholdBits, sizeof(float));
+        // Validate threshold is in reasonable range (0.1 to 50.0 kg)
+        if (tempThreshold >= 0.1f && tempThreshold <= 50.0f) {
+            m_press_threshold_kg = tempThreshold;
         }
     }
 }
@@ -751,6 +764,7 @@ void MotorController::home() {
     
     // Reset joule tracking for new homing operation
     m_joules = 0.0;
+    m_press_startpoint_mm = 0.0f;
     long current_pos_steps = m_motorA->PositionRefCommanded();
     m_prev_position_mm = static_cast<double>(current_pos_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM;
     m_prevForceValid = false;
@@ -1000,6 +1014,7 @@ void MotorController::moveAbsolute(const char* args) {
     
     // Reset joule tracking for new move
     m_joules = 0.0;
+    m_press_startpoint_mm = 0.0f;
     long current_pos_steps = m_motorA->PositionRefCommanded();
     m_prev_position_mm = static_cast<double>(current_pos_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM;
     m_machineStrainBaselinePosMm = m_prev_position_mm;
@@ -1141,6 +1156,7 @@ void MotorController::moveIncremental(const char* args) {
     
     // Reset joule tracking for new move
     m_joules = 0.0;
+    m_press_startpoint_mm = 0.0f;
     long current_pos_steps = m_motorA->PositionRefCommanded();
     m_prev_position_mm = static_cast<double>(current_pos_steps - m_machineHomeReferenceSteps) / STEPS_PER_MM;
     m_machineStrainBaselinePosMm = m_prev_position_mm;
@@ -1355,6 +1371,26 @@ bool MotorController::setHomeOnBoot(const char* enabled) {
  */
 bool MotorController::getHomeOnBoot() const {
     return m_home_on_boot;
+}
+
+/**
+ * @brief Sets the press force threshold and saves to NVM.
+ */
+bool MotorController::setPressThreshold(float threshold_kg) {
+    // Validate range
+    if (threshold_kg < 0.1f || threshold_kg > 50.0f) {
+        return false;
+    }
+    
+    m_press_threshold_kg = threshold_kg;
+    
+    // Save to NVM (byte offset 60, location 15)
+    NvmManager &nvmMgr = NvmManager::Instance();
+    int32_t bits;
+    memcpy(&bits, &threshold_kg, sizeof(float));
+    nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(15 * 4), bits);
+    
+    return true;
 }
 
 /**
@@ -1723,7 +1759,8 @@ void MotorController::updateJoules() {
     }
 
     if (!m_machineStrainContactActive) {
-        if (clamped_force_kg >= MACHINE_STRAIN_CONTACT_FORCE_KG) {
+        // Use configurable press threshold instead of hardcoded constant
+        if (clamped_force_kg >= m_press_threshold_kg) {
             double contact_machine_def_mm = static_cast<double>(estimateMachineDeflectionFromForce(clamped_force_kg));
             if (contact_machine_def_mm < 0.0) {
                 contact_machine_def_mm = 0.0;
@@ -1735,6 +1772,10 @@ void MotorController::updateJoules() {
             m_machineEnergyJ = 0.0;
             m_prev_position_mm = current_pos_mm;
             m_prevForceKg = clamped_force_kg;
+            
+            // Record the press startpoint (position where threshold was crossed)
+            m_press_startpoint_mm = static_cast<float>(current_pos_mm);
+            
             return;
         } else {
             m_machineStrainBaselinePosMm = current_pos_mm;
@@ -1753,41 +1794,50 @@ void MotorController::updateJoules() {
         total_deflection_mm = 0.0;
     }
 
-    double machine_deflection_curr = static_cast<double>(estimateMachineDeflectionFromForce(clamped_force_kg));
-    if (machine_deflection_curr > total_deflection_mm) {
-        machine_deflection_curr = total_deflection_mm;
+    // Machine strain compensation - calculate what fraction of travel is machine deflection
+    // Get estimated machine deflection at current force
+    double machine_deflection_at_force = static_cast<double>(estimateMachineDeflectionFromForce(clamped_force_kg));
+    
+    // Calculate the ratio: how much of total travel is machine deflection vs part compression
+    // If we've traveled 1mm and model says machine should deflect 0.5mm at this force,
+    // then ~50% of energy goes to machine strain
+    double machine_ratio = 0.0;
+    if (total_deflection_mm > 0.001) {  // Avoid divide by zero
+        machine_ratio = machine_deflection_at_force / total_deflection_mm;
+        // Cap ratio at 1.0 (can't be more than 100% machine)
+        if (machine_ratio > 1.0) {
+            machine_ratio = 1.0;
+        }
+        if (machine_ratio < 0.0) {
+            machine_ratio = 0.0;
+        }
     }
-    double delta_machine_mm = machine_deflection_curr - m_prevMachineDeflectionMm;
-    if (delta_machine_mm < 0.0) {
-        delta_machine_mm = 0.0;
-    }
-    if (delta_machine_mm > abs_distance_mm) {
-        delta_machine_mm = abs_distance_mm;
+    
+    // DEBUG: Log ratio values to understand calibration issue
+    static uint32_t ratioDbgCounter = 0;
+    if (++ratioDbgCounter % 50 == 0) {
+        char dbg[140];
+        snprintf(dbg, sizeof(dbg), "RATIO: force=%.0f est_defl=%.4f travel=%.4f ratio=%.4f joules=%.4f", 
+                 clamped_force_kg, machine_deflection_at_force, total_deflection_mm, machine_ratio, m_joules);
+        reportEvent(STATUS_PREFIX_INFO, dbg);
     }
 
-    double cumulative_deflection = machine_deflection_curr;
-    double delta_total_deflection = cumulative_deflection - m_prevTotalDeflectionMm;
-    if (delta_total_deflection < 0.0) {
-        delta_total_deflection = 0.0;
-    }
-    double machine_increment = actual_force_avg * delta_total_deflection * 0.00981;
+    // Energy calculations - split based on machine/part ratio
     double gross_increment = actual_force_avg * abs_distance_mm * 0.00981;
+    double machine_increment = gross_increment * machine_ratio;
     double net_increment = gross_increment - machine_increment;
+    
     if (net_increment < 0.0) {
         net_increment = 0.0;
     }
-    if (machine_increment < 0.0) {
-        machine_increment = 0.0;
-    }
+    
     m_joules += net_increment;
     m_machineEnergyJ += machine_increment;
 
-    // Debug logging removed - joule calculations can be monitored via telemetry
-    
     m_prev_position_mm = current_pos_mm;
     m_prevForceKg = clamped_force_kg;
-    m_prevMachineDeflectionMm = machine_deflection_curr;
-    m_prevTotalDeflectionMm = cumulative_deflection;
+    // Note: m_prevMachineDeflectionMm and m_prevTotalDeflectionMm are no longer used
+    // in the new approach - we calculate delta directly from force change
 
     if (m_active_op_force_limit_kg > 0.0f && raw_force_kg >= m_active_op_force_limit_kg) {
         m_jouleIntegrationActive = false;
@@ -1876,6 +1926,12 @@ void MotorController::updateTelemetry(TelemetryData* data, ForceSensor* forceSen
     
     // Update endpoint (position where last move ended)
     data->endpoint = m_endpoint_mm;
+    
+    // Update startpoint (position where threshold was crossed)
+    data->startpoint = m_press_startpoint_mm;
+    
+    // Update press threshold
+    data->press_threshold = m_press_threshold_kg;
 }
 
 bool MotorController::isBusy() const {

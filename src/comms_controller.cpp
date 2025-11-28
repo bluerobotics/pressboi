@@ -9,8 +9,9 @@
  * processing UDP packets, and parsing command strings.
  */
 #include "comms_controller.h"
+#include "config.h"    // For WATCHDOG_ENABLED and breadcrumb definitions
 #include "error_log.h"
-#include "pressboi.h"  // For WATCHDOG_ENABLED and watchdog access
+#include "pressboi.h"  // For watchdog access
 #include <sam.h>       // For WDT register access
 
 CommsController::CommsController() {
@@ -30,7 +31,15 @@ CommsController::CommsController() {
 }
 
 void CommsController::setup() {
+    #if WATCHDOG_ENABLED
+    extern volatile uint32_t g_watchdogBreadcrumb;
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SETUP_USB;
+    #endif
     setupUsbSerial();
+    
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SETUP_ETHERNET;
+    #endif
     setupEthernet();
 }
 
@@ -287,9 +296,16 @@ void CommsController::processTxQueue() {
 				#endif
 				
 				// Try to flush the TX buffer by closing and reopening the port
-				// If this hangs, watchdog should fire - don't feed it
+				// These operations could potentially block - add timeout protection
+				// Note: If this hangs, watchdog will fire and we'll know from breadcrumb
+				uint32_t usbRecoveryStart = Milliseconds();
 				ConnectorUsb.PortClose();
-				// No delay needed - USB stack handles this internally
+				
+				// Brief delay to let USB stack settle, but not too long
+				while (Milliseconds() - usbRecoveryStart < 50) {
+					// Spin briefly - max 50ms which is well under 256ms watchdog
+				}
+				
 				ConnectorUsb.PortOpen();
 				
 				// Restore breadcrumb after USB operations
@@ -356,13 +372,18 @@ void CommsController::processTxQueue() {
 			// Format: "MSG_PART_1/3: first_50_chars"
 			int totalChunks = (msgLen + CHUNK_SIZE - 1) / CHUNK_SIZE;
 			
-			// Reduce timeout during USB reconnection to prevent watchdog timeout
-			// During reconnection, USB buffer is often small (e.g. 63 bytes)
-			// Limit total blocking time to ~30ms max (3ms per chunk × 10 chunks worst case)
-			// With 256ms watchdog, this provides ample safety margin (30ms << 256ms)
-			const uint32_t CHUNK_TIMEOUT_MS = 3;  // Reduced from 10ms to 3ms
+			// Hard limit on total time spent in this loop to prevent watchdog timeout
+			// Even if each chunk timeout is small, we need an overall limit
+			const uint32_t MAX_TOTAL_CHUNK_TIME_MS = 100;  // Max 100ms total for all chunks
+			const uint32_t CHUNK_TIMEOUT_MS = 3;  // Per-chunk timeout
+			uint32_t chunkLoopStart = Milliseconds();
 			
 			for (int chunk = 0; chunk < totalChunks; chunk++) {
+				// Check overall time limit - abort if taking too long
+				if (Milliseconds() - chunkLoopStart > MAX_TOTAL_CHUNK_TIME_MS) {
+					// Taking too long - abort remaining chunks to prevent watchdog
+					break;
+				}
 				int offset = chunk * CHUNK_SIZE;
 				int chunkLen = (msgLen - offset > CHUNK_SIZE) ? CHUNK_SIZE : (msgLen - offset);
 				
@@ -466,9 +487,16 @@ void CommsController::setupUsbSerial(void) {
 }
 
 void CommsController::setupEthernet() {
+    #if WATCHDOG_ENABLED
+    extern volatile uint32_t g_watchdogBreadcrumb;
+    #endif
+    
     EthernetMgr.Setup();
 
     // Start DHCP but don't hang if it fails - the system can still function via USB
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SETUP_DHCP;
+    #endif
     if (!EthernetMgr.DhcpBegin()) {
         g_errorLog.log(LOG_WARNING, "DHCP failed - network unavailable");
         // DHCP failed - continue anyway, network features won't work but USB will
@@ -476,6 +504,9 @@ void CommsController::setupEthernet() {
     }
 
     // Wait for link with timeout (watchdog not yet enabled at this point)
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SETUP_LINK_WAIT;
+    #endif
     uint32_t link_timeout = 2000;  // 2 second timeout (plenty of time for link to come up)
     uint32_t link_start = Milliseconds();
     while (!EthernetMgr.PhyLinkActive()) {

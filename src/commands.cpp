@@ -28,6 +28,7 @@ Command parseCommand(const char* cmdStr) {
     if (strncmp(cmdStr, CMD_STR_SET_STRAIN_CAL, strlen(CMD_STR_SET_STRAIN_CAL)) == 0) return CMD_SET_STRAIN_CAL;
     if (strncmp(cmdStr, CMD_STR_SET_POLARITY, strlen(CMD_STR_SET_POLARITY)) == 0) return CMD_SET_POLARITY;
     if (strncmp(cmdStr, CMD_STR_HOME_ON_BOOT, strlen(CMD_STR_HOME_ON_BOOT)) == 0) return CMD_HOME_ON_BOOT;
+    if (strncmp(cmdStr, CMD_STR_SET_PRESS_THRESHOLD, strlen(CMD_STR_SET_PRESS_THRESHOLD)) == 0) return CMD_SET_PRESS_THRESHOLD;
     if (strncmp(cmdStr, CMD_STR_SET_RETRACT, strlen(CMD_STR_SET_RETRACT)) == 0) return CMD_SET_RETRACT;
     if (strncmp(cmdStr, CMD_STR_DUMP_ERROR_LOG, strlen(CMD_STR_DUMP_ERROR_LOG)) == 0) return CMD_DUMP_ERROR_LOG;
     if (strncmp(cmdStr, CMD_STR_RESET_NVM, strlen(CMD_STR_RESET_NVM)) == 0) return CMD_RESET_NVM;
@@ -67,6 +68,8 @@ const char* getCommandParams(const char* cmdStr, Command cmd) {
             return cmdStr + strlen(CMD_STR_SET_POLARITY);
         case CMD_HOME_ON_BOOT:
             return cmdStr + strlen(CMD_STR_HOME_ON_BOOT);
+        case CMD_SET_PRESS_THRESHOLD:
+            return cmdStr + strlen(CMD_STR_SET_PRESS_THRESHOLD);
         default:
             return NULL;
     }

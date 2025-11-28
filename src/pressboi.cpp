@@ -35,6 +35,8 @@ TelemetryData g_telemetry;
 // Place in .noinit section so it survives reset but is cleared on power-up
 __attribute__((section(".noinit"))) volatile uint32_t g_watchdogRecoveryFlag;
 __attribute__((section(".noinit"))) volatile uint32_t g_watchdogBreadcrumb;
+// Captured at boot time for accurate reporting (breadcrumb changes during normal operation)
+static uint32_t g_crashTimeBreadcrumb = 0;
 // Breadcrumb codes are now defined in config.h
 #endif
 
@@ -118,7 +120,18 @@ Pressboi::Pressboi() :
  * @brief Initializes all hardware and sub-controllers for the entire system.
  */
 void Pressboi::setup() {
+    // IMPORTANT: Capture the crash-time breadcrumb BEFORE overwriting it!
+    // This must happen at the very start of setup() to get the true crash location
+    // from the previous boot (if it was a watchdog reset).
+    #if WATCHDOG_ENABLED
+    g_crashTimeBreadcrumb = g_watchdogBreadcrumb;  // Capture before overwrite
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SETUP;    // Now mark as in setup phase
+    #endif
+    
     // Configure all motors for step and direction control mode.
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SETUP_MOTOR_MODE;
+    #endif
     MotorMgr.MotorModeSet(MotorManager::MOTOR_ALL, Connector::CPM_MODE_STEP_AND_DIR);
 
     // Log firmware startup
@@ -126,19 +139,41 @@ void Pressboi::setup() {
     g_errorLog.logf(LOG_INFO, "Firmware version: %s", FIRMWARE_VERSION);
     
     // Initialize comms first (can take time for network setup)
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SETUP_COMMS;
+    #endif
     m_comms.setup();
+    
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SETUP_MOTOR;
+    #endif
     m_motor.setup();
+    
+    #if WATCHDOG_ENABLED
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SETUP_FORCE;
+    #endif
     m_forceSensor.setup();
     
 #if WATCHDOG_ENABLED
     // Initialize watchdog AFTER comms setup to avoid timeout during network initialization
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SETUP_WD_RECOVERY;
     handleWatchdogRecovery();
+    
+    g_watchdogBreadcrumb = WD_BREADCRUMB_SETUP_WD_INIT;
     initializeWatchdog();
+    
+    // Feed watchdog immediately after enabling to give maximum time for startup messages
+    feedWatchdog();
 #endif
     
     // Only report normal startup if not in RECOVERED state
     if (m_mainState != STATE_RECOVERED) {
         m_comms.reportEvent(STATUS_PREFIX_INFO, "Pressboi system setup complete. All components initialized.");
+        
+        #if WATCHDOG_ENABLED
+        feedWatchdog();  // Feed after each message during startup
+        #endif
+        
         g_errorLog.log(LOG_INFO, "Setup complete - normal boot");
         
         // Auto-home will be initiated after a short delay in the main loop
@@ -150,6 +185,10 @@ void Pressboi::setup() {
         } else {
             m_comms.reportEvent(STATUS_PREFIX_INFO, "Auto-homing disabled. System ready in standby mode.");
         }
+        
+        #if WATCHDOG_ENABLED
+        feedWatchdog();  // Feed after startup messages
+        #endif
     } else {
         g_errorLog.log(LOG_ERROR, "Setup complete - RECOVERED from watchdog");
     }
@@ -243,10 +282,11 @@ void Pressboi::loop() {
     if (m_mainState == STATE_RECOVERED && m_comms.isGuiDiscovered() && !recovery_msg_sent) {
         recovery_msg_sent = true;
         
-        // Build recovery message with breadcrumb
+        // Build recovery message with breadcrumb captured at boot time
+        // (not g_watchdogBreadcrumb which changes during normal operation)
         char recoveryMsg[128];
         const char* breadcrumb_name = "UNKNOWN";
-        switch (g_watchdogBreadcrumb) {
+        switch (g_crashTimeBreadcrumb) {
             case WD_BREADCRUMB_SAFETY_CHECK: breadcrumb_name = "SAFETY_CHECK"; break;
             case WD_BREADCRUMB_COMMS_UPDATE: breadcrumb_name = "COMMS_UPDATE"; break;
             case WD_BREADCRUMB_RX_DEQUEUE: breadcrumb_name = "RX_DEQUEUE"; break;
@@ -281,6 +321,17 @@ void Pressboi::loop() {
             case WD_BREADCRUMB_NETWORK_INPUT: breadcrumb_name = "NETWORK_INPUT"; break;
             case WD_BREADCRUMB_LWIP_INPUT: breadcrumb_name = "LWIP_INPUT"; break;
             case WD_BREADCRUMB_LWIP_TIMEOUT: breadcrumb_name = "LWIP_TIMEOUT"; break;
+            case WD_BREADCRUMB_SETUP: breadcrumb_name = "SETUP"; break;
+            case WD_BREADCRUMB_SETUP_MOTOR_MODE: breadcrumb_name = "SETUP_MOTOR_MODE"; break;
+            case WD_BREADCRUMB_SETUP_COMMS: breadcrumb_name = "SETUP_COMMS"; break;
+            case WD_BREADCRUMB_SETUP_MOTOR: breadcrumb_name = "SETUP_MOTOR"; break;
+            case WD_BREADCRUMB_SETUP_FORCE: breadcrumb_name = "SETUP_FORCE"; break;
+            case WD_BREADCRUMB_SETUP_WD_RECOVERY: breadcrumb_name = "SETUP_WD_RECOVERY"; break;
+            case WD_BREADCRUMB_SETUP_WD_INIT: breadcrumb_name = "SETUP_WD_INIT"; break;
+            case WD_BREADCRUMB_SETUP_USB: breadcrumb_name = "SETUP_USB"; break;
+            case WD_BREADCRUMB_SETUP_ETHERNET: breadcrumb_name = "SETUP_ETHERNET"; break;
+            case WD_BREADCRUMB_SETUP_DHCP: breadcrumb_name = "SETUP_DHCP"; break;
+            case WD_BREADCRUMB_SETUP_LINK_WAIT: breadcrumb_name = "SETUP_LINK_WAIT"; break;
         }
         snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >256ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
         reportEvent(STATUS_PREFIX_RECOVERY, recoveryMsg);
@@ -631,6 +682,23 @@ void Pressboi::dispatchCommand(const Message& msg) {
             break;
         }
 
+        case CMD_SET_PRESS_THRESHOLD: {
+            float threshold_kg = 0.0f;
+            if (sscanf(args, "%f", &threshold_kg) == 1) {
+                if (m_motor.setPressThreshold(threshold_kg)) {
+                    char msg_buf[128];
+                    snprintf(msg_buf, sizeof(msg_buf), "Press threshold set to %.2f kg and saved to NVM", threshold_kg);
+                    reportEvent(STATUS_PREFIX_INFO, msg_buf);
+                    reportEvent(STATUS_PREFIX_DONE, "set_press_threshold");
+                } else {
+                    reportEvent(STATUS_PREFIX_ERROR, "Invalid threshold. Must be between 0.1 and 50.0 kg");
+                }
+            } else {
+                reportEvent(STATUS_PREFIX_ERROR, "Invalid parameter for set_press_threshold");
+            }
+            break;
+        }
+
         case CMD_SET_FORCE_ZERO: {
             const char* mode = m_motor.getForceMode();
             if (strcmp(mode, "load_cell") == 0) {
@@ -754,6 +822,35 @@ void Pressboi::dispatchCommand(const Message& msg) {
             
             snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:SUMMARY: RetractPosition=%.2f mm", 
                      retract_mm);
+            m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
+            
+            // Press threshold (location 15 - byte offset 60)
+            int32_t threshold_bits = nvm_values[15];   // Location 15
+            float threshold_kg = 2.0f;  // Default
+            if (threshold_bits != 0 && threshold_bits != -1) {
+                memcpy(&threshold_kg, &threshold_bits, sizeof(float));
+            }
+            
+            snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:SUMMARY: PressThreshold=%.2f kg", 
+                     threshold_kg);
+            m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
+            
+            // Machine strain coefficients (locations 8-12 - byte offsets 32-52)
+            float strain_coeffs[5];
+            const float default_coeffs[5] = {MACHINE_STRAIN_COEFF_X4, MACHINE_STRAIN_COEFF_X3, 
+                                              MACHINE_STRAIN_COEFF_X2, MACHINE_STRAIN_COEFF_X1, 
+                                              MACHINE_STRAIN_COEFF_C};
+            for (int i = 0; i < 5; i++) {
+                int32_t coeff_bits = nvm_values[8 + i];  // Locations 8-12
+                if (coeff_bits != 0 && coeff_bits != -1) {
+                    memcpy(&strain_coeffs[i], &coeff_bits, sizeof(float));
+                } else {
+                    strain_coeffs[i] = default_coeffs[i];
+                }
+            }
+            
+            snprintf(msg_buf, sizeof(msg_buf), "NVMDUMP:pressboi:SUMMARY: StrainCoeffs x4=%.4f x3=%.4f x2=%.4f x1=%.4f c=%.4f", 
+                     strain_coeffs[0], strain_coeffs[1], strain_coeffs[2], strain_coeffs[3], strain_coeffs[4]);
             m_comms.enqueueTx(msg_buf, m_comms.getGuiIp(), m_comms.getGuiPort());
 
             reportEvent(STATUS_PREFIX_DONE, "dump_nvm");
@@ -1008,6 +1105,9 @@ void Pressboi::reportEvent(const char* statusType, const char* message) {
  * @brief Checks for watchdog recovery after motor setup.
  */
 void Pressboi::handleWatchdogRecovery() {
+    // Note: g_crashTimeBreadcrumb is already captured at the very start of setup()
+    // before we overwrite g_watchdogBreadcrumb with WD_BREADCRUMB_SETUP
+    
     // Check reset cause to detect watchdog reset
     uint8_t reset_cause = RSTC->RCAUSE.reg;
     bool is_watchdog_reset = (reset_cause & RSTC_RCAUSE_WDT) != 0;
@@ -1072,6 +1172,17 @@ void Pressboi::handleWatchdogRecovery() {
             case WD_BREADCRUMB_NETWORK_INPUT: breadcrumb_name = "NETWORK_INPUT"; break;
             case WD_BREADCRUMB_LWIP_INPUT: breadcrumb_name = "LWIP_INPUT"; break;
             case WD_BREADCRUMB_LWIP_TIMEOUT: breadcrumb_name = "LWIP_TIMEOUT"; break;
+            case WD_BREADCRUMB_SETUP: breadcrumb_name = "SETUP"; break;
+            case WD_BREADCRUMB_SETUP_MOTOR_MODE: breadcrumb_name = "SETUP_MOTOR_MODE"; break;
+            case WD_BREADCRUMB_SETUP_COMMS: breadcrumb_name = "SETUP_COMMS"; break;
+            case WD_BREADCRUMB_SETUP_MOTOR: breadcrumb_name = "SETUP_MOTOR"; break;
+            case WD_BREADCRUMB_SETUP_FORCE: breadcrumb_name = "SETUP_FORCE"; break;
+            case WD_BREADCRUMB_SETUP_WD_RECOVERY: breadcrumb_name = "SETUP_WD_RECOVERY"; break;
+            case WD_BREADCRUMB_SETUP_WD_INIT: breadcrumb_name = "SETUP_WD_INIT"; break;
+            case WD_BREADCRUMB_SETUP_USB: breadcrumb_name = "SETUP_USB"; break;
+            case WD_BREADCRUMB_SETUP_ETHERNET: breadcrumb_name = "SETUP_ETHERNET"; break;
+            case WD_BREADCRUMB_SETUP_DHCP: breadcrumb_name = "SETUP_DHCP"; break;
+            case WD_BREADCRUMB_SETUP_LINK_WAIT: breadcrumb_name = "SETUP_LINK_WAIT"; break;
         }
         snprintf(recoveryMsg, sizeof(recoveryMsg), "Watchdog timeout in %s - main loop blocked >256ms. Motors disabled. Send RESET to clear.", breadcrumb_name);
         m_comms.reportEvent(STATUS_PREFIX_RECOVERY, recoveryMsg);

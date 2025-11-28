@@ -235,6 +235,25 @@ public:
      * @return true if home on boot is enabled, false otherwise
      */
     bool getHomeOnBoot() const;
+    
+    /**
+     * @brief Sets the press force threshold and saves to NVM.
+     * @param threshold_kg Threshold force in kg (0.1 to 50.0)
+     * @return true if successful, false if out of range
+     */
+    bool setPressThreshold(float threshold_kg);
+    
+    /**
+     * @brief Gets the current press force threshold.
+     * @return Press threshold in kg
+     */
+    float getPressThreshold() const { return m_press_threshold_kg; }
+    
+    /**
+     * @brief Gets the position where press threshold was crossed.
+     * @return Startpoint position in mm
+     */
+    float getPressStartpoint() const { return m_press_startpoint_mm; }
 
 private:
     /**
@@ -319,6 +338,7 @@ private:
     char m_polarity[16];               ///< Coordinate system polarity: "normal" or "inverted" (stored in NVM)
     bool m_home_on_boot;               ///< Home on boot setting: true = auto-home, false = skip (stored in NVM, default true)
     float m_retract_position_mm;       ///< Retract position in mm (stored in NVM, default 0.0)
+    float m_press_threshold_kg;        ///< Force threshold (kg) for energy/startpoint recording (stored in NVM, default 2.0)
     float m_smoothedTorqueValue0, m_smoothedTorqueValue1; ///< Smoothed torque values for each motor.
     bool m_firstTorqueReading0, m_firstTorqueReading1;   ///< Flags for initializing the torque smoothing EWMA filter.
     int32_t m_machineHomeReferenceSteps, m_retractReferenceSteps; ///< Stored step counts for home and retract positions.
@@ -355,6 +375,7 @@ private:
     uint32_t m_moveStartTime;               ///< Timestamp (ms) when a move operation started.
     double m_joules;                        ///< Energy expended (Joules) during current move, integrated at 50Hz.
     float m_endpoint_mm;                    ///< Actual position (mm) where last move ended (force trigger or completion).
+    float m_press_startpoint_mm;            ///< Position (mm) where force threshold was crossed (press started).
     double m_prev_position_mm;              ///< Previous position (mm) for joule integration calculations.
     double m_machineStrainBaselinePosMm;    ///< Absolute position (mm) that defines zero deflection for strain compensation.
     double m_prevMachineDeflectionMm;       ///< Estimated machine flex deflection (mm) at previous sample.

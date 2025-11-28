@@ -100,6 +100,22 @@
         "help": "Actual position where last move ended (force trigger or completion)",
         "gui_var": "pressboi_endpoint_var"
     },
+    "startpoint": {
+        "unit": "mm",
+        "type": "float",
+        "default": 0.0,
+        "precision": 2,
+        "help": "Position where press threshold was crossed (press started)",
+        "gui_var": "pressboi_startpoint_var"
+    },
+    "press_threshold": {
+        "unit": "kg",
+        "type": "float",
+        "default": 2.0,
+        "precision": 2,
+        "help": "Force threshold for energy/startpoint recording",
+        "gui_var": "pressboi_press_threshold_var"
+    },
     "torque_avg": {
         "unit": "%",
         "type": "float",

@@ -198,6 +198,15 @@
             { "parameter": "enabled", "type": "string", "enum": ["true", "false"], "help": "true = auto-home on boot, false = skip homing on boot" }
         ],
         "returns": ["done", "error"]
+    },
+    "set_press_threshold": {
+        "device": "pressboi",
+        "target": "device",
+        "description": "Sets the force threshold for energy/startpoint recording and saves to NVM. When force exceeds this threshold, the startpoint is recorded and energy integration begins.",
+        "params": [
+            { "parameter": "threshold", "unit": "kg", "type": "float", "help": "Force threshold in kg (0.1 to 50.0). Default is 2.0 kg." }
+        ],
+        "returns": ["done", "error"]
     }
 }
 
