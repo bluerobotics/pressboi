@@ -178,7 +178,9 @@ def show_stats_window(parent):
         borderwidth=2,
         padx=30,
         pady=8,
-        cursor='hand2'
+        cursor='hand2',
+        highlightthickness=0,  # Fix for macOS color rendering
+        highlightbackground=theme.BG_COLOR
     )
     close_btn.pack(pady=(10, 20))
     
@@ -310,11 +312,17 @@ def create_press_operator_view(parent, shared_gui_refs):
         inputs_frame,
         text="Scan Here",
         font=(theme.FONT_FAMILY, 20, 'bold'),
+        bg=theme.WIDGET_BG,  # Set initial colors for proper rendering on macOS
+        fg=theme.FG_COLOR,
+        activebackground='#444444',
+        activeforeground=theme.FG_COLOR,
         relief='raised',
         borderwidth=2,
         padx=25,
         cursor='hand2',
-        width=button_width
+        width=button_width,
+        highlightthickness=0,  # Disable highlight border for custom colors on macOS
+        highlightbackground=theme.BG_COLOR
     )
     job_scanner_btn.grid(row=0, column=2, pady=15, ipady=button_ipady, sticky='nsew')
     
@@ -361,11 +369,17 @@ def create_press_operator_view(parent, shared_gui_refs):
         inputs_frame,
         text="Scan Here",
         font=(theme.FONT_FAMILY, 20, 'bold'),
+        bg=theme.WIDGET_BG,  # Set initial colors for proper rendering on macOS
+        fg=theme.FG_COLOR,
+        activebackground='#444444',
+        activeforeground=theme.FG_COLOR,
         relief='raised',
         borderwidth=2,
         padx=25,
         cursor='hand2',
-        width=button_width
+        width=button_width,
+        highlightthickness=0,  # Disable highlight border for custom colors on macOS
+        highlightbackground=theme.BG_COLOR
     )
     serial_scanner_btn.grid(row=1, column=2, pady=15, ipady=button_ipady, sticky='nsew')
     
