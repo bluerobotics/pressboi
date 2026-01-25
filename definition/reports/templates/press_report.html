@@ -1153,10 +1153,29 @@
         
         // Fit 4th order polynomial to force vs position data
         // For machine strain: position (deflection) is x, force is y
-        // We need to normalize positions relative to start (deflection from contact)
-        const startPos = chartData.positions[0];
-        const deflections = chartData.positions.map(p => p - startPos);
-        const polyCoeffs = polyfit(deflections, chartData.forces, 4);
+        // Filter data to only include points where force >= threshold to avoid
+        // fitting to noisy low-force data that can cause negative values at start
+        
+        // Use press_threshold if provided, otherwise default to 5 kg
+        const polyfitThreshold = {{ press_threshold if press_threshold is not none else 5 }};
+        
+        // Find first index where force >= threshold
+        let fitStartIdx = 0;
+        for (let i = 0; i < chartData.forces.length; i++) {
+            if (chartData.forces[i] >= polyfitThreshold) {
+                fitStartIdx = i;
+                break;
+            }
+        }
+        
+        // Filter data to only include points from threshold onwards
+        const fitPositions = chartData.positions.slice(fitStartIdx);
+        const fitForces = chartData.forces.slice(fitStartIdx);
+        
+        // Normalize positions relative to the threshold crossing point (deflection from contact)
+        const startPos = fitPositions[0];
+        const deflections = fitPositions.map(p => p - startPos);
+        const polyCoeffs = polyfit(deflections, fitForces, 4);
         
         // Generate fitted curve points
         const fitX = [];

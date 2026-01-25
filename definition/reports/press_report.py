@@ -9,6 +9,7 @@ import csv
 import json
 import os
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
@@ -21,7 +22,6 @@ except ImportError:
         "Jinja2 is required for report generation. "
         "Install it with: pip install jinja2"
     )
-
 
 class PressReportGenerator:
     """
@@ -85,7 +85,64 @@ class PressReportGenerator:
         start_time = None
         end_time = None
         
-        with open(csv_path, 'r', newline='') as f:
+        # Retry logic for Windows file handle timing issues
+        # File may not be immediately available after being closed by data logger
+        max_retries = 5
+        retry_delay = 0.3  # 300ms between retries
+        last_error = None
+        last_error_type = None
+        f = None
+        temp_file_path = None  # Track temp file for cleanup
+        
+        for attempt in range(max_retries):
+            try:
+                f = open(csv_path, 'r', newline='')
+                break  # Success!
+            except FileNotFoundError as e:
+                last_error = e
+                last_error_type = "FileNotFoundError"
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+            except PermissionError as e:
+                last_error = e
+                last_error_type = "PermissionError"
+                # On Windows, try copy-to-temp fallback for locked files
+                # This works because Windows allows copying files that are open for writing
+                if attempt == max_retries - 1:
+                    try:
+                        import shutil
+                        import tempfile
+                        # Create a temp copy
+                        temp_dir = tempfile.gettempdir()
+                        temp_file_path = os.path.join(temp_dir, f"report_temp_{os.path.basename(csv_path)}")
+                        print(f"[REPORT] File locked, attempting copy-to-temp: {temp_file_path}")
+                        shutil.copy2(csv_path, temp_file_path)
+                        f = open(temp_file_path, 'r', newline='')
+                        print(f"[REPORT] Successfully opened temp copy of locked file")
+                        break  # Success via temp copy!
+                    except Exception as copy_error:
+                        print(f"[REPORT] Copy-to-temp fallback failed: {copy_error}")
+                        # Keep the original PermissionError
+                else:
+                    time.sleep(retry_delay)
+            except OSError as e:
+                last_error = e
+                last_error_type = "OSError"
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+        
+        if f is None:
+            # Preserve the original error type in the message for accurate diagnostics
+            error_msg = f"Could not open CSV after {max_retries} attempts: {csv_path} ({last_error_type}: {last_error})"
+            # Re-raise the same type of exception that actually occurred
+            if last_error_type == "PermissionError":
+                raise PermissionError(error_msg) from last_error
+            elif last_error_type == "OSError":
+                raise OSError(error_msg) from last_error
+            else:
+                raise FileNotFoundError(error_msg) from last_error
+        
+        with f:
             reader = csv.DictReader(f)
             headers = reader.fieldnames or []
             
@@ -168,6 +225,13 @@ class PressReportGenerator:
         forces = forces[:min_len]
         if energies:
             energies = energies[:min(len(energies), min_len)]
+        
+        # Clean up temp file if we used one
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.remove(temp_file_path)
+            except Exception:
+                pass  # Ignore cleanup errors
         
         return {
             'times': times,
@@ -544,13 +608,28 @@ class PressReportGenerator:
                 output_path = str(Path(csv_path).parent / f"{csv_name}_report.html")
             
             # Write output
-            with open(output_path, 'w', encoding='utf-8') as f:
-                f.write(html_content)
+            try:
+                # Ensure output directory exists
+                output_dir = Path(output_path).parent
+                output_dir.mkdir(parents=True, exist_ok=True)
+                
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(html_content)
+            except FileNotFoundError as e:
+                return (False, f"Cannot write report - output path not found: {output_path} - {e}", None)
+            except PermissionError as e:
+                return (False, f"Cannot write report - permission denied: {output_path} - {e}", None)
+            except OSError as e:
+                return (False, f"Cannot write report - OS error: {output_path} - {e}", None)
             
             return (True, f"Report generated successfully: {output_path}", output_path)
             
-        except FileNotFoundError:
-            return (False, f"CSV file not found: {csv_path}", None)
+        except FileNotFoundError as e:
+            return (False, f"CSV file not found: {csv_path} - {e}", None)
+        except PermissionError as e:
+            return (False, f"CSV file access denied (file may be locked by another process): {csv_path} - {e}", None)
+        except OSError as e:
+            return (False, f"OS error reading CSV file: {csv_path} - {e}", None)
         except Exception as e:
             import traceback
             traceback.print_exc()

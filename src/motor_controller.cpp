@@ -16,6 +16,7 @@
 #include "motor_controller.h"
 #include "pressboi.h" // Include full header for Pressboi
 #include "events.h"
+#include "error_log.h"
 #include "NvmManager.h"
 #include <cmath>
 #include <cstdio>
@@ -46,6 +47,17 @@ MotorController::MotorController(MotorDriver* motorA, MotorDriver* motorB, Press
     m_homingStartTime = 0;
     m_isEnabled = true;
     m_pausedMessageSent = false;
+    
+    // Initialize gantry squaring homing variables
+    m_axisAHomeSensorTriggered = false;
+    m_axisBHomeSensorTriggered = false;
+    m_axisAStopped = false;
+    m_axisBStopped = false;
+    m_homeSensorsInitialized = false;
+    
+    // Initialize non-blocking enable state
+    m_enableState = ENABLE_IDLE;
+    m_enableStartTime = 0;
 
     // Initialize from config file constants
     m_torqueLimit = DEFAULT_TORQUE_LIMIT;
@@ -114,6 +126,25 @@ void MotorController::setup() {
 
     m_motorA->EnableRequest(true);
     m_motorB->EnableRequest(true);
+    
+    // Wait for motors to report as enabled (up to 2 seconds)
+    // This is critical - without this check, auto-homing may start before motors are ready
+    uint32_t enableTimeout = Milliseconds() + 2000;
+    while (Milliseconds() < enableTimeout) {
+        if (m_motorA->StatusReg().bit.Enabled && m_motorB->StatusReg().bit.Enabled) {
+            break;
+        }
+    }
+    
+    // Log warning if motors didn't enable in time
+    if (!m_motorA->StatusReg().bit.Enabled || !m_motorB->StatusReg().bit.Enabled) {
+        g_errorLog.logf(LOG_WARNING, "Motor enable timeout. M0=%d, M1=%d",
+                 m_motorA->StatusReg().bit.Enabled ? 1 : 0,
+                 m_motorB->StatusReg().bit.Enabled ? 1 : 0);
+    }
+    
+    // Initialize home sensors for gantry squaring homing
+    setupHomeSensors();
     
     // Check for first boot and initialize NVM with defaults
     NvmManager &nvmMgr = NvmManager::Instance();
@@ -348,109 +379,262 @@ void MotorController::updateState() {
         break;
 
         case STATE_HOMING: {
+            // Check for homing timeout
+            if (Milliseconds() - m_homingStartTime > MAX_HOMING_DURATION_MS) {
+                abortMove();
+                reportEvent(STATUS_PREFIX_ERROR, "Homing failed: Timeout exceeded.");
+                m_state = STATE_STANDBY;
+                m_homingPhase = HOMING_PHASE_IDLE;
+                break;
+            }
+            
             switch (m_homingPhase) {
-                case RAPID_SEARCH_START: {
-                    reportEvent(STATUS_PREFIX_INFO, "Homing: Starting rapid search.");
-                    m_torqueLimit = HOMING_SEARCH_TORQUE_PERCENT;
+                //==============================================================================
+                // RAPID APPROACH - Both axes move toward home, stop individually on sensor
+                //==============================================================================
+                case RAPID_APPROACH_START: {
+                    reportEvent(STATUS_PREFIX_INFO, "Homing: Starting rapid approach (gantry squaring).");
+                    
+                    // Reset axis tracking flags
+                    m_axisAStopped = false;
+                    m_axisBStopped = false;
+                    m_axisAHomeSensorTriggered = false;
+                    m_axisBHomeSensorTriggered = false;
+                    
+                    // Set torque limit as backup safety
+                    m_torqueLimit = HOMING_BACKOFF_TORQUE_PERCENT;
+                    
+                    // Calculate approach direction (negative = toward home for HOMING state)
                     long rapid_search_steps = m_homingDistanceSteps;
                     if (m_homingState == HOMING) {
                         rapid_search_steps = -rapid_search_steps;
                     }
+                    
+                    // Start both motors moving together
                     startMove(rapid_search_steps, m_homingRapidSps, m_homingAccelSps2);
-                    m_homingStartTime = Milliseconds();
-                    m_homingPhase = RAPID_SEARCH_WAIT_TO_START;
+                    m_homingPhase = RAPID_APPROACH_WAIT_TO_START;
                     break;
                 }
-                case RAPID_SEARCH_WAIT_TO_START:
-                    if (isMoving()) {
-                        m_homingPhase = RAPID_SEARCH_MOVING;
-                    }
-                    else if (Milliseconds() - m_homingStartTime > 500) {
+                
+                case RAPID_APPROACH_WAIT_TO_START: {
+                    // CRITICAL: Verify BOTH motors are moving before proceeding
+                    // Using isMoving() alone would pass if only ONE motor started
+                    bool m0_moving = m_motorA->StatusReg().bit.StepsActive;
+                    bool m1_moving = m_motorB->StatusReg().bit.StepsActive;
+                    
+                    if (m0_moving && m1_moving) {
+                        m_homingPhase = RAPID_APPROACH_MOVING;
+                        reportEvent(STATUS_PREFIX_INFO, "Homing: Rapid approach moving, monitoring sensors.");
+                    } else if (Milliseconds() - m_homingStartTime > 500) {
                         abortMove();
                         char errorMsg[200];
-                        snprintf(errorMsg, sizeof(errorMsg), "Homing failed: Motor did not start moving. M0 Status=0x%04X, M1 Status=0x%04X",
-                                 (unsigned int)m_motorA->StatusReg().reg, (unsigned int)m_motorB->StatusReg().reg);
-                        reportEvent(STATUS_PREFIX_INFO, errorMsg);
-                        m_state = STATE_STANDBY;
-                        m_homingPhase = HOMING_PHASE_IDLE;
-                    }
-                break;
-                case RAPID_SEARCH_MOVING: {
-                    if (checkTorqueLimit()) {
-                        abortMove();
-                        reportEvent(STATUS_PREFIX_INFO, "Homing: Rapid search torque limit hit.");
-                        m_homingPhase = BACKOFF_START;
-                        } else if (!isMoving()) {
-                        abortMove();
-                        reportEvent(STATUS_PREFIX_ERROR, "Homing failed: Axis stopped before torque limit was reached.");
+                        snprintf(errorMsg, sizeof(errorMsg), 
+                            "Homing failed: Not all motors started. M0_moving=%d M1_moving=%d M0_status=0x%04X M1_status=0x%04X",
+                            m0_moving ? 1 : 0, m1_moving ? 1 : 0,
+                            (unsigned int)m_motorA->StatusReg().reg, (unsigned int)m_motorB->StatusReg().reg);
+                        reportEvent(STATUS_PREFIX_ERROR, errorMsg);
                         m_state = STATE_STANDBY;
                         m_homingPhase = HOMING_PHASE_IDLE;
                     }
                     break;
                 }
+                
+                case RAPID_APPROACH_MOVING: {
+                    // Check Motor A (M0) sensor - stop if triggered and not already stopped
+                    if (!m_axisAStopped && isHomeSensorTriggered(0)) {
+                        stopAxis(0);
+                        m_axisAStopped = true;
+                        m_axisAHomeSensorTriggered = true;
+                        reportEvent(STATUS_PREFIX_INFO, "Homing: M0 sensor triggered (rapid).");
+                    }
+                    
+                    // Check Motor B (M1) sensor - stop if triggered and not already stopped
+                    if (!m_axisBStopped && isHomeSensorTriggered(1)) {
+                        stopAxis(1);
+                        m_axisBStopped = true;
+                        m_axisBHomeSensorTriggered = true;
+                        reportEvent(STATUS_PREFIX_INFO, "Homing: M1 sensor triggered (rapid).");
+                    }
+                    
+                    // Check for torque limit as backup safety (stops both)
+                    if (checkTorqueLimit()) {
+                        abortMove();
+                        reportEvent(STATUS_PREFIX_INFO, "Homing: Torque limit hit during rapid approach (backup safety).");
+                        m_axisAStopped = true;
+                        m_axisBStopped = true;
+                    }
+                    
+                    // Transition when both axes have stopped
+                    if (m_axisAStopped && m_axisBStopped) {
+                        // Verify at least one sensor triggered (not just torque limit)
+                        if (m_axisAHomeSensorTriggered || m_axisBHomeSensorTriggered) {
+                            reportEvent(STATUS_PREFIX_INFO, "Homing: Rapid approach complete, starting backoff.");
+                            m_homingPhase = BACKOFF_START;
+                        } else {
+                            reportEvent(STATUS_PREFIX_ERROR, "Homing failed: No sensors triggered during rapid approach.");
+                            m_state = STATE_STANDBY;
+                            m_homingPhase = HOMING_PHASE_IDLE;
+                        }
+                    } else if (!isMoving()) {
+                        // Motors stopped but not all sensors triggered - check if travel exceeded
+                        abortMove();
+                        reportEvent(STATUS_PREFIX_ERROR, "Homing failed: Motion stopped before sensors triggered.");
+                        m_state = STATE_STANDBY;
+                        m_homingPhase = HOMING_PHASE_IDLE;
+                    }
+                    break;
+                }
+                
+                //==============================================================================
+                // BACKOFF - Both axes back off together
+                //==============================================================================
                 case BACKOFF_START: {
                     reportEvent(STATUS_PREFIX_INFO, "Homing: Starting backoff.");
+                    
+                    // Reset axis flags for next phase
+                    m_axisAStopped = false;
+                    m_axisBStopped = false;
+                    m_axisAHomeSensorTriggered = false;
+                    m_axisBHomeSensorTriggered = false;
+                    
                     m_torqueLimit = HOMING_BACKOFF_TORQUE_PERCENT;
+                    
+                    // Backoff direction is opposite of approach
                     long backoff_steps = (m_homingState == HOMING) ? m_homingBackoffSteps : -m_homingBackoffSteps;
                     startMove(backoff_steps, m_homingBackoffSps, m_homingAccelSps2);
                     m_homingPhase = BACKOFF_WAIT_TO_START;
                     break;
                 }
-                case BACKOFF_WAIT_TO_START:
-                if (isMoving()) {
-                    m_homingPhase = BACKOFF_MOVING;
-                }
-                break;
-                case BACKOFF_MOVING:
-                if (!isMoving()) {
-                    reportEvent(STATUS_PREFIX_INFO, "Homing: Backoff complete.");
-                    m_homingPhase = SLOW_SEARCH_START;
-                }
-                break;
-                case SLOW_SEARCH_START: {
-                    reportEvent(STATUS_PREFIX_INFO, "Homing: Starting slow search.");
-                    m_torqueLimit = HOMING_SEARCH_TORQUE_PERCENT;
-                    long slow_search_steps = (m_homingState == HOMING) ? -m_homingBackoffSteps * 2 : m_homingBackoffSteps * 2;
-                    startMove(slow_search_steps, m_homingTouchSps, m_homingAccelSps2);
-                    m_homingPhase = SLOW_SEARCH_WAIT_TO_START;
+                
+                case BACKOFF_WAIT_TO_START: {
+                    if (isMoving()) {
+                        m_homingPhase = BACKOFF_MOVING;
+                    }
                     break;
                 }
-                case SLOW_SEARCH_WAIT_TO_START:
-                if (isMoving()) {
-                    m_homingPhase = SLOW_SEARCH_MOVING;
+                
+                case BACKOFF_MOVING: {
+                    if (!isMoving()) {
+                        reportEvent(STATUS_PREFIX_INFO, "Homing: Backoff complete, starting slow approach.");
+                        m_homingPhase = SLOW_APPROACH_START;
+                    }
+                    break;
                 }
-                break;
-                case SLOW_SEARCH_MOVING: {
+                
+                //==============================================================================
+                // SLOW APPROACH - Both axes approach slowly, stop individually on sensor
+                //==============================================================================
+                case SLOW_APPROACH_START: {
+                    reportEvent(STATUS_PREFIX_INFO, "Homing: Starting slow approach for precision.");
+                    
+                    // Reset axis tracking flags
+                    m_axisAStopped = false;
+                    m_axisBStopped = false;
+                    m_axisAHomeSensorTriggered = false;
+                    m_axisBHomeSensorTriggered = false;
+                    
+                    m_torqueLimit = HOMING_BACKOFF_TORQUE_PERCENT;
+                    
+                    // Slow approach in same direction as rapid, but only 2x backoff distance
+                    long slow_approach_steps = (m_homingState == HOMING) ? -m_homingBackoffSteps * 2 : m_homingBackoffSteps * 2;
+                    startMove(slow_approach_steps, m_homingTouchSps, m_homingAccelSps2);
+                    m_homingPhase = SLOW_APPROACH_WAIT_TO_START;
+                    break;
+                }
+                
+                case SLOW_APPROACH_WAIT_TO_START: {
+                    if (isMoving()) {
+                        m_homingPhase = SLOW_APPROACH_MOVING;
+                        reportEvent(STATUS_PREFIX_INFO, "Homing: Slow approach moving, monitoring sensors.");
+                    }
+                    break;
+                }
+                
+                case SLOW_APPROACH_MOVING: {
+                    // Check Motor A (M0) sensor - stop if triggered and not already stopped
+                    if (!m_axisAStopped && isHomeSensorTriggered(0)) {
+                        stopAxis(0);
+                        m_axisAStopped = true;
+                        m_axisAHomeSensorTriggered = true;
+                        reportEvent(STATUS_PREFIX_INFO, "Homing: M0 sensor triggered (slow) - precise position found.");
+                    }
+                    
+                    // Check Motor B (M1) sensor - stop if triggered and not already stopped
+                    if (!m_axisBStopped && isHomeSensorTriggered(1)) {
+                        stopAxis(1);
+                        m_axisBStopped = true;
+                        m_axisBHomeSensorTriggered = true;
+                        reportEvent(STATUS_PREFIX_INFO, "Homing: M1 sensor triggered (slow) - precise position found.");
+                    }
+                    
+                    // Check for torque limit as backup safety
                     if (checkTorqueLimit()) {
                         abortMove();
-                        reportEvent(STATUS_PREFIX_INFO, "Homing: Precise position found. Moving to offset.");
-                        m_homingPhase = SET_OFFSET_START;
-                        } else if (!isMoving()) {
+                        reportEvent(STATUS_PREFIX_INFO, "Homing: Torque limit hit during slow approach (backup safety).");
+                        m_axisAStopped = true;
+                        m_axisBStopped = true;
+                    }
+                    
+                    // Transition when both axes have stopped
+                    if (m_axisAStopped && m_axisBStopped) {
+                        if (m_axisAHomeSensorTriggered && m_axisBHomeSensorTriggered) {
+                            reportEvent(STATUS_PREFIX_INFO, "Homing: Both sensors triggered, gantry squared. Moving to offset.");
+                            m_homingPhase = FINAL_BACKOFF_START;
+                        } else if (m_axisAHomeSensorTriggered || m_axisBHomeSensorTriggered) {
+                            // Only one sensor triggered - this is a partial success, continue anyway
+                            char warnMsg[128];
+                            snprintf(warnMsg, sizeof(warnMsg), "Homing: Warning - only %s sensor triggered during slow approach.",
+                                     m_axisAHomeSensorTriggered ? "M0" : "M1");
+                            reportEvent(STATUS_PREFIX_INFO, warnMsg);
+                            m_homingPhase = FINAL_BACKOFF_START;
+                        } else {
+                            reportEvent(STATUS_PREFIX_ERROR, "Homing failed: No sensors triggered during slow approach.");
+                            m_state = STATE_STANDBY;
+                            m_homingPhase = HOMING_PHASE_IDLE;
+                        }
+                    } else if (!isMoving()) {
+                        // Motors stopped but not all sensors triggered
                         abortMove();
-                        reportEvent(STATUS_PREFIX_ERROR, "Homing failed during slow search.");
+                        reportEvent(STATUS_PREFIX_ERROR, "Homing failed: Motion stopped before sensors triggered (slow).");
                         m_state = STATE_STANDBY;
                         m_homingPhase = HOMING_PHASE_IDLE;
                     }
                     break;
                 }
-                case SET_OFFSET_START: {
+                
+                //==============================================================================
+                // FINAL BACKOFF - Move to offset position and set zero
+                //==============================================================================
+                case FINAL_BACKOFF_START: {
+                    reportEvent(STATUS_PREFIX_INFO, "Homing: Moving to final offset position.");
+                    
                     m_torqueLimit = HOMING_BACKOFF_TORQUE_PERCENT;
+                    
+                    // Move to final offset position (away from sensors)
                     long offset_steps = (m_homingState == HOMING) ? m_homingBackoffSteps : -m_homingBackoffSteps;
                     startMove(offset_steps, m_homingBackoffSps, m_homingAccelSps2);
-                    m_homingPhase = SET_OFFSET_WAIT_TO_START;
+                    m_homingPhase = FINAL_BACKOFF_WAIT_TO_START;
                     break;
                 }
-                case SET_OFFSET_WAIT_TO_START:
-                if (isMoving()) {
-                    m_homingPhase = SET_OFFSET_MOVING;
+                
+                case FINAL_BACKOFF_WAIT_TO_START: {
+                    if (isMoving()) {
+                        m_homingPhase = FINAL_BACKOFF_MOVING;
+                    }
+                    break;
                 }
-                break;
-                case SET_OFFSET_MOVING:
-                if (!isMoving()) {
-                    reportEvent(STATUS_PREFIX_INFO, "Homing: Offset position reached.");
-                    m_homingPhase = SET_ZERO;
+                
+                case FINAL_BACKOFF_MOVING: {
+                    if (!isMoving()) {
+                        reportEvent(STATUS_PREFIX_INFO, "Homing: Final position reached.");
+                        m_homingPhase = SET_ZERO;
+                    }
+                    break;
                 }
-                break;
+                
+                //==============================================================================
+                // SET ZERO - Set home reference position
+                //==============================================================================
                 case SET_ZERO: {
                     const char* commandStr = (m_homingState == HOMING) ? "home" : "cartridge_home";
                     
@@ -459,8 +643,7 @@ void MotorController::updateState() {
                         m_homingDone = true;
                         
                         // If a retract position was loaded from NVM or set manually, recalculate it
-                        // based on the new home reference. We check m_retract_position_mm instead of
-                        // m_retractReferenceSteps to avoid accumulation on multiple boots.
+                        // based on the new home reference.
                         if (m_retract_position_mm != 0.0f) {
                             m_retractReferenceSteps = m_machineHomeReferenceSteps + static_cast<long>(m_retract_position_mm * STEPS_PER_MM);
                             
@@ -469,7 +652,14 @@ void MotorController::updateState() {
                                      m_retract_position_mm, m_retractReferenceSteps, m_machineHomeReferenceSteps);
                             reportEvent(STATUS_PREFIX_INFO, dbg);
                         }
-                        } else { // HOMING_CARTRIDGE
+                        
+                        // Report sensor states at home position
+                        char sensorMsg[128];
+                        snprintf(sensorMsg, sizeof(sensorMsg), "Homing complete. Sensor states: M0=%d, M1=%d",
+                                 getHomeSensorState(0) ? 1 : 0, getHomeSensorState(1) ? 1 : 0);
+                        reportEvent(STATUS_PREFIX_INFO, sensorMsg);
+                        
+                    } else { // HOMING_CARTRIDGE
                         m_retractReferenceSteps = m_motorA->PositionRefCommanded();
                         m_retractDone = true;
                     }
@@ -481,17 +671,21 @@ void MotorController::updateState() {
                     m_homingPhase = HOMING_PHASE_IDLE;
                     break;
                 }
-                case HOMING_PHASE_ERROR:
-                reportEvent(STATUS_PREFIX_ERROR, "Homing sequence ended with error.");
-                m_state = STATE_STANDBY;
-                m_homingPhase = HOMING_PHASE_IDLE;
-                break;
-                default:
-                abortMove();
-                reportEvent(STATUS_PREFIX_ERROR, "Unknown homing phase, aborting.");
-                m_state = STATE_STANDBY;
-                m_homingPhase = HOMING_PHASE_IDLE;
-                break;
+                
+                case HOMING_PHASE_ERROR: {
+                    reportEvent(STATUS_PREFIX_ERROR, "Homing sequence ended with error.");
+                    m_state = STATE_STANDBY;
+                    m_homingPhase = HOMING_PHASE_IDLE;
+                    break;
+                }
+                
+                default: {
+                    abortMove();
+                    reportEvent(STATUS_PREFIX_ERROR, "Unknown homing phase, aborting.");
+                    m_state = STATE_STANDBY;
+                    m_homingPhase = HOMING_PHASE_IDLE;
+                    break;
+                }
             }
             break;
         }
@@ -684,9 +878,15 @@ void MotorController::handleCommand(Command cmd, const char* args) {
 }
 
 /**
- * @brief Enables both motors.
+ * @brief Enables both motors (non-blocking).
+ * @details Requests motor enable and starts the enable state machine.
+ * The caller should use updateEnableState() to check for completion.
  */
 void MotorController::enable() {
+    // Clear any pending alerts before enabling
+    m_motorA->ClearAlerts();
+    m_motorB->ClearAlerts();
+    
     m_motorA->EnableRequest(true);
     m_motorB->EnableRequest(true);
 
@@ -697,8 +897,44 @@ void MotorController::enable() {
     m_motorB->VelMax(MOTOR_DEFAULT_VEL_MAX_SPS);
     m_motorB->AccelMax(MOTOR_DEFAULT_ACCEL_MAX_SPS2);
     
+    // Start non-blocking enable wait state machine
+    m_enableState = ENABLE_WAITING;
+    m_enableStartTime = Milliseconds();
     m_isEnabled = true;
-    reportEvent(STATUS_PREFIX_INFO, "Motors enabled.");
+    
+    reportEvent(STATUS_PREFIX_INFO, "Motors enabling...");
+}
+
+/**
+ * @brief Updates the non-blocking enable state machine.
+ * @return The current EnableState after the update.
+ */
+EnableState MotorController::updateEnableState() {
+    if (m_enableState == ENABLE_WAITING) {
+        // Check if both motors report as enabled
+        if (m_motorA->StatusReg().bit.Enabled && m_motorB->StatusReg().bit.Enabled) {
+            m_enableState = ENABLE_COMPLETE;
+            reportEvent(STATUS_PREFIX_INFO, "Motors enabled.");
+        } 
+        // Check for timeout (2 seconds)
+        else if (Milliseconds() - m_enableStartTime > 2000) {
+            m_enableState = ENABLE_TIMEOUT;
+            char warnMsg[128];
+            snprintf(warnMsg, sizeof(warnMsg), "Motor enable timeout. M0=%d, M1=%d",
+                     m_motorA->StatusReg().bit.Enabled ? 1 : 0,
+                     m_motorB->StatusReg().bit.Enabled ? 1 : 0);
+            reportEvent(STATUS_PREFIX_INFO, warnMsg);
+        }
+    }
+    return m_enableState;
+}
+
+/**
+ * @brief Checks if the enable operation has completed (success or timeout).
+ * @return true if enable is complete or timed out, false if still waiting.
+ */
+bool MotorController::isEnableComplete() const {
+    return m_enableState == ENABLE_COMPLETE || m_enableState == ENABLE_TIMEOUT;
 }
 
 /**
@@ -708,6 +944,7 @@ void MotorController::disable() {
     m_motorA->EnableRequest(false);
     m_motorB->EnableRequest(false);
     m_isEnabled = false;
+    m_enableState = ENABLE_IDLE;  // Reset enable state machine
     reportEvent(STATUS_PREFIX_INFO, "Motors disabled.");
 }
 
@@ -729,6 +966,7 @@ void MotorController::reset() {
     m_homingState = HOMING_NONE;
     m_homingPhase = HOMING_PHASE_IDLE;
     m_moveState = MOVE_STANDBY;
+    m_enableState = ENABLE_IDLE;  // Reset enable state machine
     fullyResetActiveMove();
 }
 
@@ -736,6 +974,34 @@ void MotorController::reset() {
  * @brief Handles the HOME command.
  */
 void MotorController::home() {
+    // Check if home sensors are initialized
+    if (!m_homeSensorsInitialized) {
+        setupHomeSensors();
+    }
+    
+    // Log motor status before homing for diagnostics
+    char statusMsg[200];
+    snprintf(statusMsg, sizeof(statusMsg), 
+        "Home: Motor status before homing: M0(en=%d,fault=%d,status=0x%04X) M1(en=%d,fault=%d,status=0x%04X)",
+        m_motorA->StatusReg().bit.Enabled ? 1 : 0,
+        m_motorA->StatusReg().bit.MotorInFault ? 1 : 0,
+        (unsigned int)m_motorA->StatusReg().reg,
+        m_motorB->StatusReg().bit.Enabled ? 1 : 0,
+        m_motorB->StatusReg().bit.MotorInFault ? 1 : 0,
+        (unsigned int)m_motorB->StatusReg().reg);
+    reportEvent(STATUS_PREFIX_INFO, statusMsg);
+    
+    // Verify both motors are enabled before starting homing
+    if (!m_motorA->StatusReg().bit.Enabled || !m_motorB->StatusReg().bit.Enabled) {
+        char errorMsg[128];
+        snprintf(errorMsg, sizeof(errorMsg), 
+            "Homing failed: Motors not enabled. M0=%d, M1=%d",
+            m_motorA->StatusReg().bit.Enabled ? 1 : 0,
+            m_motorB->StatusReg().bit.Enabled ? 1 : 0);
+        reportEvent(STATUS_PREFIX_ERROR, errorMsg);
+        return;
+    }
+    
     m_homingDistanceSteps = (long)(fabs(HOMING_STROKE_MM) * STEPS_PER_MM);
     m_homingBackoffSteps = (long)(HOMING_BACKOFF_MM * STEPS_PER_MM);
     m_homingRapidSps = (int)fabs(HOMING_RAPID_VEL_MMS * STEPS_PER_MM);
@@ -750,17 +1016,32 @@ void MotorController::home() {
     snprintf(logMsg, sizeof(logMsg), "Homing params: dist_steps=%ld, rapid_sps=%d, touch_sps=%d, accel_sps2=%d",
              m_homingDistanceSteps, m_homingRapidSps, m_homingTouchSps, m_homingAccelSps2);
     reportEvent(STATUS_PREFIX_INFO, logMsg);
+    
+    // Report current sensor states before starting
+    char sensorMsg[128];
+    snprintf(sensorMsg, sizeof(sensorMsg), "Home sensors before homing: M0(DI7)=%d, M1(DI6)=%d (active=%s)",
+             getHomeSensorState(0) ? 1 : 0, 
+             getHomeSensorState(1) ? 1 : 0,
+             HOME_SENSOR_ACTIVE_STATE ? "HIGH" : "LOW");
+    reportEvent(STATUS_PREFIX_INFO, sensorMsg);
 
     if (m_homingDistanceSteps == 0) {
         reportEvent(STATUS_PREFIX_ERROR, "Homing failed: Calculated distance is zero. Check config.");
         return;
     }
 
+    // Initialize state machine for gantry squaring homing
     m_state = STATE_HOMING;
     m_homingState = HOMING;
-    m_homingPhase = RAPID_SEARCH_START;
+    m_homingPhase = RAPID_APPROACH_START;  // Start with rapid approach phase
     m_homingStartTime = Milliseconds();
     m_homingDone = false;
+    
+    // Initialize gantry squaring tracking variables
+    m_axisAHomeSensorTriggered = false;
+    m_axisBHomeSensorTriggered = false;
+    m_axisAStopped = false;
+    m_axisBStopped = false;
     
     // Reset joule tracking for new homing operation
     m_joules = 0.0;
@@ -771,7 +1052,7 @@ void MotorController::home() {
     m_forceLimitTriggered = false;
     m_jouleIntegrationActive = false; // Do not accumulate joules during homing
 
-    reportEvent(STATUS_PREFIX_START, "HOME initiated.");
+    reportEvent(STATUS_PREFIX_START, "HOME initiated (gantry squaring mode).");
 }
 
 /**
@@ -1932,6 +2213,10 @@ void MotorController::updateTelemetry(TelemetryData* data, ForceSensor* forceSen
     
     // Update press threshold
     data->press_threshold = m_press_threshold_kg;
+    
+    // Update home sensor states (for gantry squaring homing debugging)
+    data->home_sensor_m0 = getHomeSensorStateM0() ? 1 : 0;
+    data->home_sensor_m1 = getHomeSensorStateM1() ? 1 : 0;
 }
 
 bool MotorController::isBusy() const {
@@ -1950,4 +2235,124 @@ const char* MotorController::getState() const {
 
 bool MotorController::isInFault() const {
     return m_motorA->StatusReg().bit.MotorInFault || m_motorB->StatusReg().bit.MotorInFault;
+}
+
+//==================================================================================================
+// --- Home Sensor Functions (Gantry Squaring Homing) ---
+//==================================================================================================
+
+/**
+ * @brief Configures the home sensors (hall effect) for gantry squaring homing.
+ * @details Sets up DI6 and DI7 as digital inputs with debounce filtering.
+ * M0 uses DI7, M1 uses DI6.
+ */
+void MotorController::setupHomeSensors() {
+    // Configure home sensor inputs with filtering for debounce
+    // Convert ms to samples (1 ms = 5 samples at 200µs sample rate)
+    uint16_t filterSamples = HOME_SENSOR_FILTER_MS * 5;
+    
+    // Set mode to digital input (this is the default but we set it explicitly)
+    HOME_SENSOR_M0.Mode(Connector::INPUT_DIGITAL);
+    HOME_SENSOR_M1.Mode(Connector::INPUT_DIGITAL);
+    
+    // Set filter length for debouncing
+    HOME_SENSOR_M0.FilterLength(filterSamples);
+    HOME_SENSOR_M1.FilterLength(filterSamples);
+    
+    m_homeSensorsInitialized = true;
+    
+    reportEvent(STATUS_PREFIX_INFO, "Home sensors initialized (DI6=M1, DI7=M0).");
+}
+
+/**
+ * @brief Checks if the home sensor for the specified axis is triggered.
+ * @param axis 0 for Motor A (M0), 1 for Motor B (M1)
+ * @return true if the sensor is in the triggered (active) state
+ */
+bool MotorController::isHomeSensorTriggered(int axis) {
+    bool sensorState = getHomeSensorState(axis);
+    
+    // Return true if sensor state matches the active state configuration
+    return (sensorState == HOME_SENSOR_ACTIVE_STATE);
+}
+
+/**
+ * @brief Gets the raw state of the home sensor for the specified axis.
+ * @param axis 0 for Motor A (M0), 1 for Motor B (M1)
+ * @return true if sensor input is HIGH, false if LOW
+ */
+bool MotorController::getHomeSensorState(int axis) {
+    if (axis == 0) {
+        // Motor A (M0) uses DI7
+        return HOME_SENSOR_M0.State() != 0;
+    } else {
+        // Motor B (M1) uses DI6
+        return HOME_SENSOR_M1.State() != 0;
+    }
+}
+
+/**
+ * @brief Public getter for Motor A (M0) home sensor state.
+ * @return true if sensor is triggered (active), false otherwise
+ */
+bool MotorController::getHomeSensorStateM0() const {
+    return HOME_SENSOR_M0.State() == (HOME_SENSOR_ACTIVE_STATE ? 1 : 0);
+}
+
+/**
+ * @brief Public getter for Motor B (M1) home sensor state.
+ * @return true if sensor is triggered (active), false otherwise
+ */
+bool MotorController::getHomeSensorStateM1() const {
+    return HOME_SENSOR_M1.State() == (HOME_SENSOR_ACTIVE_STATE ? 1 : 0);
+}
+
+/**
+ * @brief Stops a single motor axis using deceleration.
+ * @param axis 0 for Motor A (M0), 1 for Motor B (M1)
+ */
+void MotorController::stopAxis(int axis) {
+    if (axis == 0) {
+        m_motorA->MoveStopDecel();
+    } else {
+        m_motorB->MoveStopDecel();
+    }
+}
+
+/**
+ * @brief Checks if a specific motor axis is currently moving.
+ * @param axis 0 for Motor A (M0), 1 for Motor B (M1)
+ * @return true if the motor is actively stepping
+ */
+bool MotorController::isAxisMoving(int axis) {
+    if (!m_isEnabled) return false;
+    
+    if (axis == 0) {
+        return m_motorA->StatusReg().bit.StepsActive;
+    } else {
+        return m_motorB->StatusReg().bit.StepsActive;
+    }
+}
+
+/**
+ * @brief Commands a move on a single motor axis.
+ * @param axis 0 for Motor A (M0), 1 for Motor B (M1)
+ * @param steps Number of steps to move (positive or negative)
+ * @param velSps Velocity in steps per second
+ * @param accelSps2 Acceleration in steps per second squared
+ */
+void MotorController::startMoveAxis(int axis, long steps, int velSps, int accelSps2) {
+    if (steps == 0) {
+        return;
+    }
+    
+    if (axis == 0) {
+        m_motorA->VelMax(velSps);
+        m_motorA->AccelMax(accelSps2);
+        m_motorA->Move(steps);
+    } else {
+        m_motorB->VelMax(velSps);
+        m_motorB->AccelMax(accelSps2);
+        m_motorB->Move(steps);
+    }
 }

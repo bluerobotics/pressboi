@@ -428,25 +428,40 @@ void Pressboi::updateState() {
         }
 
         case STATE_RESETTING: {
-            // Non-blocking reset: wait for 100ms delay before re-enabling motors
+            // Non-blocking reset with phased motor enable
             uint32_t now = Milliseconds();
-            if (now - m_resetStartTime >= 100) {  // 100ms delay
+            
+            // Phase 1: Wait 100ms after disable before re-enabling
+            if (now - m_resetStartTime < 100) {
+                break;  // Still waiting for delay
+            }
+            
+            // Phase 2: Start motor enable (only once, when enable state is IDLE)
+            if (m_motor.getEnableState() == ENABLE_IDLE) {
                 // Clear any motor faults before re-enabling
                 MOTOR_A.ClearAlerts();
                 MOTOR_B.ClearAlerts();
                 
-                // Re-enable motors
+                // Start non-blocking motor enable
                 m_motor.enable();
-                
-                // Set grace period to ignore faults for 500ms after clearing
-                // This prevents false alarms as the motor driver status stabilizes
-                m_faultGracePeriodEnd = now + 500;
-                
-                // Reset complete, transition to standby
-                standby();
-                reportEvent(STATUS_PREFIX_DONE, "reset");
-                m_mainState = STATE_STANDBY;
+                break;  // Wait for next iteration to check enable status
             }
+            
+            // Phase 3: Wait for enable to complete (non-blocking check)
+            m_motor.updateEnableState();
+            if (!m_motor.isEnableComplete()) {
+                break;  // Still waiting for motors to enable
+            }
+            
+            // Phase 4: Enable complete - finish reset
+            // Set grace period to ignore faults for 500ms after clearing
+            // This prevents false alarms as the motor driver status stabilizes
+            m_faultGracePeriodEnd = now + 500;
+            
+            // Reset complete, transition to standby
+            standby();
+            reportEvent(STATUS_PREFIX_DONE, "reset");
+            m_mainState = STATE_STANDBY;
             break;
         }
 
@@ -1135,9 +1150,11 @@ void Pressboi::handleWatchdogRecovery() {
         MOTOR_B.ClearAlerts();
         
         // Send recovery message with breadcrumb
+        // Use g_crashTimeBreadcrumb which was captured at the start of setup()
+        // before g_watchdogBreadcrumb was overwritten
         char recoveryMsg[128];
         const char* breadcrumb_name = "UNKNOWN";
-        switch (g_watchdogBreadcrumb) {
+        switch (g_crashTimeBreadcrumb) {
             case WD_BREADCRUMB_SAFETY_CHECK: breadcrumb_name = "SAFETY_CHECK"; break;
             case WD_BREADCRUMB_COMMS_UPDATE: breadcrumb_name = "COMMS_UPDATE"; break;
             case WD_BREADCRUMB_RX_DEQUEUE: breadcrumb_name = "RX_DEQUEUE"; break;

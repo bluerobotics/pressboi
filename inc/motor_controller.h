@@ -64,6 +64,18 @@ enum MoveState : uint8_t {
 	MOVE_COMPLETED              ///< The move finished successfully.
 };
 
+/**
+ * @enum EnableState
+ * @brief Defines the state of a non-blocking motor enable operation.
+ * @details Used to track motor enable status without blocking the main loop.
+ */
+enum EnableState : uint8_t {
+	ENABLE_IDLE,                ///< No enable operation in progress.
+	ENABLE_WAITING,             ///< Waiting for motors to report enabled status.
+	ENABLE_COMPLETE,            ///< Motors have successfully enabled.
+	ENABLE_TIMEOUT              ///< Motors did not enable within timeout period.
+};
+
 
 /**
  * @class MotorController
@@ -116,9 +128,29 @@ public:
     void updateTelemetry(TelemetryData* data, ForceSensor* forceSensor);
 
     /**
-     * @brief Enables the motors and sets their default parameters.
+     * @brief Enables the motors and sets their default parameters (non-blocking).
+     * @details Requests motor enable and starts the enable state machine.
+     * Call updateEnableState() to check progress.
      */
     void enable();
+
+    /**
+     * @brief Updates the non-blocking enable state machine.
+     * @return The current EnableState after the update.
+     */
+    EnableState updateEnableState();
+
+    /**
+     * @brief Checks if the enable operation has completed (success or timeout).
+     * @return true if enable is complete or timed out, false if still waiting.
+     */
+    bool isEnableComplete() const;
+
+    /**
+     * @brief Gets the current enable state.
+     * @return The current EnableState value.
+     */
+    EnableState getEnableState() const { return m_enableState; }
 
     /**
      * @brief Disables the motors.
@@ -254,6 +286,18 @@ public:
      * @return Startpoint position in mm
      */
     float getPressStartpoint() const { return m_press_startpoint_mm; }
+    
+    /**
+     * @brief Gets the current state of Motor A (M0) home sensor.
+     * @return true if sensor is triggered (active), false otherwise
+     */
+    bool getHomeSensorStateM0() const;
+    
+    /**
+     * @brief Gets the current state of Motor B (M1) home sensor.
+     * @return true if sensor is triggered (active), false otherwise
+     */
+    bool getHomeSensorStateM1() const;
 
 private:
     /**
@@ -261,7 +305,10 @@ private:
      * @{
      */
     void startMove(long steps, int velSps, int accelSps2);
+    void startMoveAxis(int axis, long steps, int velSps, int accelSps2);
+    void stopAxis(int axis);
     bool isMoving();
+    bool isAxisMoving(int axis);
     float getSmoothedTorque(MotorDriver *motor, float *smoothedValue, bool *firstRead);
     bool checkTorqueLimit();
     bool checkForceSensorStatus(const char** errorMsg);
@@ -270,6 +317,11 @@ private:
     void fullyResetActiveMove();
     void updateJoules();
     void reportEvent(const char* statusType, const char* message);
+    
+    // Home sensor methods for gantry squaring
+    void setupHomeSensors();
+    bool isHomeSensorTriggered(int axis);
+    bool getHomeSensorState(int axis);
     /** @} */
 
     /**
@@ -303,25 +355,31 @@ private:
 
     /**
      * @enum HomingPhase
-     * @brief Defines the detailed sub-states for the press's internal homing sequence.
+     * @brief Defines the detailed sub-states for the gantry-squaring homing sequence.
+     * @details This state machine supports independent axis control with hall effect sensors.
+     * Each axis can stop independently when its sensor triggers, enabling gantry squaring.
      */
     typedef enum {
-		HOMING_PHASE_IDLE,              ///< Homing is not active.
-		RAPID_SEARCH_START,             ///< Starting high-speed move towards hard stop.
-		RAPID_SEARCH_WAIT_TO_START,     ///< Waiting for rapid move to begin before checking torque.
-		RAPID_SEARCH_MOVING,            ///< Executing high-speed move and monitoring for torque limit.
-		BACKOFF_START,                  ///< Starting move away from hard stop.
-		BACKOFF_WAIT_TO_START,          ///< Waiting for backoff move to begin.
-		BACKOFF_MOVING,                 ///< Executing backoff move.
-		SLOW_SEARCH_START,              ///< Starting slow-speed move to find precise stop.
-		SLOW_SEARCH_WAIT_TO_START,      ///< Waiting for slow move to begin.
-		SLOW_SEARCH_MOVING,             ///< Executing slow-speed move and monitoring for torque limit.
-		SET_OFFSET_START,               ///< Not used in this implementation.
-		SET_OFFSET_WAIT_TO_START,       ///< Not used in this implementation.
-		SET_OFFSET_MOVING,              ///< Not used in this implementation.
-		SET_ZERO,                       ///< Setting the final position as the logical zero.
+        HOMING_PHASE_IDLE,              ///< Homing is not active.
+        // Rapid approach - both axes move toward home, stop individually on sensor trigger
+        RAPID_APPROACH_START,           ///< Starting rapid approach move toward home sensors.
+        RAPID_APPROACH_WAIT_TO_START,   ///< Waiting for rapid move to begin.
+        RAPID_APPROACH_MOVING,          ///< Executing rapid move, monitoring sensors independently.
+        // Backoff - both axes back off together after sensor trigger
+        BACKOFF_START,                  ///< Starting backoff move away from sensors.
+        BACKOFF_WAIT_TO_START,          ///< Waiting for backoff move to begin.
+        BACKOFF_MOVING,                 ///< Executing backoff move.
+        // Slow approach - both axes move slowly, stop individually on sensor trigger
+        SLOW_APPROACH_START,            ///< Starting slow approach for precision homing.
+        SLOW_APPROACH_WAIT_TO_START,    ///< Waiting for slow move to begin.
+        SLOW_APPROACH_MOVING,           ///< Executing slow move, monitoring sensors independently.
+        // Final backoff and set zero
+        FINAL_BACKOFF_START,            ///< Starting final backoff to offset position.
+        FINAL_BACKOFF_WAIT_TO_START,    ///< Waiting for final backoff to begin.
+        FINAL_BACKOFF_MOVING,           ///< Executing final backoff move.
+        SET_ZERO,                       ///< Setting the final position as the logical zero.
         HOMING_PHASE_ERROR              ///< Homing sequence failed.
-	} HomingPhase;
+    } HomingPhase;
     HomingPhase m_homingPhase; ///< The current phase of an active homing sequence.
 
     MoveState m_moveState;             ///< The current state of a move operation.
@@ -329,6 +387,27 @@ private:
     bool m_retractDone;                ///< Flag indicating if retract position has been set.
     bool m_pausedMessageSent;          ///< Flag to prevent spamming "paused" messages.
     uint32_t m_homingStartTime;        ///< Timestamp (ms) when the homing sequence started, used for timeout.
+    
+    /**
+     * @name Gantry Squaring Homing Variables
+     * @brief Variables for independent axis tracking during gantry squaring homing.
+     * @{
+     */
+    bool m_axisAHomeSensorTriggered;   ///< M0 home sensor has been triggered in current phase.
+    bool m_axisBHomeSensorTriggered;   ///< M1 home sensor has been triggered in current phase.
+    bool m_axisAStopped;               ///< M0 has been stopped in current homing phase.
+    bool m_axisBStopped;               ///< M1 has been stopped in current homing phase.
+    bool m_homeSensorsInitialized;     ///< Flag indicating home sensors have been configured.
+    /** @} */
+    
+    /**
+     * @name Non-Blocking Enable State Variables
+     * @{
+     */
+    EnableState m_enableState;         ///< Current state of the non-blocking enable operation.
+    uint32_t m_enableStartTime;        ///< Timestamp (ms) when enable was requested.
+    /** @} */
+    
     bool m_isEnabled;                  ///< Flag indicating if motors are currently enabled.
     float m_torqueLimit;               ///< Current torque limit (%) for detecting hard stops or stalls.
     float m_torqueOffset;              ///< User-configurable offset (%) for torque readings to account for bias.

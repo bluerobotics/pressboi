@@ -41,6 +41,8 @@
 #define TELEM_KEY_PRESS_THRESHOLD                "press_threshold"  ///< Force threshold (kg) for energy/startpoint recording
 #define TELEM_KEY_TORQUE_AVG                     "torque_avg"  ///< Average motor torque percentage
 #define TELEM_KEY_HOMED                          "homed"  ///< Indicates if press has been homed to zero position
+#define TELEM_KEY_HOME_SENSOR_M0                 "home_sensor_m0"  ///< Motor A (M0) home sensor state (DI7)
+#define TELEM_KEY_HOME_SENSOR_M1                 "home_sensor_m1"  ///< Motor B (M1) home sensor state (DI6)
 /** @} */
 
 //==================================================================================================
@@ -70,6 +72,8 @@ typedef struct {
     float        press_threshold               ; ///< Force threshold (kg) for energy/startpoint recording
     float        torque_avg                    ; ///< Average motor torque percentage
     int32_t      homed                         ; ///< Indicates if press has been homed to zero position
+    int32_t      home_sensor_m0                ; ///< Motor A (M0) home sensor state (DI7)
+    int32_t      home_sensor_m1                ; ///< Motor B (M1) home sensor state (DI6)
 } TelemetryData;
 
 //==================================================================================================

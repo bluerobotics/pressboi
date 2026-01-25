@@ -38,6 +38,8 @@ void telemetry_init(TelemetryData* data) {
     data->press_threshold = 2.0f;  // Default 2 kg
     data->torque_avg = 0.0f;
     data->homed = 0;
+    data->home_sensor_m0 = 0;
+    data->home_sensor_m1 = 0;
 }
 
 //==================================================================================================
@@ -134,7 +136,17 @@ int telemetry_build_message(const TelemetryData* data, char* buffer, size_t buff
     
     // homed
     if (pos < buffer_size) {
-        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%ld", TELEM_KEY_HOMED, (long)data->homed);
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%ld,", TELEM_KEY_HOMED, (long)data->homed);
+    }
+    
+    // home_sensor_m0
+    if (pos < buffer_size) {
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%ld,", TELEM_KEY_HOME_SENSOR_M0, (long)data->home_sensor_m0);
+    }
+    
+    // home_sensor_m1
+    if (pos < buffer_size) {
+        pos += snprintf(buffer + pos, buffer_size - pos, "%s:%ld", TELEM_KEY_HOME_SENSOR_M1, (long)data->home_sensor_m1);
     }
     
     return (int)pos;

@@ -73,6 +73,13 @@
 // --- Motors ---
 #define MOTOR_A                         ConnectorM0 ///< Primary press motor.
 #define MOTOR_B                         ConnectorM1 ///< Secondary, ganged press motor.
+
+// --- Home Sensors (Hall Effect) ---
+// Sensor PN: 326161-0053
+#define HOME_SENSOR_M0                  ConnectorDI7 ///< Motor A (M0) home sensor on DI7.
+#define HOME_SENSOR_M1                  ConnectorDI6 ///< Motor B (M1) home sensor on DI6.
+#define HOME_SENSOR_ACTIVE_STATE        true         ///< true = sensor outputs HIGH when triggered (active high).
+#define HOME_SENSOR_FILTER_MS           2            ///< Debounce filter length in milliseconds for home sensors.
 /** @} */
 
 //==================================================================================================

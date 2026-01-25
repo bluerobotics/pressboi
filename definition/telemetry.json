@@ -133,5 +133,25 @@
         },
         "help": "Indicates if press has been homed to zero position",
         "gui_var": "pressboi_homed_var"
+    },
+    "home_sensor_m0": {
+        "type": "int",
+        "default": 0,
+        "map": {
+            "0": "inactive",
+            "1": "active"
+        },
+        "help": "Motor A (M0) home sensor state (DI7)",
+        "gui_var": "pressboi_home_sensor_m0_var"
+    },
+    "home_sensor_m1": {
+        "type": "int",
+        "default": 0,
+        "map": {
+            "0": "inactive",
+            "1": "active"
+        },
+        "help": "Motor B (M1) home sensor state (DI6)",
+        "gui_var": "pressboi_home_sensor_m1_var"
     }
 }
