@@ -1,0 +1,8 @@
+"Comment","Designator","Footprint","JLCPCB Part #"
+"0805B102K102CT","C1","BR_Passives:C_0805_2012Metric-minimized","C303890"
+"DB125-2.54-4P-GN-S","J1","BR_Connectors:DB125-2.54-4P-GN-S","C918122"
+"KF128-2.54-2P","J2","BR_Connectors:KF128-2.54-2P","C474920"
+"RC02015","J3","BR_Connectors:RJ45-SMD_8P-P1.27_RC02015","C708654"
+"HB-PH3-25415PB2GOP","J4, J5","BR_Connectors:Pin_Header_1x5_2.54mm_Vertical","C6332198"
+"PZ254V-11-02P","J6, J8","BR_Connectors:PinHeader_1x02_P2.54mm_Vertical","C492401"
+"PZ2.54-1X6P-H25","J7, J9","BR_Connectors:PinHeader_1x06_P2.54mm_Vertical","C42431790"

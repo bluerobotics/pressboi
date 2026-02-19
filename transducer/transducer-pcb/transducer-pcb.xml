@@ -1,0 +1,735 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="E">
+  <design>
+    <source>C:\Users\zx100\Documents\GitHub\pressboi\transducer\transducer-pcb\transducer-pcb.kicad_sch</source>
+    <date>2026-02-18T17:36:04-0800</date>
+    <tool>Eeschema 9.0.7</tool>
+    <textvar name="PCBA_BR_REVISION">A</textvar>
+    <textvar name="PCBA_BR_TAB_NUMBER">002</textvar>
+    <textvar name="PCB_BR_BASE_NUMBER">103935</textvar>
+    <textvar name="PCB_BR_REVISION">A</textvar>
+    <textvar name="SCALE">1</textvar>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>transducer-pcb.kicad_sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="C1">
+      <value>1nF 1kV</value>
+      <footprint>BR_Passives:C_0805_2012Metric-minimized</footprint>
+      <datasheet>https://www.mouser.com/datasheet/2/210/Middle_and_High_Voltage_DS-1535659.pdf</datasheet>
+      <description>1nF 1kV X7R 10% Ceramic Capacitor 0805</description>
+      <fields>
+        <field name="Manufacturer">Walsin Tech Corp</field>
+        <field name="Manufacturer Part Num">0805B102K102CT</field>
+        <field name="BRE Number">BRE-000048</field>
+        <field name="Supplier 1">DigiKey</field>
+        <field name="Supplier Part Num 1">1292-0805B102K102CT-ND</field>
+        <field name="Supplier 2">Mouser</field>
+        <field name="Supplier Part Num 2">791-0805B102K102CT</field>
+        <field name="Supplier 3">JLCPCB</field>
+        <field name="Supplier Part Num 3">C303890</field>
+        <field name="JLCPCB Part Num">C303890</field>
+        <field name="Footprint">BR_Passives:C_0805_2012Metric-minimized</field>
+        <field name="Datasheet">https://www.mouser.com/datasheet/2/210/Middle_and_High_Voltage_DS-1535659.pdf</field>
+        <field name="Description">1nF 1kV X7R 10% Ceramic Capacitor 0805</field>
+      </fields>
+      <libsource lib="BR_Capacitors_0805" part="C_0805_1nF_1kV_X7R_10%" description="1nF 1kV X7R 10% Ceramic Capacitor 0805"/>
+      <property name="Manufacturer" value="Walsin Tech Corp"/>
+      <property name="Manufacturer Part Num" value="0805B102K102CT"/>
+      <property name="BRE Number" value="BRE-000048"/>
+      <property name="Supplier 1" value="DigiKey"/>
+      <property name="Supplier Part Num 1" value="1292-0805B102K102CT-ND"/>
+      <property name="Supplier 2" value="Mouser"/>
+      <property name="Supplier Part Num 2" value="791-0805B102K102CT"/>
+      <property name="Supplier 3" value="JLCPCB"/>
+      <property name="Supplier Part Num 3" value="C303890"/>
+      <property name="JLCPCB Part Num" value="C303890"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="capacitor cap"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>b94031f0-31e6-4f15-bbbd-57b91bb04cdf</tstamps>
+    </comp>
+    <comp ref="GL101">
+      <value>~</value>
+      <footprint>BR_Virtual_Parts:JLC_Number</footprint>
+      <datasheet>https://jlcpcb.com/help/article/How-to-remove-order-number-from-your-PCB</datasheet>
+      <description>Footprint for JLC's batch number marking system</description>
+      <fields>
+        <field name="Footprint">BR_Virtual_Parts:JLC_Number</field>
+        <field name="Datasheet">https://jlcpcb.com/help/article/How-to-remove-order-number-from-your-PCB</field>
+        <field name="Description">Footprint for JLC's batch number marking system</field>
+      </fields>
+      <libsource lib="BR_Virtual_Parts" part="JLC_Number" description="Footprint for JLC's batch number marking system"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="JLC Number"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e29bf312-33d0-4de2-b110-82061d5fcafc</tstamps>
+    </comp>
+    <comp ref="GL102">
+      <value>~</value>
+      <footprint>BR_Virtual_Parts:BR_Logo</footprint>
+      <fields>
+        <field name="Footprint">BR_Virtual_Parts:BR_Logo</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+      <libsource lib="BR_Virtual_Parts" part="BR_Logo" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="exclude_from_bom"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f15bdb54-3e34-477b-8f41-30dde671f3cc</tstamps>
+    </comp>
+    <comp ref="H1">
+      <value>Pressfit_5.15mm_hole</value>
+      <footprint>BR_Virtual_Parts:PressFit_5.15mm_hole</footprint>
+      <datasheet>~</datasheet>
+      <description>Pressfit_5.15mm_hole</description>
+      <fields>
+        <field name="Manufacturer">~</field>
+        <field name="Manufacturer Part Num">~</field>
+        <field name="Supplier 1">~</field>
+        <field name="Supplier Part Num 1">~</field>
+        <field name="Supplier 2">~</field>
+        <field name="Supplier Part Num 2">~</field>
+        <field name="Footprint">BR_Virtual_Parts:PressFit_5.15mm_hole</field>
+        <field name="Datasheet">~</field>
+        <field name="Description">Pressfit_5.15mm_hole</field>
+      </fields>
+      <libsource lib="BR_Virtual_Parts" part="Pressfit_5.15mm_hole" description="Pressfit_5.15mm_hole"/>
+      <property name="Manufacturer" value="~"/>
+      <property name="Manufacturer Part Num" value="~"/>
+      <property name="Supplier 1" value="~"/>
+      <property name="Supplier Part Num 1" value="~"/>
+      <property name="Supplier 2" value="~"/>
+      <property name="Supplier Part Num 2" value="~"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="exclude_from_bom"/>
+      <property name="ki_keywords" value="hole"/>
+      <property name="ki_fp_filters" value="*NTC* *Thermistor* PIN?ARRAY* bornier* *Terminal?Block* R_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>47c79ea0-6639-481a-88c9-70ebbfb3f74d</tstamps>
+    </comp>
+    <comp ref="H2">
+      <value>Pressfit_5.15mm_hole</value>
+      <footprint>BR_Virtual_Parts:PressFit_5.15mm_hole</footprint>
+      <datasheet>~</datasheet>
+      <description>Pressfit_5.15mm_hole</description>
+      <fields>
+        <field name="Manufacturer">~</field>
+        <field name="Manufacturer Part Num">~</field>
+        <field name="Supplier 1">~</field>
+        <field name="Supplier Part Num 1">~</field>
+        <field name="Supplier 2">~</field>
+        <field name="Supplier Part Num 2">~</field>
+        <field name="Footprint">BR_Virtual_Parts:PressFit_5.15mm_hole</field>
+        <field name="Datasheet">~</field>
+        <field name="Description">Pressfit_5.15mm_hole</field>
+      </fields>
+      <libsource lib="BR_Virtual_Parts" part="Pressfit_5.15mm_hole" description="Pressfit_5.15mm_hole"/>
+      <property name="Manufacturer" value="~"/>
+      <property name="Manufacturer Part Num" value="~"/>
+      <property name="Supplier 1" value="~"/>
+      <property name="Supplier Part Num 1" value="~"/>
+      <property name="Supplier 2" value="~"/>
+      <property name="Supplier Part Num 2" value="~"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="exclude_from_bom"/>
+      <property name="ki_keywords" value="hole"/>
+      <property name="ki_fp_filters" value="*NTC* *Thermistor* PIN?ARRAY* bornier* *Terminal?Block* R_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>cfc7d15e-8cf4-4c2f-82f4-c727c1f493bc</tstamps>
+    </comp>
+    <comp ref="J1">
+      <value>Load Cell</value>
+      <footprint>BR_Connectors:DB125-2.54-4P-GN-S</footprint>
+      <datasheet>https://lcsc.com/datasheet/lcsc_datasheet_2301061530_DORABO-DB125-2-54-4P-GN-S_C918122.pdf</datasheet>
+      <description>1x4P 7A 150V 2.54mm Screw Terminal Through Hole</description>
+      <fields>
+        <field name="Manufacturer">DORABO</field>
+        <field name="Manufacturer Part Num">DB125-2.54-4P-GN-S</field>
+        <field name="BRE Number">BRE-001269</field>
+        <field name="JLCPCB Part Num">C918122</field>
+        <field name="Footprint">BR_Connectors:DB125-2.54-4P-GN-S</field>
+        <field name="Datasheet">https://lcsc.com/datasheet/lcsc_datasheet_2301061530_DORABO-DB125-2-54-4P-GN-S_C918122.pdf</field>
+        <field name="Description">1x4P 7A 150V 2.54mm Screw Terminal Through Hole</field>
+      </fields>
+      <libsource lib="BR_Connectors" part="DB125-2.54-4P-GN-S" description="1x4P 7A 150V 2.54mm Screw Terminal Through Hole"/>
+      <property name="Manufacturer" value="DORABO"/>
+      <property name="Manufacturer Part Num" value="DB125-2.54-4P-GN-S"/>
+      <property name="BRE Number" value="BRE-001269"/>
+      <property name="JLCPCB Part Num" value="C918122"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>115f3d8f-fbd4-4f3f-a561-ef65dbb850ec</tstamps>
+    </comp>
+    <comp ref="J2">
+      <value>Sheild</value>
+      <footprint>BR_Connectors:KF128-2.54-2P</footprint>
+      <datasheet>https://www.lcsc.com/datasheet/C474920.pdf</datasheet>
+      <description>1x2P 8A 130V 2.54mm Screw Terminal Through Hole</description>
+      <fields>
+        <field name="Manufacturer">Cixi Kefa Elec</field>
+        <field name="Manufacturer Part Num">KF128-2.54-2P</field>
+        <field name="BRE Number">BRE-001271</field>
+        <field name="JLCPCB Part Num">C474920</field>
+        <field name="Footprint">BR_Connectors:KF128-2.54-2P</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/C474920.pdf</field>
+        <field name="Description">1x2P 8A 130V 2.54mm Screw Terminal Through Hole</field>
+      </fields>
+      <libsource lib="BR_Connectors" part="KF128-2.54-2P" description="1x2P 8A 130V 2.54mm Screw Terminal Through Hole"/>
+      <property name="Manufacturer" value="Cixi Kefa Elec"/>
+      <property name="Manufacturer Part Num" value="KF128-2.54-2P"/>
+      <property name="BRE Number" value="BRE-001271"/>
+      <property name="JLCPCB Part Num" value="C474920"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1106a7f5-3057-4b19-afd5-4f59bfb94fc8</tstamps>
+    </comp>
+    <comp ref="J3">
+      <value>RJ45</value>
+      <footprint>BR_Connectors:RJ45-SMD_8P-P1.27_RC02015</footprint>
+      <datasheet>https://www.lcsc.com/datasheet/C708654.pdf</datasheet>
+      <description>RJ45 Receptacle Connector, Without LEDs, Unshielded</description>
+      <fields>
+        <field name="Manufacturer">RCH</field>
+        <field name="Manufacturer Part Num">RC02015</field>
+        <field name="BRE Number">BRE-001364</field>
+        <field name="LCSC Part">C708654</field>
+        <field name="JLCPCB Part Num">C708654</field>
+        <field name="Footprint">BR_Connectors:RJ45-SMD_8P-P1.27_RC02015</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/C708654.pdf</field>
+        <field name="Description">RJ45 Receptacle Connector, Without LEDs, Unshielded</field>
+      </fields>
+      <libsource lib="BR_Connectors" part="RC02015" description="RJ45 Receptacle Connector, Without LEDs, Unshielded"/>
+      <property name="Manufacturer" value="RCH"/>
+      <property name="Manufacturer Part Num" value="RC02015"/>
+      <property name="BRE Number" value="BRE-001364"/>
+      <property name="LCSC Part" value="C708654"/>
+      <property name="JLCPCB Part Num" value="C708654"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a804069d-a9eb-42ff-ac0e-21f248b0683b</tstamps>
+    </comp>
+    <comp ref="J4">
+      <value>AMP RIGHT</value>
+      <footprint>BR_Connectors:Pin_Header_1x5_2.54mm_Vertical</footprint>
+      <datasheet>https://www.lcsc.com/datasheet/lcsc_datasheet_2312301326_Hanbo-Electronic-HB-PH3-25415PB2GOP_C6332198.pdf</datasheet>
+      <description>Header Pin Connector 01x05 2.54mm (0.100") Vertical PTH</description>
+      <fields>
+        <field name="Manufacturer">Hanbo Electronic</field>
+        <field name="Manufacturer Part Num">HB-PH3-25415PB2GOP</field>
+        <field name="BRE Number">BRE-001029</field>
+        <field name="JLCPCB Part Num">C6332198</field>
+        <field name="Footprint">BR_Connectors:Pin_Header_1x5_2.54mm_Vertical</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/lcsc_datasheet_2312301326_Hanbo-Electronic-HB-PH3-25415PB2GOP_C6332198.pdf</field>
+        <field name="Description">Header Pin Connector 01x05 2.54mm (0.100") Vertical PTH</field>
+      </fields>
+      <libsource lib="BR_Connectors_Header" part="Header_Pin_01x05_2.54mm_Vert_PTH" description="Header Pin Connector 01x05 2.54mm (0.100&quot;) Vertical PTH"/>
+      <property name="Manufacturer" value="Hanbo Electronic"/>
+      <property name="Manufacturer Part Num" value="HB-PH3-25415PB2GOP"/>
+      <property name="BRE Number" value="BRE-001029"/>
+      <property name="JLCPCB Part Num" value="C6332198"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>6e94c1d6-2a00-4012-a91c-bb6e0ed6217e</tstamps>
+    </comp>
+    <comp ref="J5">
+      <value>AMP LEFT</value>
+      <footprint>BR_Connectors:Pin_Header_1x5_2.54mm_Vertical</footprint>
+      <datasheet>https://www.lcsc.com/datasheet/lcsc_datasheet_2312301326_Hanbo-Electronic-HB-PH3-25415PB2GOP_C6332198.pdf</datasheet>
+      <description>Header Pin Connector 01x05 2.54mm (0.100") Vertical PTH</description>
+      <fields>
+        <field name="Manufacturer">Hanbo Electronic</field>
+        <field name="Manufacturer Part Num">HB-PH3-25415PB2GOP</field>
+        <field name="BRE Number">BRE-001029</field>
+        <field name="JLCPCB Part Num">C6332198</field>
+        <field name="Footprint">BR_Connectors:Pin_Header_1x5_2.54mm_Vertical</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/lcsc_datasheet_2312301326_Hanbo-Electronic-HB-PH3-25415PB2GOP_C6332198.pdf</field>
+        <field name="Description">Header Pin Connector 01x05 2.54mm (0.100") Vertical PTH</field>
+      </fields>
+      <libsource lib="BR_Connectors_Header" part="Header_Pin_01x05_2.54mm_Vert_PTH" description="Header Pin Connector 01x05 2.54mm (0.100&quot;) Vertical PTH"/>
+      <property name="Manufacturer" value="Hanbo Electronic"/>
+      <property name="Manufacturer Part Num" value="HB-PH3-25415PB2GOP"/>
+      <property name="BRE Number" value="BRE-001029"/>
+      <property name="JLCPCB Part Num" value="C6332198"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>41bb609d-840f-4110-954f-1e4f24222739</tstamps>
+    </comp>
+    <comp ref="J6">
+      <value>NANO UR</value>
+      <footprint>BR_Connectors:PinHeader_1x02_P2.54mm_Vertical</footprint>
+      <datasheet>https://lcsc.com/datasheet/lcsc_datasheet_2409302300_XFCN-PZ254V-11-02P_C492401.pdf</datasheet>
+      <description>Header Pin 2P 01x02P 2.54mm Pitch Vertical Through Hole 3A</description>
+      <fields>
+        <field name="Manufacturer">XFCN</field>
+        <field name="Manufacturer Part Num">PZ254V-11-02P</field>
+        <field name="BRE Number">BRE-001259</field>
+        <field name="JLCPCB Part Num">C492401</field>
+        <field name="Footprint">BR_Connectors:PinHeader_1x02_P2.54mm_Vertical</field>
+        <field name="Datasheet">https://lcsc.com/datasheet/lcsc_datasheet_2409302300_XFCN-PZ254V-11-02P_C492401.pdf</field>
+        <field name="Description">Header Pin 2P 01x02P 2.54mm Pitch Vertical Through Hole 3A</field>
+      </fields>
+      <libsource lib="BR_Connectors_Header" part="Header_Pin_01x02_2.54mm_Vert_PTH" description="Header Pin 2P 01x02P 2.54mm Pitch Vertical Through Hole 3A"/>
+      <property name="Manufacturer" value="XFCN"/>
+      <property name="Manufacturer Part Num" value="PZ254V-11-02P"/>
+      <property name="BRE Number" value="BRE-001259"/>
+      <property name="JLCPCB Part Num" value="C492401"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>35c0029d-a44c-4d6c-b9a1-c87276f9b683</tstamps>
+    </comp>
+    <comp ref="J7">
+      <value>NANO LR</value>
+      <footprint>BR_Connectors:PinHeader_1x06_P2.54mm_Vertical</footprint>
+      <datasheet>https://www.lcsc.com/datasheet/C42431790.pdf</datasheet>
+      <description>Header Pin Connector 01x06 2.54mm (0.100") Vertical PTH</description>
+      <fields>
+        <field name="Manufacturer">JXTCONN</field>
+        <field name="Manufacturer Part Num">PZ2.54-1X6P-H25</field>
+        <field name="BRE Number"> BRE-001332</field>
+        <field name="JLCPCB Part Num">C42431790</field>
+        <field name="Footprint">BR_Connectors:PinHeader_1x06_P2.54mm_Vertical</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/C42431790.pdf</field>
+        <field name="Description">Header Pin Connector 01x06 2.54mm (0.100") Vertical PTH</field>
+      </fields>
+      <libsource lib="BR_Connectors_Header" part="Header_Pin_01x06_2.54mm_Vert_PTH" description="Header Pin Connector 01x06 2.54mm (0.100&quot;) Vertical PTH"/>
+      <property name="Manufacturer" value="JXTCONN"/>
+      <property name="Manufacturer Part Num" value="PZ2.54-1X6P-H25"/>
+      <property name="BRE Number" value=" BRE-001332"/>
+      <property name="JLCPCB Part Num" value="C42431790"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>23da9780-64d6-464d-ac37-e00271c24d02</tstamps>
+    </comp>
+    <comp ref="J8">
+      <value>NANO UL</value>
+      <footprint>BR_Connectors:PinHeader_1x02_P2.54mm_Vertical</footprint>
+      <datasheet>https://lcsc.com/datasheet/lcsc_datasheet_2409302300_XFCN-PZ254V-11-02P_C492401.pdf</datasheet>
+      <description>Header Pin 2P 01x02P 2.54mm Pitch Vertical Through Hole 3A</description>
+      <fields>
+        <field name="Manufacturer">XFCN</field>
+        <field name="Manufacturer Part Num">PZ254V-11-02P</field>
+        <field name="BRE Number">BRE-001259</field>
+        <field name="JLCPCB Part Num">C492401</field>
+        <field name="Footprint">BR_Connectors:PinHeader_1x02_P2.54mm_Vertical</field>
+        <field name="Datasheet">https://lcsc.com/datasheet/lcsc_datasheet_2409302300_XFCN-PZ254V-11-02P_C492401.pdf</field>
+        <field name="Description">Header Pin 2P 01x02P 2.54mm Pitch Vertical Through Hole 3A</field>
+      </fields>
+      <libsource lib="BR_Connectors_Header" part="Header_Pin_01x02_2.54mm_Vert_PTH" description="Header Pin 2P 01x02P 2.54mm Pitch Vertical Through Hole 3A"/>
+      <property name="Manufacturer" value="XFCN"/>
+      <property name="Manufacturer Part Num" value="PZ254V-11-02P"/>
+      <property name="BRE Number" value="BRE-001259"/>
+      <property name="JLCPCB Part Num" value="C492401"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f038a75b-61bf-4bac-b2f0-d9c5f9e7da9e</tstamps>
+    </comp>
+    <comp ref="J9">
+      <value>NANO LL</value>
+      <footprint>BR_Connectors:PinHeader_1x06_P2.54mm_Vertical</footprint>
+      <datasheet>https://www.lcsc.com/datasheet/C42431790.pdf</datasheet>
+      <description>Header Pin Connector 01x06 2.54mm (0.100") Vertical PTH</description>
+      <fields>
+        <field name="Manufacturer">JXTCONN</field>
+        <field name="Manufacturer Part Num">PZ2.54-1X6P-H25</field>
+        <field name="BRE Number"> BRE-001332</field>
+        <field name="JLCPCB Part Num">C42431790</field>
+        <field name="Footprint">BR_Connectors:PinHeader_1x06_P2.54mm_Vertical</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/C42431790.pdf</field>
+        <field name="Description">Header Pin Connector 01x06 2.54mm (0.100") Vertical PTH</field>
+      </fields>
+      <libsource lib="BR_Connectors_Header" part="Header_Pin_01x06_2.54mm_Vert_PTH" description="Header Pin Connector 01x06 2.54mm (0.100&quot;) Vertical PTH"/>
+      <property name="Manufacturer" value="JXTCONN"/>
+      <property name="Manufacturer Part Num" value="PZ2.54-1X6P-H25"/>
+      <property name="BRE Number" value=" BRE-001332"/>
+      <property name="JLCPCB Part Num" value="C42431790"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>0830a78d-392f-458d-a044-0a5d9ffecce4</tstamps>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="BR_Capacitors_0805" part="C_0805_1nF_1kV_X7R_10%">
+      <description>1nF 1kV X7R 10% Ceramic Capacitor 0805</description>
+      <docs>https://www.mouser.com/datasheet/2/210/Middle_and_High_Voltage_DS-1535659.pdf</docs>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">1nF 1kV</field>
+        <field name="Footprint">BR_Passives:C_0805_2012Metric-minimized</field>
+        <field name="Datasheet">https://www.mouser.com/datasheet/2/210/Middle_and_High_Voltage_DS-1535659.pdf</field>
+        <field name="Description">1nF 1kV X7R 10% Ceramic Capacitor 0805</field>
+        <field name="Manufacturer">Walsin Tech Corp</field>
+        <field name="Manufacturer Part Num">0805B102K102CT</field>
+        <field name="BRE Number">BRE-000048</field>
+        <field name="Supplier 1">DigiKey</field>
+        <field name="Supplier Part Num 1">1292-0805B102K102CT-ND</field>
+        <field name="Supplier 2">Mouser</field>
+        <field name="Supplier Part Num 2">791-0805B102K102CT</field>
+        <field name="Supplier 3">JLCPCB</field>
+        <field name="Supplier Part Num 3">C303890</field>
+        <field name="JLCPCB Part Num">C303890</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="BR_Connectors" part="DB125-2.54-4P-GN-S">
+      <description>1x4P 7A 150V 2.54mm Screw Terminal Through Hole</description>
+      <docs>https://lcsc.com/datasheet/lcsc_datasheet_2301061530_DORABO-DB125-2-54-4P-GN-S_C918122.pdf</docs>
+      <footprints>
+        <fp>TerminalBlock*:*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">LABEL</field>
+        <field name="Footprint">BR_Connectors:DB125-2.54-4P-GN-S</field>
+        <field name="Datasheet">https://lcsc.com/datasheet/lcsc_datasheet_2301061530_DORABO-DB125-2-54-4P-GN-S_C918122.pdf</field>
+        <field name="Description">1x4P 7A 150V 2.54mm Screw Terminal Through Hole</field>
+        <field name="Manufacturer">DORABO</field>
+        <field name="Manufacturer Part Num">DB125-2.54-4P-GN-S</field>
+        <field name="BRE Number">BRE-001269</field>
+        <field name="JLCPCB Part Num">C918122</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="BR_Connectors" part="KF128-2.54-2P">
+      <description>1x2P 8A 130V 2.54mm Screw Terminal Through Hole</description>
+      <docs>https://www.lcsc.com/datasheet/C474920.pdf</docs>
+      <footprints>
+        <fp>TerminalBlock*:*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">LABEL</field>
+        <field name="Footprint">BR_Connectors:KF128-2.54-2P</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/C474920.pdf</field>
+        <field name="Description">1x2P 8A 130V 2.54mm Screw Terminal Through Hole</field>
+        <field name="Manufacturer">Cixi Kefa Elec</field>
+        <field name="Manufacturer Part Num">KF128-2.54-2P</field>
+        <field name="BRE Number">BRE-001271</field>
+        <field name="JLCPCB Part Num">C474920</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="BR_Connectors" part="RC02015">
+      <description>RJ45 Receptacle Connector, Without LEDs, Unshielded</description>
+      <docs>https://www.lcsc.com/datasheet/C708654.pdf</docs>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">RJ45</field>
+        <field name="Footprint">BR_Connectors:RJ45-SMD_8P-P1.27_RC02015</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/C708654.pdf</field>
+        <field name="Description">RJ45 Receptacle Connector, Without LEDs, Unshielded</field>
+        <field name="Manufacturer">RCH</field>
+        <field name="Manufacturer Part Num">RC02015</field>
+        <field name="BRE Number">BRE-001364</field>
+        <field name="LCSC Part">C708654</field>
+        <field name="JLCPCB Part Num">C708654</field>
+      </fields>
+      <pins>
+        <pin num="0" name="" type="passive"/>
+        <pin num="1" name="A_P" type="passive"/>
+        <pin num="2" name="A_N" type="passive"/>
+        <pin num="3" name="B_P" type="passive"/>
+        <pin num="4" name="C_P" type="passive"/>
+        <pin num="5" name="C_N" type="passive"/>
+        <pin num="6" name="B_N" type="passive"/>
+        <pin num="7" name="D_P" type="passive"/>
+        <pin num="8" name="D_N" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="BR_Connectors_Header" part="Header_Pin_01x02_2.54mm_Vert_PTH">
+      <description>Header Pin 2P 01x02P 2.54mm Pitch Vertical Through Hole 3A</description>
+      <docs>https://lcsc.com/datasheet/lcsc_datasheet_2409302300_XFCN-PZ254V-11-02P_C492401.pdf</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">LABEL</field>
+        <field name="Footprint">BR_Connectors:PinHeader_1x02_P2.54mm_Vertical</field>
+        <field name="Datasheet">https://lcsc.com/datasheet/lcsc_datasheet_2409302300_XFCN-PZ254V-11-02P_C492401.pdf</field>
+        <field name="Description">Header Pin 2P 01x02P 2.54mm Pitch Vertical Through Hole 3A</field>
+        <field name="Manufacturer">XFCN</field>
+        <field name="Manufacturer Part Num">PZ254V-11-02P</field>
+        <field name="BRE Number">BRE-001259</field>
+        <field name="JLCPCB Part Num">C492401</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="BR_Connectors_Header" part="Header_Pin_01x05_2.54mm_Vert_PTH">
+      <description>Header Pin Connector 01x05 2.54mm (0.100") Vertical PTH</description>
+      <docs>https://www.lcsc.com/datasheet/lcsc_datasheet_2312301326_Hanbo-Electronic-HB-PH3-25415PB2GOP_C6332198.pdf</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">LABEL</field>
+        <field name="Footprint">BR_Connectors:Pin_Header_1x5_2.54mm_Vertical</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/lcsc_datasheet_2312301326_Hanbo-Electronic-HB-PH3-25415PB2GOP_C6332198.pdf</field>
+        <field name="Description">Header Pin Connector 01x05 2.54mm (0.100") Vertical PTH</field>
+        <field name="Manufacturer">Hanbo Electronic</field>
+        <field name="Manufacturer Part Num">HB-PH3-25415PB2GOP</field>
+        <field name="BRE Number">BRE-001029</field>
+        <field name="JLCPCB Part Num">C6332198</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+        <pin num="5" name="Pin_5" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="BR_Connectors_Header" part="Header_Pin_01x06_2.54mm_Vert_PTH">
+      <description>Header Pin Connector 01x06 2.54mm (0.100") Vertical PTH</description>
+      <docs>https://www.lcsc.com/datasheet/C42431790.pdf</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">LABEL</field>
+        <field name="Footprint">BR_Connectors:PinHeader_1x06_P2.54mm_Vertical</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/C42431790.pdf</field>
+        <field name="Description">Header Pin Connector 01x06 2.54mm (0.100") Vertical PTH</field>
+        <field name="Manufacturer">JXTCONN</field>
+        <field name="Manufacturer Part Num">PZ2.54-1X6P-H25</field>
+        <field name="BRE Number"> BRE-001332</field>
+        <field name="JLCPCB Part Num">C42431790</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+        <pin num="5" name="Pin_5" type="passive"/>
+        <pin num="6" name="Pin_6" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="BR_Virtual_Parts" part="BR_Logo">
+      <fields>
+        <field name="Reference">GL</field>
+        <field name="Value"/>
+        <field name="Footprint">BR_Virtual_Parts:BR_Logo</field>
+        <field name="Datasheet"/>
+        <field name="Description"/>
+      </fields>
+    </libpart>
+    <libpart lib="BR_Virtual_Parts" part="JLC_Number">
+      <description>Footprint for JLC's batch number marking system</description>
+      <docs>https://jlcpcb.com/help/article/How-to-remove-order-number-from-your-PCB</docs>
+      <fields>
+        <field name="Reference">GL</field>
+        <field name="Value"/>
+        <field name="Footprint">BR_Virtual_Parts:JLC_Number</field>
+        <field name="Datasheet">https://jlcpcb.com/help/article/How-to-remove-order-number-from-your-PCB</field>
+        <field name="Description">Footprint for JLC's batch number marking system</field>
+      </fields>
+    </libpart>
+    <libpart lib="BR_Virtual_Parts" part="Pressfit_5.15mm_hole">
+      <description>Pressfit_5.15mm_hole</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>*NTC*</fp>
+        <fp>*Thermistor*</fp>
+        <fp>PIN?ARRAY*</fp>
+        <fp>bornier*</fp>
+        <fp>*Terminal?Block*</fp>
+        <fp>R_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">H</field>
+        <field name="Value">Pressfit_5.15mm_hole</field>
+        <field name="Footprint">BR_Virtual_Parts:PressFit_5.15mm_hole</field>
+        <field name="Datasheet">~</field>
+        <field name="Description">Pressfit_5.15mm_hole</field>
+        <field name="Manufacturer">~</field>
+        <field name="Manufacturer Part Num">~</field>
+        <field name="Supplier 1">~</field>
+        <field name="Supplier Part Num 1">~</field>
+        <field name="Supplier 2">~</field>
+        <field name="Supplier Part Num 2">~</field>
+        <field name="Sim.Enable">0</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="BR_Capacitors_0805">
+      <uri>C:\Users\zx100\Documents\GitHub\br-kicad-lib\Symbols/BR_Capacitors_0805.kicad_sym</uri>
+    </library>
+    <library logical="BR_Connectors">
+      <uri>C:\Users\zx100\Documents\GitHub\br-kicad-lib\Symbols/BR_Connectors.kicad_sym</uri>
+    </library>
+    <library logical="BR_Connectors_Header">
+      <uri>C:\Users\zx100\Documents\GitHub\br-kicad-lib\Symbols/BR_Connectors_Header.kicad_sym</uri>
+    </library>
+    <library logical="BR_Virtual_Parts">
+      <uri>C:\Users\zx100\Documents\GitHub\br-kicad-lib\Symbols/BR_Virtual_Parts.kicad_sym</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="/5V" class="Default">
+      <node ref="J3" pin="6" pinfunction="B_N" pintype="passive"/>
+      <node ref="J4" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J4" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="J9" pin="3" pinfunction="Pin_3" pintype="passive"/>
+    </net>
+    <net code="2" name="/BLK" class="Default">
+      <node ref="J1" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="J5" pin="2" pinfunction="Pin_2" pintype="passive"/>
+    </net>
+    <net code="3" name="/CLK" class="Default">
+      <node ref="J4" pin="4" pinfunction="Pin_4" pintype="passive"/>
+      <node ref="J7" pin="2" pinfunction="Pin_2" pintype="passive"/>
+    </net>
+    <net code="4" name="/COM0RX" class="Default">
+      <node ref="J3" pin="8" pinfunction="D_N" pintype="passive"/>
+      <node ref="J7" pin="6" pinfunction="Pin_6" pintype="passive"/>
+    </net>
+    <net code="5" name="/COM0TX" class="Default">
+      <node ref="J3" pin="5" pinfunction="C_N" pintype="passive"/>
+      <node ref="J7" pin="5" pinfunction="Pin_5" pintype="passive"/>
+    </net>
+    <net code="6" name="/DATA" class="Default">
+      <node ref="J4" pin="3" pinfunction="Pin_3" pintype="passive"/>
+      <node ref="J7" pin="1" pinfunction="Pin_1" pintype="passive"/>
+    </net>
+    <net code="7" name="/GRN" class="Default">
+      <node ref="J1" pin="4" pinfunction="Pin_4" pintype="passive"/>
+      <node ref="J5" pin="4" pinfunction="Pin_4" pintype="passive"/>
+    </net>
+    <net code="8" name="/Red" class="Default">
+      <node ref="J1" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J5" pin="1" pinfunction="Pin_1" pintype="passive"/>
+    </net>
+    <net code="9" name="/WHT" class="Default">
+      <node ref="J1" pin="3" pinfunction="Pin_3" pintype="passive"/>
+      <node ref="J5" pin="3" pinfunction="Pin_3" pintype="passive"/>
+    </net>
+    <net code="10" name="/YLW/SHEILD" class="Default">
+      <node ref="C1" pin="1" pintype="passive"/>
+      <node ref="J2" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J5" pin="5" pinfunction="Pin_5" pintype="passive"/>
+    </net>
+    <net code="11" name="GND" class="Power">
+      <node ref="C1" pin="2" pintype="passive"/>
+      <node ref="J2" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="J3" pin="4" pinfunction="C_P" pintype="passive"/>
+      <node ref="J4" pin="5" pinfunction="Pin_5" pintype="passive"/>
+      <node ref="J7" pin="3" pinfunction="Pin_3" pintype="passive"/>
+      <node ref="J9" pin="5" pinfunction="Pin_5" pintype="passive"/>
+    </net>
+    <net code="12" name="unconnected-(H1-Pad1)" class="Default">
+      <node ref="H1" pin="1" pintype="passive"/>
+    </net>
+    <net code="13" name="unconnected-(H2-Pad1)" class="Default">
+      <node ref="H2" pin="1" pintype="passive"/>
+    </net>
+    <net code="14" name="unconnected-(J3-A_N-Pad2)" class="Default">
+      <node ref="J3" pin="2" pinfunction="A_N" pintype="passive+no_connect"/>
+    </net>
+    <net code="15" name="unconnected-(J3-A_P-Pad1)" class="Default">
+      <node ref="J3" pin="1" pinfunction="A_P" pintype="passive+no_connect"/>
+    </net>
+    <net code="16" name="unconnected-(J3-B_P-Pad3)" class="Default">
+      <node ref="J3" pin="3" pinfunction="B_P" pintype="passive+no_connect"/>
+    </net>
+    <net code="17" name="unconnected-(J3-D_P-Pad7)" class="Default">
+      <node ref="J3" pin="7" pinfunction="D_P" pintype="passive+no_connect"/>
+    </net>
+    <net code="18" name="unconnected-(J3-Pad0)" class="Default">
+      <node ref="J3" pin="0" pintype="passive+no_connect"/>
+    </net>
+    <net code="19" name="unconnected-(J6-Pin_1-Pad1)" class="Default">
+      <node ref="J6" pin="1" pinfunction="Pin_1" pintype="passive+no_connect"/>
+    </net>
+    <net code="20" name="unconnected-(J6-Pin_2-Pad2)" class="Default">
+      <node ref="J6" pin="2" pinfunction="Pin_2" pintype="passive+no_connect"/>
+    </net>
+    <net code="21" name="unconnected-(J7-Pin_4-Pad4)" class="Default">
+      <node ref="J7" pin="4" pinfunction="Pin_4" pintype="passive+no_connect"/>
+    </net>
+    <net code="22" name="unconnected-(J8-Pin_1-Pad1)" class="Default">
+      <node ref="J8" pin="1" pinfunction="Pin_1" pintype="passive+no_connect"/>
+    </net>
+    <net code="23" name="unconnected-(J8-Pin_2-Pad2)" class="Default">
+      <node ref="J8" pin="2" pinfunction="Pin_2" pintype="passive+no_connect"/>
+    </net>
+    <net code="24" name="unconnected-(J9-Pin_1-Pad1)" class="Default">
+      <node ref="J9" pin="1" pinfunction="Pin_1" pintype="passive+no_connect"/>
+    </net>
+    <net code="25" name="unconnected-(J9-Pin_2-Pad2)" class="Default">
+      <node ref="J9" pin="2" pinfunction="Pin_2" pintype="passive+no_connect"/>
+    </net>
+    <net code="26" name="unconnected-(J9-Pin_4-Pad4)" class="Default">
+      <node ref="J9" pin="4" pinfunction="Pin_4" pintype="passive+no_connect"/>
+    </net>
+    <net code="27" name="unconnected-(J9-Pin_6-Pad6)" class="Default">
+      <node ref="J9" pin="6" pinfunction="Pin_6" pintype="passive+no_connect"/>
+    </net>
+  </nets>
+</export>
