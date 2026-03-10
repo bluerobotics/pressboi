@@ -2,12 +2,12 @@
 <export version="E">
   <design>
     <source>C:\Users\zx100\Documents\GitHub\pressboi\transducer\transducer-pcb\transducer-pcb.kicad_sch</source>
-    <date>2026-02-18T17:36:04-0800</date>
+    <date>2026-02-23T16:28:30-0800</date>
     <tool>Eeschema 9.0.7</tool>
-    <textvar name="PCBA_BR_REVISION">A</textvar>
+    <textvar name="PCBA_BR_REVISION">B</textvar>
     <textvar name="PCBA_BR_TAB_NUMBER">002</textvar>
     <textvar name="PCB_BR_BASE_NUMBER">103935</textvar>
-    <textvar name="PCB_BR_REVISION">A</textvar>
+    <textvar name="PCB_BR_REVISION">B</textvar>
     <textvar name="SCALE">1</textvar>
     <sheet number="1" name="/" tstamps="/">
       <title_block>
@@ -394,6 +394,58 @@
       <sheetpath names="/" tstamps="/"/>
       <tstamps>0830a78d-392f-458d-a044-0a5d9ffecce4</tstamps>
     </comp>
+    <comp ref="J10">
+      <value>Thermocouple Board</value>
+      <footprint>BR_Connectors:Pin_Header_1x4_2.54mm_Vertical</footprint>
+      <datasheet>https://www.lcsc.com/datasheet/lcsc_datasheet_2409302232_XFCN-PZ254V-11-04P_C2691448.pdf</datasheet>
+      <description>Header Pin Connector 01x04 2.54mm (0.100") Vertical PTH</description>
+      <fields>
+        <field name="Manufacturer">XFCN</field>
+        <field name="Manufacturer Part Num">PZ254V-11-04P</field>
+        <field name="BRE Number">BRE-001042</field>
+        <field name="JLCPCB Part Num">C5116483</field>
+        <field name="Footprint">BR_Connectors:Pin_Header_1x4_2.54mm_Vertical</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/lcsc_datasheet_2409302232_XFCN-PZ254V-11-04P_C2691448.pdf</field>
+        <field name="Description">Header Pin Connector 01x04 2.54mm (0.100") Vertical PTH</field>
+      </fields>
+      <libsource lib="BR_Connectors_Header" part="Header_Pin_01x04_2.54mm_Vert_PTH" description="Header Pin Connector 01x04 2.54mm (0.100&quot;) Vertical PTH"/>
+      <property name="Manufacturer" value="XFCN"/>
+      <property name="Manufacturer Part Num" value="PZ254V-11-04P"/>
+      <property name="BRE Number" value="BRE-001042"/>
+      <property name="JLCPCB Part Num" value="C5116483"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="connector"/>
+      <property name="ki_fp_filters" value="Connector*:*_1x??_*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>2849fcfb-5bf8-4d59-a8b7-c4742ffdef42</tstamps>
+    </comp>
+    <comp ref="J11">
+      <value>Thermocouple Out</value>
+      <footprint>BR_Connectors:KF128-2.54-2P</footprint>
+      <datasheet>https://www.lcsc.com/datasheet/C474920.pdf</datasheet>
+      <description>1x2P 8A 130V 2.54mm Screw Terminal Through Hole</description>
+      <fields>
+        <field name="Manufacturer">Cixi Kefa Elec</field>
+        <field name="Manufacturer Part Num">KF128-2.54-2P</field>
+        <field name="BRE Number">BRE-001271</field>
+        <field name="JLCPCB Part Num">C474920</field>
+        <field name="Footprint">BR_Connectors:KF128-2.54-2P</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/C474920.pdf</field>
+        <field name="Description">1x2P 8A 130V 2.54mm Screw Terminal Through Hole</field>
+      </fields>
+      <libsource lib="BR_Connectors" part="KF128-2.54-2P" description="1x2P 8A 130V 2.54mm Screw Terminal Through Hole"/>
+      <property name="Manufacturer" value="Cixi Kefa Elec"/>
+      <property name="Manufacturer Part Num" value="KF128-2.54-2P"/>
+      <property name="BRE Number" value="BRE-001271"/>
+      <property name="JLCPCB Part Num" value="C474920"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="transducer-pcb.kicad_sch"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <property name="ki_fp_filters" value="TerminalBlock*:*"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>81951fac-643f-4db7-99ca-7abeefb0631e</tstamps>
+    </comp>
   </components>
   <libparts>
     <libpart lib="BR_Capacitors_0805" part="C_0805_1nF_1kV_X7R_10%">
@@ -516,6 +568,30 @@
         <pin num="2" name="Pin_2" type="passive"/>
       </pins>
     </libpart>
+    <libpart lib="BR_Connectors_Header" part="Header_Pin_01x04_2.54mm_Vert_PTH">
+      <description>Header Pin Connector 01x04 2.54mm (0.100") Vertical PTH</description>
+      <docs>https://www.lcsc.com/datasheet/lcsc_datasheet_2409302232_XFCN-PZ254V-11-04P_C2691448.pdf</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">LABEL</field>
+        <field name="Footprint">BR_Connectors:Pin_Header_1x4_2.54mm_Vertical</field>
+        <field name="Datasheet">https://www.lcsc.com/datasheet/lcsc_datasheet_2409302232_XFCN-PZ254V-11-04P_C2691448.pdf</field>
+        <field name="Description">Header Pin Connector 01x04 2.54mm (0.100") Vertical PTH</field>
+        <field name="Manufacturer">XFCN</field>
+        <field name="Manufacturer Part Num">PZ254V-11-04P</field>
+        <field name="BRE Number">BRE-001042</field>
+        <field name="JLCPCB Part Num">C5116483</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+      </pins>
+    </libpart>
     <libpart lib="BR_Connectors_Header" part="Header_Pin_01x05_2.54mm_Vert_PTH">
       <description>Header Pin Connector 01x05 2.54mm (0.100") Vertical PTH</description>
       <docs>https://www.lcsc.com/datasheet/lcsc_datasheet_2312301326_Hanbo-Electronic-HB-PH3-25415PB2GOP_C6332198.pdf</docs>
@@ -633,6 +709,7 @@
   </libraries>
   <nets>
     <net code="1" name="/5V" class="Default">
+      <node ref="J10" pin="4" pinfunction="Pin_4" pintype="passive"/>
       <node ref="J3" pin="6" pinfunction="B_N" pintype="passive"/>
       <node ref="J4" pin="1" pinfunction="Pin_1" pintype="passive"/>
       <node ref="J4" pin="2" pinfunction="Pin_2" pintype="passive"/>
@@ -666,69 +743,76 @@
       <node ref="J1" pin="1" pinfunction="Pin_1" pintype="passive"/>
       <node ref="J5" pin="1" pinfunction="Pin_1" pintype="passive"/>
     </net>
-    <net code="9" name="/WHT" class="Default">
+    <net code="9" name="/T_OUT" class="Default">
+      <node ref="J10" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="J11" pin="1" pinfunction="Pin_1" pintype="passive"/>
+    </net>
+    <net code="10" name="/WHT" class="Default">
       <node ref="J1" pin="3" pinfunction="Pin_3" pintype="passive"/>
       <node ref="J5" pin="3" pinfunction="Pin_3" pintype="passive"/>
     </net>
-    <net code="10" name="/YLW/SHEILD" class="Default">
+    <net code="11" name="/YLW/SHEILD" class="Default">
       <node ref="C1" pin="1" pintype="passive"/>
       <node ref="J2" pin="1" pinfunction="Pin_1" pintype="passive"/>
       <node ref="J5" pin="5" pinfunction="Pin_5" pintype="passive"/>
     </net>
-    <net code="11" name="GND" class="Power">
+    <net code="12" name="GND" class="Power">
       <node ref="C1" pin="2" pintype="passive"/>
+      <node ref="J10" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J10" pin="3" pinfunction="Pin_3" pintype="passive"/>
+      <node ref="J11" pin="2" pinfunction="Pin_2" pintype="passive"/>
       <node ref="J2" pin="2" pinfunction="Pin_2" pintype="passive"/>
       <node ref="J3" pin="4" pinfunction="C_P" pintype="passive"/>
       <node ref="J4" pin="5" pinfunction="Pin_5" pintype="passive"/>
       <node ref="J7" pin="3" pinfunction="Pin_3" pintype="passive"/>
       <node ref="J9" pin="5" pinfunction="Pin_5" pintype="passive"/>
     </net>
-    <net code="12" name="unconnected-(H1-Pad1)" class="Default">
+    <net code="13" name="unconnected-(H1-Pad1)" class="Default">
       <node ref="H1" pin="1" pintype="passive"/>
     </net>
-    <net code="13" name="unconnected-(H2-Pad1)" class="Default">
+    <net code="14" name="unconnected-(H2-Pad1)" class="Default">
       <node ref="H2" pin="1" pintype="passive"/>
     </net>
-    <net code="14" name="unconnected-(J3-A_N-Pad2)" class="Default">
+    <net code="15" name="unconnected-(J3-A_N-Pad2)" class="Default">
       <node ref="J3" pin="2" pinfunction="A_N" pintype="passive+no_connect"/>
     </net>
-    <net code="15" name="unconnected-(J3-A_P-Pad1)" class="Default">
+    <net code="16" name="unconnected-(J3-A_P-Pad1)" class="Default">
       <node ref="J3" pin="1" pinfunction="A_P" pintype="passive+no_connect"/>
     </net>
-    <net code="16" name="unconnected-(J3-B_P-Pad3)" class="Default">
+    <net code="17" name="unconnected-(J3-B_P-Pad3)" class="Default">
       <node ref="J3" pin="3" pinfunction="B_P" pintype="passive+no_connect"/>
     </net>
-    <net code="17" name="unconnected-(J3-D_P-Pad7)" class="Default">
+    <net code="18" name="unconnected-(J3-D_P-Pad7)" class="Default">
       <node ref="J3" pin="7" pinfunction="D_P" pintype="passive+no_connect"/>
     </net>
-    <net code="18" name="unconnected-(J3-Pad0)" class="Default">
+    <net code="19" name="unconnected-(J3-Pad0)" class="Default">
       <node ref="J3" pin="0" pintype="passive+no_connect"/>
     </net>
-    <net code="19" name="unconnected-(J6-Pin_1-Pad1)" class="Default">
+    <net code="20" name="unconnected-(J6-Pin_1-Pad1)" class="Default">
       <node ref="J6" pin="1" pinfunction="Pin_1" pintype="passive+no_connect"/>
     </net>
-    <net code="20" name="unconnected-(J6-Pin_2-Pad2)" class="Default">
+    <net code="21" name="unconnected-(J6-Pin_2-Pad2)" class="Default">
       <node ref="J6" pin="2" pinfunction="Pin_2" pintype="passive+no_connect"/>
     </net>
-    <net code="21" name="unconnected-(J7-Pin_4-Pad4)" class="Default">
+    <net code="22" name="unconnected-(J7-Pin_4-Pad4)" class="Default">
       <node ref="J7" pin="4" pinfunction="Pin_4" pintype="passive+no_connect"/>
     </net>
-    <net code="22" name="unconnected-(J8-Pin_1-Pad1)" class="Default">
+    <net code="23" name="unconnected-(J8-Pin_1-Pad1)" class="Default">
       <node ref="J8" pin="1" pinfunction="Pin_1" pintype="passive+no_connect"/>
     </net>
-    <net code="23" name="unconnected-(J8-Pin_2-Pad2)" class="Default">
+    <net code="24" name="unconnected-(J8-Pin_2-Pad2)" class="Default">
       <node ref="J8" pin="2" pinfunction="Pin_2" pintype="passive+no_connect"/>
     </net>
-    <net code="24" name="unconnected-(J9-Pin_1-Pad1)" class="Default">
+    <net code="25" name="unconnected-(J9-Pin_1-Pad1)" class="Default">
       <node ref="J9" pin="1" pinfunction="Pin_1" pintype="passive+no_connect"/>
     </net>
-    <net code="25" name="unconnected-(J9-Pin_2-Pad2)" class="Default">
+    <net code="26" name="unconnected-(J9-Pin_2-Pad2)" class="Default">
       <node ref="J9" pin="2" pinfunction="Pin_2" pintype="passive+no_connect"/>
     </net>
-    <net code="26" name="unconnected-(J9-Pin_4-Pad4)" class="Default">
+    <net code="27" name="unconnected-(J9-Pin_4-Pad4)" class="Default">
       <node ref="J9" pin="4" pinfunction="Pin_4" pintype="passive+no_connect"/>
     </net>
-    <net code="27" name="unconnected-(J9-Pin_6-Pad6)" class="Default">
+    <net code="28" name="unconnected-(J9-Pin_6-Pad6)" class="Default">
       <node ref="J9" pin="6" pinfunction="Pin_6" pintype="passive+no_connect"/>
     </net>
   </nets>

@@ -1381,6 +1381,249 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "BR_Connectors_Header:Header_Pin_01x04_2.54mm_Vert_PTH"
+			(pin_names
+				(offset 1.016)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "J"
+				(at 1.27 1.778 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "LABEL"
+				(at 1.524 -11.43 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "BR_Connectors:Pin_Header_1x4_2.54mm_Vertical"
+				(at 0 76.2 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2409302232_XFCN-PZ254V-11-04P_C2691448.pdf"
+				(at 0 73.66 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Description" "Header Pin Connector 01x04 2.54mm (0.100\") Vertical PTH"
+				(at 0 71.12 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Manufacturer" "XFCN"
+				(at 0 68.58 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "Manufacturer Part Num" "PZ254V-11-04P"
+				(at 0 66.04 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "BRE Number" "BRE-001042"
+				(at 0 63.5 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "JLCPCB Part Num" "C5116483"
+				(at 0 60.96 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "connector"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "Connector*:*_1x??_*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "Header_Pin_01x04_2.54mm_Vert_PTH_1_1"
+				(rectangle
+					(start 0 0)
+					(end 2.54 -10.16)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(rectangle
+					(start 1.27 -6.223)
+					(end 2.54 -6.477)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 1.27 -8.763)
+					(end 2.54 -9.017)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 2.54 -1.143)
+					(end 1.27 -1.397)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(rectangle
+					(start 2.54 -3.683)
+					(end 1.27 -3.937)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(pin passive line
+					(at 6.35 -1.27 180)
+					(length 3.81)
+					(name "Pin_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 6.35 -3.81 180)
+					(length 3.81)
+					(name "Pin_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 6.35 -6.35 180)
+					(length 3.81)
+					(name "Pin_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 6.35 -8.89 180)
+					(length 3.81)
+					(name "Pin_4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "BR_Connectors_Header:Header_Pin_01x05_2.54mm_Vert_PTH"
 			(pin_names
 				(offset 1.016)
@@ -2452,7 +2695,7 @@
 	(bus_alias "USB"
 		(members "D_P" "D_N" "RX_P" "RX_N" "TX_P" "TX_N")
 	)
-	(text_box "CHANGELOG\nRev A:\n- Initial revision"
+	(text_box "CHANGELOG\nRev A:\n- Initial revision\nRev B:\n- Fix hole spacing and add thermocouple support"
 		(exclude_from_sim no)
 		(at 19.05 17.78 0)
 		(size 34.29 16.51)
@@ -2477,6 +2720,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "387b7e2c-f7d6-44a1-8fd3-7bf593131f57")
+	)
+	(junction
+		(at 184.15 120.65)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "3b7d5849-77aa-42e2-8b65-5ec32a109354")
 	)
 	(junction
 		(at 80.01 135.89)
@@ -2602,6 +2851,16 @@
 	)
 	(wire
 		(pts
+			(xy 171.45 133.35) (xy 175.26 133.35)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2d84cf94-4892-452d-94f7-a81087887b07")
+	)
+	(wire
+		(pts
 			(xy 172.72 74.93) (xy 176.53 74.93)
 		)
 		(stroke
@@ -2632,6 +2891,36 @@
 	)
 	(wire
 		(pts
+			(xy 171.45 115.57) (xy 184.15 115.57)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "454f074d-8384-454f-b0c9-b7513800e43c")
+	)
+	(wire
+		(pts
+			(xy 171.45 120.65) (xy 184.15 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "53313b33-fe1f-463e-b25c-06daba033511")
+	)
+	(wire
+		(pts
+			(xy 175.26 135.89) (xy 175.26 138.43)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "550ac470-c1c7-479c-a60f-c72ae9f0f518")
+	)
+	(wire
+		(pts
 			(xy 80.01 129.54) (xy 80.01 135.89)
 		)
 		(stroke
@@ -2649,6 +2938,16 @@
 			(type default)
 		)
 		(uuid "644e3476-a7a5-4108-838f-47abcc683071")
+	)
+	(wire
+		(pts
+			(xy 184.15 120.65) (xy 184.15 127)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "69f8670e-8b88-4b10-b662-0424d74d6c20")
 	)
 	(wire
 		(pts
@@ -2679,6 +2978,16 @@
 			(type default)
 		)
 		(uuid "76e14e6f-f68f-40d9-85db-aee47b7ce123")
+	)
+	(wire
+		(pts
+			(xy 171.45 135.89) (xy 175.26 135.89)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7e0a8c54-bcee-437a-a32f-f1e721ca4a18")
 	)
 	(wire
 		(pts
@@ -2762,6 +3071,36 @@
 	)
 	(wire
 		(pts
+			(xy 184.15 115.57) (xy 184.15 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9cad6657-40a7-41c8-a78e-9a57678994d8")
+	)
+	(wire
+		(pts
+			(xy 171.45 123.19) (xy 175.26 123.19)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a7aca4d2-6047-4fa4-8de9-ca41461ecd37")
+	)
+	(wire
+		(pts
+			(xy 171.45 118.11) (xy 175.26 118.11)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c00f9da0-cee7-46bb-b05c-2f3e32c6b92a")
+	)
+	(wire
+		(pts
 			(xy 189.23 67.31) (xy 189.23 69.85)
 		)
 		(stroke
@@ -2830,6 +3169,16 @@
 		)
 		(uuid "fb5f339c-390a-48f5-9858-c4615aa2fed3")
 	)
+	(label "T_OUT"
+		(at 175.26 133.35 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "007ae600-35ba-477a-a93c-8f97e33412ab")
+	)
 	(label "BLK"
 		(at 93.98 118.11 0)
 		(effects
@@ -2839,6 +3188,16 @@
 			(justify left bottom)
 		)
 		(uuid "0b08302d-cab1-445d-860e-ac038166eaa7")
+	)
+	(label "5V"
+		(at 175.26 123.19 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "0ea61df1-033f-43a2-a8fc-092a02fb0128")
 	)
 	(label "CLK"
 		(at 118.11 123.19 0)
@@ -2929,6 +3288,16 @@
 			(justify left bottom)
 		)
 		(uuid "811b27d9-414d-4fb9-a95c-66a7fd86665a")
+	)
+	(label "T_OUT"
+		(at 175.26 118.11 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "92a42ffa-182a-4507-9511-d69ac7a73a90")
 	)
 	(label "5V"
 		(at 142.24 67.31 0)
@@ -3474,6 +3843,189 @@
 		)
 	)
 	(symbol
+		(lib_id "BR_Connectors_Header:Header_Pin_01x04_2.54mm_Vert_PTH")
+		(at 165.1 114.3 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "2849fcfb-5bf8-4d59-a8b7-c4742ffdef42")
+		(property "Reference" "J10"
+			(at 166.37 109.22 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "Thermocouple Board"
+			(at 166.37 111.76 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "BR_Connectors:Pin_Header_1x4_2.54mm_Vertical"
+			(at 165.1 38.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.lcsc.com/datasheet/lcsc_datasheet_2409302232_XFCN-PZ254V-11-04P_C2691448.pdf"
+			(at 165.1 40.64 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "Header Pin Connector 01x04 2.54mm (0.100\") Vertical PTH"
+			(at 165.1 43.18 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer" "XFCN"
+			(at 165.1 45.72 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer Part Num" "PZ254V-11-04P"
+			(at 165.1 48.26 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "BRE Number" "BRE-001042"
+			(at 165.1 50.8 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "JLCPCB Part Num" "C5116483"
+			(at 165.1 53.34 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "3e1ed90d-6548-422f-99a8-901b05ae8352")
+		)
+		(pin "3"
+			(uuid "ec80aaae-e46d-4599-9e41-82cd9c4be42e")
+		)
+		(pin "4"
+			(uuid "0353cd11-389d-422a-a9c8-3712a433d9e5")
+		)
+		(pin "2"
+			(uuid "51c2d6f0-00fb-4cdd-9841-d43df5a82b22")
+		)
+		(instances
+			(project ""
+				(path "/4338d028-a057-460c-b9d6-000328210722"
+					(reference "J10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "BR_Virtual_Parts:GND")
+		(at 184.15 127 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "2d48dd12-e78d-43f7-a212-e90161115059")
+		(property "Reference" "#PWR06"
+			(at 184.15 133.35 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 184.15 132.08 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 184.15 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 184.15 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 184.15 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "f10192ff-b8e7-417a-a0f4-ef8bf7e216b6")
+		)
+		(instances
+			(project ""
+				(path "/4338d028-a057-460c-b9d6-000328210722"
+					(reference "#PWR06")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "BR_Connectors_Header:Header_Pin_01x02_2.54mm_Vert_PTH")
 		(at 166.37 43.18 0)
 		(unit 1)
@@ -3710,7 +4262,7 @@
 		(lib_id "BR_Virtual_Parts:Pressfit_5.15mm_hole")
 		(at 88.9 35.56 0)
 		(unit 1)
-		(exclude_from_sim no)
+		(exclude_from_sim yes)
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
@@ -3809,15 +4361,6 @@
 		)
 		(property "Supplier Part Num 2" "~"
 			(at 89.027 27.94 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Sim.Enable" "0"
-			(at 88.9 35.56 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -3952,6 +4495,118 @@
 			(project ""
 				(path "/4338d028-a057-460c-b9d6-000328210722"
 					(reference "J4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "BR_Connectors:KF128-2.54-2P")
+		(at 166.37 133.35 0)
+		(mirror y)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "81951fac-643f-4db7-99ca-7abeefb0631e")
+		(property "Reference" "J11"
+			(at 166.37 127 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "Thermocouple Out"
+			(at 166.37 129.54 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "BR_Connectors:KF128-2.54-2P"
+			(at 166.37 57.15 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.lcsc.com/datasheet/C474920.pdf"
+			(at 166.37 59.69 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Description" "1x2P 8A 130V 2.54mm Screw Terminal Through Hole"
+			(at 166.37 62.23 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer" "Cixi Kefa Elec"
+			(at 166.37 64.77 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "Manufacturer Part Num" "KF128-2.54-2P"
+			(at 166.37 67.31 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "BRE Number" "BRE-001271"
+			(at 166.37 69.85 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(property "JLCPCB Part Num" "C474920"
+			(at 166.37 72.39 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "6fd6eebc-d670-4168-8ae5-a9dc99ed7bde")
+		)
+		(pin "2"
+			(uuid "d5db627a-517d-4c86-b034-6e36d619779a")
+		)
+		(instances
+			(project "transducer-pcb"
+				(path "/4338d028-a057-460c-b9d6-000328210722"
+					(reference "J11")
 					(unit 1)
 				)
 			)
@@ -4474,7 +5129,7 @@
 		(lib_id "BR_Virtual_Parts:Pressfit_5.15mm_hole")
 		(at 95.25 35.56 0)
 		(unit 1)
-		(exclude_from_sim no)
+		(exclude_from_sim yes)
 		(in_bom no)
 		(on_board yes)
 		(dnp no)
@@ -4580,15 +5235,6 @@
 				(hide yes)
 			)
 		)
-		(property "Sim.Enable" "0"
-			(at 95.25 35.56 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
 		(pin "1"
 			(uuid "fd7bd6eb-0571-48bd-9558-bdb5b9d17949")
 		)
@@ -4659,6 +5305,72 @@
 			(project ""
 				(path "/4338d028-a057-460c-b9d6-000328210722"
 					(reference "GL101")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "BR_Virtual_Parts:GND")
+		(at 175.26 138.43 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "e2ddd88a-cb18-43bb-9e8d-36e1d40a4b44")
+		(property "Reference" "#PWR07"
+			(at 175.26 144.78 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 175.26 143.51 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 175.26 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 175.26 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 175.26 138.43 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "4e1370b6-4c10-4d01-a946-b69f9e59c86a")
+		)
+		(instances
+			(project ""
+				(path "/4338d028-a057-460c-b9d6-000328210722"
+					(reference "#PWR07")
 					(unit 1)
 				)
 			)
