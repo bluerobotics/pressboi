@@ -870,10 +870,10 @@
     ]
   ],
   "text_variables": {
-    "PCBA_BR_REVISION": "A",
+    "PCBA_BR_REVISION": "B",
     "PCBA_BR_TAB_NUMBER": "002",
     "PCB_BR_BASE_NUMBER": "103935",
-    "PCB_BR_REVISION": "A",
+    "PCB_BR_REVISION": "B",
     "SCALE": "1"
   }
 }

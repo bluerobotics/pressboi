@@ -9,3 +9,5 @@ Ref,Val,Package,PosX,PosY,Rot,Side
 "J7","NANO LR","PinHeader_1x06_P2.54mm_Vertical",265.250000,-114.820000,0.000000,top
 "J8","NANO UL","PinHeader_1x02_P2.54mm_Vertical",265.250000,-91.960000,0.000000,top
 "J9","NANO LL","PinHeader_1x06_P2.54mm_Vertical",250.010000,-114.820000,0.000000,top
+"J10","Thermocouple Board","Pin_Header_1x4_2.54mm_Vertical",282.500000,-100.000000,90.000000,top
+"J11","Thermocouple Out","KF128-2.54-2P",273.775000,-88.282500,180.000000,top
