@@ -359,7 +359,7 @@ void MotorController::setMachineStrainCoeffs(float coeff_x4, float coeff_x3, flo
     for (int i = 0; i < 5; ++i) {
         int32_t bits;
         memcpy(&bits, &m_machineStrainCoeffs[i], sizeof(float));
-        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>(8 + i), bits);
+        nvmMgr.Int32(static_cast<NvmManager::NvmLocations>((8 + i) * 4), bits);
     }
 }
 
@@ -2154,9 +2154,9 @@ void MotorController::updateTelemetry(TelemetryData* data, ForceSensor* forceSen
     float avg_torque = (displayTorque0 + displayTorque1) / 2.0f;
     
     // Calculate force from motor torque (always available)
-    data->force_motor_torque = (avg_torque - 1.04f) / 0.0335f;
+    data->force_motor_torque = (avg_torque - m_motor_torque_offset) / m_motor_torque_scale;
     if (data->force_motor_torque < 0.0f) data->force_motor_torque = 0.0f;
-    if (data->force_motor_torque > 1000.0f) data->force_motor_torque = 1000.0f;
+    if (data->force_motor_torque > 2000.0f) data->force_motor_torque = 2000.0f;
     
     // Get force from load cell (if available)
     if (forceSensor && forceSensor->isConnected()) {

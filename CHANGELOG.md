@@ -2,6 +2,15 @@
 
 All notable changes to the Pressboi firmware will be documented in this file.
 
+## [1.14.1] - 2026-03-18
+
+### Fixed
+- **NVM strain calibration persistence**: `set_strain_cal` command was writing coefficients to wrong NVM addresses (`(8+i)` instead of `(8+i)*4` byte offsets), causing calibration to be lost on reboot
+- **Telemetry force display**: `force_motor_torque` telemetry was using hardcoded calibration values (1.04/0.0335) instead of NVM-stored values from `set_force_offset`/`set_force_scale` commands; also increased force clamp from 1000 kg to 2000 kg to match motor_torque mode range
+
+### Changed
+- **Dead code cleanup**: Removed unused USB mirror declarations and member variables from CommsController (~1KB RAM savings)
+
 ## [1.14.0] - 2025-11-28
 
 ### Added
