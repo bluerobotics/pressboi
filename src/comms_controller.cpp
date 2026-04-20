@@ -356,61 +356,41 @@ void CommsController::processTxQueue() {
 		#if WATCHDOG_ENABLED
 		g_watchdogBreadcrumb = WD_BREADCRUMB_TX_QUEUE_USB;
 		#endif
-	if (m_usbHostConnected) {
-		const int CHUNK_SIZE = 50;
-		int msgLen = strlen(msg.buffer);
-		
-		if (msgLen <= CHUNK_SIZE) {
-			// Small message - send directly if buffer available
-			if (usbAvail >= msgLen + 1) {
-				ConnectorUsb.Send(msg.buffer);
+		if (m_usbHostConnected) {
+			int msgLen = (int)strlen(msg.buffer);
+			const int USB_STREAM_BLOCK_SIZE = 64;
+			const uint32_t USB_SEND_TIMEOUT_MS = 100;
+			uint32_t sendStart = Milliseconds();
+			int offset = 0;
+
+			while (offset < msgLen) {
+				if (Milliseconds() - sendStart > USB_SEND_TIMEOUT_MS) break;
+
+				int avail = ConnectorUsb.AvailableForWrite();
+				if (avail <= 0) continue;
+
+				int remaining = msgLen - offset;
+				int toSend = remaining;
+				if (toSend > avail) toSend = avail;
+				if (toSend > USB_STREAM_BLOCK_SIZE) toSend = USB_STREAM_BLOCK_SIZE;
+
+				char buf[USB_STREAM_BLOCK_SIZE + 1];
+				memcpy(buf, msg.buffer + offset, toSend);
+				buf[toSend] = '\0';
+				ConnectorUsb.Send(buf);
+				offset += toSend;
+			}
+
+			// Always terminate the line so partial messages don't
+			// concatenate with subsequent ones.
+			uint32_t nlStart = Milliseconds();
+			while (ConnectorUsb.AvailableForWrite() < 1) {
+				if (Milliseconds() - nlStart > 10) break;
+			}
+			if (ConnectorUsb.AvailableForWrite() >= 1) {
 				ConnectorUsb.Send("\n");
 			}
-			// If buffer full, just drop the message silently
-		} else {
-			// Large message - send in chunks with continuation markers
-			// Format: "MSG_PART_1/3: first_50_chars"
-			int totalChunks = (msgLen + CHUNK_SIZE - 1) / CHUNK_SIZE;
-			
-			// Hard limit on total time spent in this loop to prevent watchdog timeout
-			// Even if each chunk timeout is small, we need an overall limit
-			const uint32_t MAX_TOTAL_CHUNK_TIME_MS = 100;  // Max 100ms total for all chunks
-			const uint32_t CHUNK_TIMEOUT_MS = 3;  // Per-chunk timeout
-			uint32_t chunkLoopStart = Milliseconds();
-			
-			for (int chunk = 0; chunk < totalChunks; chunk++) {
-				// Check overall time limit - abort if taking too long
-				if (Milliseconds() - chunkLoopStart > MAX_TOTAL_CHUNK_TIME_MS) {
-					// Taking too long - abort remaining chunks to prevent watchdog
-					break;
-				}
-				int offset = chunk * CHUNK_SIZE;
-				int chunkLen = (msgLen - offset > CHUNK_SIZE) ? CHUNK_SIZE : (msgLen - offset);
-				
-				char chunkMsg[80];
-				snprintf(chunkMsg, sizeof(chunkMsg), "CHUNK_%d/%d:", chunk + 1, totalChunks);
-				int headerLen = strlen(chunkMsg);
-				
-				// Add chunk data
-				strncat(chunkMsg, msg.buffer + offset, chunkLen);
-				chunkMsg[headerLen + chunkLen] = '\0';
-				
-				// Wait for buffer space (with shorter timeout to prevent watchdog)
-				uint32_t startWait = Milliseconds();
-				while (ConnectorUsb.AvailableForWrite() < (int)strlen(chunkMsg) + 1) {
-					if (Milliseconds() - startWait > CHUNK_TIMEOUT_MS) {
-						// Timeout - skip this chunk to prevent blocking
-						break;
-					}
-				}
-				
-				if (ConnectorUsb.AvailableForWrite() >= (int)strlen(chunkMsg) + 1) {
-					ConnectorUsb.Send(chunkMsg);
-					ConnectorUsb.Send("\n");
-				}
-			}
 		}
-	}
 	// If USB unhealthy or buffer full, message is silently dropped to prevent blocking
 	// USB will auto-recover when buffer has space again (host reconnects)
 	}
